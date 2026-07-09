@@ -243,7 +243,12 @@ function HomePage() {
         ) : (
           <Accordion
             type="multiple"
-            defaultValue={SECTORS.map((s) => s)}
+            value={
+              search.trim() || activeFilters.length > 0
+                ? SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0)
+                : openSectors
+            }
+            onValueChange={setOpenSectors}
             className="space-y-3"
           >
             {SECTORS.map((sec) => {
