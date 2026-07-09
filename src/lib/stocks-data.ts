@@ -17,6 +17,12 @@ export interface Stock {
   tipo: ShareType;
   preco: number;
   variacaoDia: number;
+  precoD1: number;
+  varD1: number;
+  precoD7: number;
+  varD7: number;
+  precoD30: number;
+  varD30: number;
   pl: number;
   pvp: number;
   dy: number;
@@ -30,7 +36,14 @@ export interface Stock {
   valorMercado: number;
   liquidezDiaria: number;
   dividendos: DividendYear[];
+  /** Nº de anos (últimos 5) em que houve pagamento de proventos > 0 */
+  anosComProventos: number;
+  /** Pagou proventos todos os anos dos últimos 5 */
+  dividendosRecorrentes: boolean;
+  /** Nº de anos em que o yield superou a Selic média ponderada */
+  anosYieldAcimaSelic: number;
 }
+
 
 interface RawRow {
   t: string; n: string; s: string; tp: string;
