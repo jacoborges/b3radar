@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { LineChart } from "lucide-react";
+import { LineChart, CalendarClock } from "lucide-react";
 import type { Stock } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { InfoTip } from "./InfoTip";
@@ -16,6 +16,15 @@ import {
   DividendStackedChart,
   DividendVsSelicChart,
 } from "./DividendChart";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface Props {
   stock: Stock | null;
