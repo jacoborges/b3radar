@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -12,39 +13,36 @@ interface Props {
 }
 
 export function TradingViewModal({ ticker, onClose }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    if (!ticker || !containerRef.current) return;
-    const container = containerRef.current;
-    container.innerHTML =
-      '<div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>';
+    setLoaded(false);
+  }, [ticker]);
 
-    const script = document.createElement("script");
-    script.src =
-      "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
-    script.async = true;
-    script.type = "text/javascript";
-    script.text = JSON.stringify({
-      autosize: true,
+  const chartUrl = useMemo(() => {
+    if (!ticker) return "";
+
+    const params = new URLSearchParams({
       symbol: `BMFBOVESPA:${ticker}`,
       interval: "D",
       timezone: "America/Sao_Paulo",
       theme: "dark",
       style: "1",
       locale: "br",
-      backgroundColor: "rgba(15, 15, 20, 1)",
-      gridColor: "rgba(90, 90, 105, 0.1)",
-      allow_symbol_change: true,
-      hide_side_toolbar: false,
-      studies: ["MASimple@tv-basicstudies", "Volume@tv-basicstudies"],
+      allow_symbol_change: "1",
+      hide_side_toolbar: "0",
+      withdateranges: "1",
+      details: "1",
+      hotlist: "0",
+      calendar: "0",
+      studies: JSON.stringify([
+        "MASimple@tv-basicstudies",
+        "Volume@tv-basicstudies",
+      ]),
       support_host: "https://www.tradingview.com",
     });
-    container.appendChild(script);
 
-    return () => {
-      container.innerHTML = "";
-    };
+    return `https://s.tradingview.com/widgetembed/?${params.toString()}`;
   }, [ticker]);
 
   return (
@@ -54,13 +52,27 @@ export function TradingViewModal({ ticker, onClose }: Props) {
           <DialogTitle className="font-mono text-primary">
             {ticker} — Gráfico TradingView
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Gráfico interativo do TradingView para o ativo selecionado.
+          </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 min-h-0 bg-background">
-          <div
-            ref={containerRef}
-            className="tradingview-widget-container"
-            style={{ height: "100%", width: "100%" }}
-          />
+        <div className="relative flex-1 min-h-0 bg-background">
+          {!loaded && (
+            <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+              Carregando gráfico…
+            </div>
+          )}
+          {chartUrl && (
+            <iframe
+              key={chartUrl}
+              title={`Gráfico TradingView ${ticker}`}
+              src={chartUrl}
+              className="h-full w-full border-0"
+              allow="clipboard-write; fullscreen"
+              referrerPolicy="origin-when-cross-origin"
+              onLoad={() => setLoaded(true)}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>
