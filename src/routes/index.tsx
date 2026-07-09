@@ -49,11 +49,11 @@ export const Route = createFileRoute("/")({
         content:
           "Painel escuro para acompanhar todas as ações ON, PN e Units da B3: fundamentos, dividendos vs. Selic, semáforo de endividamento, filtros técnicos e gráficos TradingView.",
       },
-      { property: "og:title", content: "B3 Radar — Painel completo da Bovespa" },
+      { property: "og:title", content: "B3 Radar — Ações da Bovespa com fundamentos, dividendos e gráfico" },
       {
         property: "og:description",
         content:
-          "Fundamentos, dividendos, comparativo com a Selic e gráficos TradingView de todas as ações da B3.",
+          "Painel escuro para acompanhar todas as ações ON, PN e Units da B3: fundamentos, dividendos vs. Selic, semáforo de endividamento, filtros técnicos e gráficos TradingView.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

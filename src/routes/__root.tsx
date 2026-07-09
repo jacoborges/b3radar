@@ -77,10 +77,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "B3 Radar — Painel da Bovespa" },
-      { name: "description", content: "Painel escuro com fundamentos, dividendos, comparativo Selic e gráfico TradingView de todas as ações da B3." },
+      { title: "B3 Radar — Ações da Bovespa com fundamentos, dividendos e gráfico" },
+      { name: "description", content: "Painel escuro para acompanhar todas as ações ON, PN e Units da B3: fundamentos, dividendos vs. Selic, semáforo de endividamento, filtros técnicos e gráficos TradingView." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "B3 Radar — Ações da Bovespa com fundamentos, dividendos e gráfico" },
+      { name: "twitter:title", content: "B3 Radar — Ações da Bovespa com fundamentos, dividendos e gráfico" },
+      { property: "og:description", content: "Painel escuro para acompanhar todas as ações ON, PN e Units da B3: fundamentos, dividendos vs. Selic, semáforo de endividamento, filtros técnicos e gráficos TradingView." },
+      { name: "twitter:description", content: "Painel escuro para acompanhar todas as ações ON, PN e Units da B3: fundamentos, dividendos vs. Selic, semáforo de endividamento, filtros técnicos e gráficos TradingView." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/452bfe79-170f-40c8-8541-e2b120744f58/id-preview-e5027c53--c9b35fa5-b557-4db6-95d6-315a7c2aaa1c.lovable.app-1783600142341.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/452bfe79-170f-40c8-8541-e2b120744f58/id-preview-e5027c53--c9b35fa5-b557-4db6-95d6-315a7c2aaa1c.lovable.app-1783600142341.png" },
     ],
     links: [
       {
