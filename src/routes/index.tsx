@@ -291,10 +291,11 @@ function HomePage() {
           <Accordion
             type="multiple"
             value={
-              search.trim() || activeFilters.length > 0
+              search.trim() || activeFilters.length > 0 || extraActiveCount > 0
                 ? SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0)
                 : openSectors
             }
+
             onValueChange={setOpenSectors}
             className="space-y-3"
           >
