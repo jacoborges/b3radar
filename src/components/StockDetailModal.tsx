@@ -251,3 +251,103 @@ function HistoryCard({
   );
 }
 
+function fmtDate(iso: string) {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function ProvisionamentoPanel({ stock }: { stock: Stock }) {
+  const items = stock.proventosProvisionados;
+  const totalPorAcao = items.reduce((s, p) => s + p.valorPorAcao, 0);
+  const yieldProvisionado = stock.preco > 0 ? (totalPorAcao / stock.preco) * 100 : 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border/60 bg-card p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Provisionamento de novos dividendos
+          </h3>
+          <InfoTip
+            title="Data Com × Data Ex"
+            fundamentalista="Data Com é a última data em que ao comprar a ação você tem direito ao provento. Data Ex é o primeiro pregão em que a ação passa a negociar sem o direito — o preço tende a abrir descontado do valor do provento. A Data de Pagamento é quando o dinheiro cai na conta."
+            tecnica="Na Data Ex costuma haver um 'gap' de abertura para baixo, próximo ao valor do provento. Estratégias de 'dividend capture' exploram esse comportamento — mas o efeito prático em ativos líquidos é pequeno."
+          />
+        </div>
+
+        {items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Nenhum provento provisionado no momento.
+          </p>
+        ) : (
+          <>
+            <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+              <PriceCard
+                label="Anúncios pendentes"
+                value={String(items.length)}
+              />
+              <PriceCard
+                label="Total por ação"
+                value={`R$ ${totalPorAcao.toFixed(4)}`}
+              />
+              <PriceCard
+                label="Yield provisionado"
+                value={`${yieldProvisionado.toFixed(2)}%`}
+                positive={yieldProvisionado > 0}
+              />
+            </div>
+
+            <div className="overflow-x-auto rounded-md border border-border/40">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Valor/ação</TableHead>
+                    <TableHead>Data Com</TableHead>
+                    <TableHead>Data Ex</TableHead>
+                    <TableHead>Pagamento</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {items.map((p, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="border-border/60"
+                          style={{
+                            color:
+                              p.tipo === "JCP"
+                                ? "var(--color-jcp)"
+                                : "var(--color-dividend)",
+                          }}
+                        >
+                          {p.tipo}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-mono">
+                        R$ {p.valorPorAcao.toFixed(4)}
+                      </TableCell>
+                      <TableCell className="font-mono">{fmtDate(p.dataCom)}</TableCell>
+                      <TableCell className="font-mono">{fmtDate(p.dataEx)}</TableCell>
+                      <TableCell className="font-mono">
+                        {fmtDate(p.dataPagamento)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <p className="mt-3 text-xs text-muted-foreground">
+              Dados estimados. Consulte o RI da companhia e comunicados na B3 antes de
+              operar por data com/ex.
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
