@@ -191,3 +191,31 @@ function PriceCard({
     </div>
   );
 }
+
+function HistoryCard({
+  label,
+  preco,
+  variacao,
+}: {
+  label: string;
+  preco: number;
+  variacao: number;
+}) {
+  const positive = variacao >= 0;
+  const color = positive ? "var(--color-success)" : "var(--color-danger)";
+  return (
+    <div className="rounded-lg border border-border/60 bg-card p-3">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 flex items-baseline justify-between gap-2">
+        <span className="font-mono text-base font-semibold">
+          R$ {preco.toFixed(2)}
+        </span>
+        <span className="font-mono text-sm" style={{ color }}>
+          {positive ? "+" : ""}
+          {variacao.toFixed(2)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
