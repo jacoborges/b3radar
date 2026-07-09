@@ -214,8 +214,15 @@ function HomePage() {
               <FilterSheet
                 filters={filters}
                 setFilters={setFilters}
-                activeCount={activeFilters.length}
+                activeCount={activeFilters.length + extraActiveCount}
+                debtFilter={debtFilter}
+                setDebtFilter={setDebtFilter}
+                recFilter={recFilter}
+                setRecFilter={setRecFilter}
+                minAnosAcimaSelic={minAnosAcimaSelic}
+                setMinAnosAcimaSelic={setMinAnosAcimaSelic}
               />
+
             </div>
           </div>
 
