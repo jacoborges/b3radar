@@ -707,3 +707,57 @@ function FilterSheet({
     </Sheet>
   );
 }
+
+function LiveBadge({
+  updatedAt,
+  isFetching,
+  hasError,
+  count,
+}: {
+  updatedAt: Date | null;
+  isFetching: boolean;
+  hasError: boolean;
+  count: number;
+}) {
+  const time = updatedAt
+    ? updatedAt.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : null;
+
+  const color = hasError
+    ? "var(--color-danger)"
+    : updatedAt
+      ? "var(--color-success)"
+      : "var(--color-warning)";
+
+  const label = hasError
+    ? "Cotações indisponíveis"
+    : updatedAt
+      ? `Ao vivo · ${count} tickers · ${time}`
+      : "Conectando…";
+
+  return (
+    <span
+      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      style={{
+        borderColor: "var(--color-border)",
+        color: "var(--color-muted-foreground)",
+      }}
+      title="Preços atualizados a cada 30 s via brapi.dev"
+    >
+      <span
+        className="inline-block h-1.5 w-1.5 rounded-full"
+        style={{
+          backgroundColor: color,
+          boxShadow: `0 0 8px ${color}`,
+          animation: isFetching ? "pulse 1.2s ease-in-out infinite" : undefined,
+        }}
+      />
+      {label}
+    </span>
+  );
+}
+
