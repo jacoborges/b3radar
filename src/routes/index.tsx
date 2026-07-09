@@ -39,6 +39,7 @@ import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { TradingViewModal } from "@/components/TradingViewModal";
+import { useLiveQuotes } from "@/hooks/use-live-quotes";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -122,11 +123,28 @@ function HomePage() {
     });
   }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic]);
 
+  // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
+  const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
+  const live = useLiveQuotes(requestedTickers);
+
+  const filteredLive = useMemo<Stock[]>(() => {
+    if (live.map.size === 0) return filtered;
+    return filtered.map((s) => {
+      const q = live.map.get(s.ticker);
+      if (!q) return s;
+      return {
+        ...s,
+        preco: q.price,
+        variacaoDia: q.changePercent,
+        precoD1: q.previousClose ?? s.precoD1,
+      };
+    });
+  }, [filtered, live.map]);
 
   const bySector = useMemo(() => {
     const map = new Map<string, Stock[]>();
     for (const sec of SECTORS) map.set(sec, []);
-    for (const s of filtered) map.get(s.setor)?.push(s);
+    for (const s of filteredLive) map.get(s.setor)?.push(s);
     for (const [, arr] of map) {
       arr.sort((a, b) => {
         const av = a[sortKey] as number | string;
@@ -139,7 +157,7 @@ function HomePage() {
       });
     }
     return map;
-  }, [filtered, sortKey, sortDir]);
+  }, [filteredLive, sortKey, sortDir]);
 
   const total = filtered.length;
 
