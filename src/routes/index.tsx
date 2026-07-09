@@ -64,6 +64,8 @@ export const Route = createFileRoute("/")({
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
+type DebtOpt = "ALL" | "success" | "warning" | "danger";
+type RecOpt = "ALL" | "YES" | "NO";
 
 interface FilterRange {
   min: number | null;
@@ -80,6 +82,9 @@ function HomePage() {
   const [sortKey, setSortKey] = useState<SortKey>("ticker");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filters, setFilters] = useState<Record<string, FilterRange>>(initialFilters);
+  const [debtFilter, setDebtFilter] = useState<DebtOpt>("ALL");
+  const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
+  const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
   const [chartTicker, setChartTicker] = useState<string | null>(null);
   const [openSectors, setOpenSectors] = useState<string[]>([]);
@@ -92,6 +97,11 @@ function HomePage() {
     [filters],
   );
 
+  const extraActiveCount =
+    (debtFilter !== "ALL" ? 1 : 0) +
+    (recFilter !== "ALL" ? 1 : 0) +
+    (minAnosAcimaSelic > 0 ? 1 : 0);
+
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
     return STOCKS.filter((s) => {
@@ -103,9 +113,15 @@ function HomePage() {
         if (r.min !== null && val < r.min) return false;
         if (r.max !== null && val > r.max) return false;
       }
+      if (debtFilter !== "ALL" && debtLevel(s.divBrutaPatrimonio).color !== debtFilter)
+        return false;
+      if (recFilter === "YES" && !s.dividendosRecorrentes) return false;
+      if (recFilter === "NO" && s.dividendosRecorrentes) return false;
+      if (s.anosYieldAcimaSelic < minAnosAcimaSelic) return false;
       return true;
     });
-  }, [search, tipo, activeFilters]);
+  }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic]);
+
 
   const bySector = useMemo(() => {
     const map = new Map<string, Stock[]>();
