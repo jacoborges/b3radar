@@ -57,6 +57,8 @@ export interface Stock {
   dividendosRecorrentes: boolean;
   /** Nº de anos em que o yield superou a Selic média ponderada */
   anosYieldAcimaSelic: number;
+  /** Proventos anunciados/provisionados a pagar */
+  proventosProvisionados: ProventoProvisionado[];
 }
 
 
