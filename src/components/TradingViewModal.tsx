@@ -35,12 +35,10 @@ export function TradingViewModal({ ticker, onClose }: Props) {
       details: "1",
       hotlist: "0",
       calendar: "0",
-      studies: JSON.stringify([
-        "MASimple@tv-basicstudies",
-        "Volume@tv-basicstudies",
-      ]),
       support_host: "https://www.tradingview.com",
     });
+    params.append("studies", "MASimple@tv-basicstudies");
+    params.append("studies", "Volume@tv-basicstudies");
 
     return `https://s.tradingview.com/widgetembed/?${params.toString()}`;
   }, [ticker]);
