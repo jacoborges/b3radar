@@ -237,6 +237,29 @@ function HomePage() {
 
       {/* Content */}
       <main className="mx-auto max-w-[1400px] px-4 py-6 md:px-8">
+        <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            {total} ativos em {SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0).length} setores
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() =>
+                setOpenSectors(
+                  SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0),
+                )
+              }
+              className="rounded-md border border-border/60 px-2.5 py-1 transition-colors hover:border-primary/60 hover:text-foreground"
+            >
+              Expandir tudo
+            </button>
+            <button
+              onClick={() => setOpenSectors([])}
+              className="rounded-md border border-border/60 px-2.5 py-1 transition-colors hover:border-primary/60 hover:text-foreground"
+            >
+              Recolher tudo
+            </button>
+          </div>
+        </div>
         {total === 0 ? (
           <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
             Nenhum ativo encontrado com esses filtros.
