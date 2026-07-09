@@ -536,9 +536,98 @@ function FilterSheet({
           <SheetTitle>Filtros por indicadores técnicos</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-6 px-4 pb-8">
+          {/* Filtros qualitativos */}
+          <div className="space-y-4 rounded-lg border border-border/60 bg-background/40 p-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-sm">
+                Semáforo de endividamento
+                <InfoTip
+                  title="Semáforo de Endividamento"
+                  fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: 0,5x–1,2x. Vermelho: > 1,2x."
+                  tecnica="Ativos mais alavancados costumam ter beta e volatilidade maiores."
+                />
+              </Label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {([
+                  ["ALL", "Todos", "var(--color-muted-foreground)"],
+                  ["success", "Baixo", "var(--color-success)"],
+                  ["warning", "Moderado", "var(--color-warning)"],
+                  ["danger", "Elevado", "var(--color-danger)"],
+                ] as const).map(([val, label, color]) => (
+                  <button
+                    key={val}
+                    onClick={() => setDebtFilter(val as DebtOpt)}
+                    className="rounded-md border px-2 py-1.5 text-xs transition-colors"
+                    style={{
+                      borderColor: debtFilter === val ? color : "var(--color-border)",
+                      color: debtFilter === val ? color : "var(--color-muted-foreground)",
+                      backgroundColor: debtFilter === val ? `color-mix(in oklab, ${color} 12%, transparent)` : "transparent",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-sm">
+                Pagamento recorrente de dividendos
+                <InfoTip
+                  title="Recorrência de proventos"
+                  fundamentalista="Considera recorrente quem pagou dividendos ou JCP em todos os últimos 5 anos."
+                  tecnica="Papéis 'pagadores' costumam ter menor volatilidade e drawdowns mais amenos."
+                />
+              </Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  ["ALL", "Todos"],
+                  ["YES", "Sim (5/5 anos)"],
+                  ["NO", "Não"],
+                ] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setRecFilter(val as RecOpt)}
+                    className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                      recFilter === val
+                        ? "border-primary/70 bg-primary/10 text-primary"
+                        : "border-border/60 text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  Dividendo &gt; Selic
+                  <InfoTip
+                    title="Yield vs. Selic"
+                    fundamentalista="Nº de anos (dos últimos 5) em que o yield de proventos superou a Selic média ponderada do ano."
+                    tecnica="Papéis que batem a Selic sistematicamente tendem a atrair fluxo em ciclos de queda de juros."
+                  />
+                </Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  ≥ {minAnosAcimaSelic}/5 anos
+                </span>
+              </div>
+              <Slider
+                min={0}
+                max={5}
+                step={1}
+                value={[minAnosAcimaSelic]}
+                onValueChange={([v]) => setMinAnosAcimaSelic(v)}
+              />
+            </div>
+          </div>
+
           {FUNDAMENTAL_KEYS.map((k) => {
             const [min, max, step] = bounds[k];
             const cur = filters[k];
+
             const v: [number, number] = [
               cur.min ?? min,
               cur.max ?? max,
