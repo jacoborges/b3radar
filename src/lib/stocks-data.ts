@@ -141,6 +141,10 @@ function buildStock(r: RawRow): Stock {
     cagrLucros5a: r.cr,
     valorMercado: r.vm,
     liquidezDiaria: r.lq,
+    // Free float estimado determinístico (30% – 95%), atrelado à liquidez
+    freeFloat: Number(
+      Math.min(95, Math.max(25, 30 + rand() * 55 + Math.min(20, r.lq / 20))).toFixed(1),
+    ),
     dividendos,
     anosComProventos,
     dividendosRecorrentes,
