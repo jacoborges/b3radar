@@ -144,6 +144,16 @@ export const INDICATORS: Record<string, IndicatorInfo> = {
     tecnica:
       "Volume valida rompimentos. Sem volume, breakout tende a ser falso.",
   },
+  freeFloat: {
+    key: "freeFloat",
+    label: "Free Float",
+    short: "% de ações em circulação",
+    format: pct,
+    fundamentalista:
+      "Percentual do capital em circulação livre no mercado (fora das mãos de controladores e tesouraria). Free float alto tende a indicar governança mais dispersa e maior escrutínio do mercado; muito baixo concentra decisões no controlador.",
+    tecnica:
+      "Free float baixo reduz liquidez e amplifica volatilidade — movimentos bruscos com pouco volume. Free float alto favorece formação de preço mais eficiente e menor slippage.",
+  },
 };
 
 export const FUNDAMENTAL_KEYS = [
@@ -157,6 +167,7 @@ export const FUNDAMENTAL_KEYS = [
   "divBrutaPatrimonio",
   "liquidezCorrente",
   "cagrLucros5a",
+  "freeFloat",
 ] as const;
 
 export type IndicatorKey = (typeof FUNDAMENTAL_KEYS)[number];
