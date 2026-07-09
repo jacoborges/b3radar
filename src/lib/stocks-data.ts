@@ -35,6 +35,8 @@ export interface Stock {
   cagrLucros5a: number;
   valorMercado: number;
   liquidezDiaria: number;
+  /** Free float estimado (% de ações em circulação no mercado) */
+  freeFloat: number;
   dividendos: DividendYear[];
   /** Nº de anos (últimos 5) em que houve pagamento de proventos > 0 */
   anosComProventos: number;
