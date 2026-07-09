@@ -668,7 +668,13 @@ function FilterSheet({
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => setFilters(initialFilters)}
+            onClick={() => {
+              setFilters(initialFilters);
+              setDebtFilter("ALL");
+              setRecFilter("ALL");
+              setMinAnosAcimaSelic(0);
+            }}
+
           >
             Limpar todos os filtros
           </Button>
