@@ -76,6 +76,25 @@ export function StockDetailModal({ stock, onClose, onOpenChart }: Props) {
               />
             </div>
 
+            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <HistoryCard
+                label="Fech. D-1 (ontem)"
+                preco={stock.precoD1}
+                variacao={stock.varD1}
+              />
+              <HistoryCard
+                label="D-7 (semana)"
+                preco={stock.precoD7}
+                variacao={stock.varD7}
+              />
+              <HistoryCard
+                label="D-30 (mês)"
+                preco={stock.precoD30}
+                variacao={stock.varD30}
+              />
+            </div>
+
+
             <div className="mt-4 rounded-lg border border-border/60 bg-card p-4">
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                 Indicadores Fundamentais
