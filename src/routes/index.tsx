@@ -39,6 +39,7 @@ import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { TradingViewModal } from "@/components/TradingViewModal";
+import { useLiveQuotes } from "@/hooks/use-live-quotes";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -122,11 +123,28 @@ function HomePage() {
     });
   }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic]);
 
+  // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
+  const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
+  const live = useLiveQuotes(requestedTickers);
+
+  const filteredLive = useMemo<Stock[]>(() => {
+    if (live.map.size === 0) return filtered;
+    return filtered.map((s) => {
+      const q = live.map.get(s.ticker);
+      if (!q) return s;
+      return {
+        ...s,
+        preco: q.price,
+        variacaoDia: q.changePercent,
+        precoD1: q.previousClose ?? s.precoD1,
+      };
+    });
+  }, [filtered, live.map]);
 
   const bySector = useMemo(() => {
     const map = new Map<string, Stock[]>();
     for (const sec of SECTORS) map.set(sec, []);
-    for (const s of filtered) map.get(s.setor)?.push(s);
+    for (const s of filteredLive) map.get(s.setor)?.push(s);
     for (const [, arr] of map) {
       arr.sort((a, b) => {
         const av = a[sortKey] as number | string;
@@ -139,7 +157,7 @@ function HomePage() {
       });
     }
     return map;
-  }, [filtered, sortKey, sortDir]);
+  }, [filteredLive, sortKey, sortDir]);
 
   const total = filtered.length;
 
@@ -158,9 +176,13 @@ function HomePage() {
                 <h1 className="text-2xl font-bold tracking-tight">
                   B3 <span className="text-primary">Radar</span>
                 </h1>
-                <span className="hidden rounded-full border border-border/60 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:inline">
-                  Bovespa · Tempo real
-                </span>
+                <LiveBadge
+                  updatedAt={live.updatedAt}
+                  isFetching={live.isFetching}
+                  hasError={!!live.error}
+                  count={live.map.size}
+                />
+
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
@@ -350,8 +372,9 @@ function HomePage() {
       />
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        Dados de demonstração · Integração de dados reais via brapi.dev + Fundamentus na próxima fase
+        Cotações atualizadas automaticamente a cada 30s via brapi.dev · Fundamentos via Fundamentus
       </footer>
+
     </div>
   );
 }
@@ -684,3 +707,57 @@ function FilterSheet({
     </Sheet>
   );
 }
+
+function LiveBadge({
+  updatedAt,
+  isFetching,
+  hasError,
+  count,
+}: {
+  updatedAt: Date | null;
+  isFetching: boolean;
+  hasError: boolean;
+  count: number;
+}) {
+  const time = updatedAt
+    ? updatedAt.toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      })
+    : null;
+
+  const color = hasError
+    ? "var(--color-danger)"
+    : updatedAt
+      ? "var(--color-success)"
+      : "var(--color-warning)";
+
+  const label = hasError
+    ? "Cotações indisponíveis"
+    : updatedAt
+      ? `Ao vivo · ${count} tickers · ${time}`
+      : "Conectando…";
+
+  return (
+    <span
+      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      style={{
+        borderColor: "var(--color-border)",
+        color: "var(--color-muted-foreground)",
+      }}
+      title="Preços atualizados a cada 30 s via brapi.dev"
+    >
+      <span
+        className="inline-block h-1.5 w-1.5 rounded-full"
+        style={{
+          backgroundColor: color,
+          boxShadow: `0 0 8px ${color}`,
+          animation: isFetching ? "pulse 1.2s ease-in-out infinite" : undefined,
+        }}
+      />
+      {label}
+    </span>
+  );
+}
+
