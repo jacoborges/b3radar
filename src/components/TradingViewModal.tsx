@@ -17,13 +17,15 @@ export function TradingViewModal({ ticker, onClose }: Props) {
   useEffect(() => {
     if (!ticker || !containerRef.current) return;
     const container = containerRef.current;
-    container.innerHTML = "";
+    container.innerHTML =
+      '<div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>';
+
     const script = document.createElement("script");
     script.src =
       "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.async = true;
     script.type = "text/javascript";
-    script.innerHTML = JSON.stringify({
+    script.text = JSON.stringify({
       autosize: true,
       symbol: `BMFBOVESPA:${ticker}`,
       interval: "D",
@@ -39,23 +41,26 @@ export function TradingViewModal({ ticker, onClose }: Props) {
       support_host: "https://www.tradingview.com",
     });
     container.appendChild(script);
+
+    return () => {
+      container.innerHTML = "";
+    };
   }, [ticker]);
 
   return (
     <Dialog open={!!ticker} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-6xl h-[85vh] p-0 gap-0 border-border/60">
-        <DialogHeader className="px-6 py-4 border-b border-border/60">
+      <DialogContent className="max-w-6xl w-[95vw] h-[85vh] p-0 gap-0 border-border/60 flex flex-col overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b border-border/60 shrink-0">
           <DialogTitle className="font-mono text-primary">
             {ticker} — Gráfico TradingView
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden bg-background">
+        <div className="flex-1 min-h-0 bg-background">
           <div
-            className="tradingview-widget-container h-full w-full"
             ref={containerRef}
-          >
-            <div className="tradingview-widget-container__widget h-full w-full" />
-          </div>
+            className="tradingview-widget-container"
+            style={{ height: "100%", width: "100%" }}
+          />
         </div>
       </DialogContent>
     </Dialog>
