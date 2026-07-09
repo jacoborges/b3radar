@@ -516,6 +516,7 @@ function FilterSheet({
     divBrutaPatrimonio: [0, 3, 0.05],
     liquidezCorrente: [0, 5, 0.05],
     cagrLucros5a: [-30, 50, 0.5],
+    freeFloat: [0, 100, 1],
   };
 
   return (
