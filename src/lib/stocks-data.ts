@@ -10,6 +10,19 @@ export interface DividendYear {
   precoMedio: number;
 }
 
+export type ProventoTipo = "Dividendo" | "JCP";
+
+export interface ProventoProvisionado {
+  tipo: ProventoTipo;
+  valorPorAcao: number;
+  /** ISO yyyy-mm-dd — última data para ter direito ao provento */
+  dataCom: string;
+  /** ISO yyyy-mm-dd — primeiro pregão sem o direito */
+  dataEx: string;
+  /** ISO yyyy-mm-dd — data prevista de pagamento */
+  dataPagamento: string;
+}
+
 export interface Stock {
   ticker: string;
   nome: string;
@@ -44,6 +57,8 @@ export interface Stock {
   dividendosRecorrentes: boolean;
   /** Nº de anos em que o yield superou a Selic média ponderada */
   anosYieldAcimaSelic: number;
+  /** Proventos anunciados/provisionados a pagar */
+  proventosProvisionados: ProventoProvisionado[];
 }
 
 
@@ -115,6 +130,31 @@ function buildStock(r: RawRow): Stock {
     return yieldAno > d.selicMediaPonderada;
   }).length;
 
+  // Provisionamento de novos proventos (0–3 anúncios futuros)
+  const proventosProvisionados: ProventoProvisionado[] = [];
+  if (paysDivs) {
+    const n = 1 + Math.floor(rand() * 3); // 1..3
+    // âncora determinística de referência (hoje simulado): 2026-07-09
+    const baseMs = Date.UTC(2026, 6, 9);
+    const dayMs = 86_400_000;
+    for (let i = 0; i < n; i++) {
+      const comOffset = 10 + Math.floor(rand() * 80) + i * 25; // dias no futuro
+      const exDate = new Date(baseMs + (comOffset + 1) * dayMs);
+      const comDate = new Date(baseMs + comOffset * dayMs);
+      const payDate = new Date(baseMs + (comOffset + 20 + Math.floor(rand() * 40)) * dayMs);
+      const isJcp = rand() < jcpBias + 0.15;
+      const valor = Math.max(0.01, (proventoAtual / (2 + rand() * 3)) * (0.6 + rand() * 0.9));
+      proventosProvisionados.push({
+        tipo: isJcp ? "JCP" : "Dividendo",
+        valorPorAcao: Number(valor.toFixed(4)),
+        dataCom: comDate.toISOString().slice(0, 10),
+        dataEx: exDate.toISOString().slice(0, 10),
+        dataPagamento: payDate.toISOString().slice(0, 10),
+      });
+    }
+    proventosProvisionados.sort((a, b) => a.dataCom.localeCompare(b.dataCom));
+  }
+
   return {
     ticker: r.t,
     nome: r.n,
@@ -149,6 +189,7 @@ function buildStock(r: RawRow): Stock {
     anosComProventos,
     dividendosRecorrentes,
     anosYieldAcimaSelic,
+    proventosProvisionados,
   };
 }
 
