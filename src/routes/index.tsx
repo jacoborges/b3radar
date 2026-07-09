@@ -486,11 +486,24 @@ function FilterSheet({
   filters,
   setFilters,
   activeCount,
+  debtFilter,
+  setDebtFilter,
+  recFilter,
+  setRecFilter,
+  minAnosAcimaSelic,
+  setMinAnosAcimaSelic,
 }: {
   filters: Record<string, FilterRange>;
   setFilters: (f: Record<string, FilterRange>) => void;
   activeCount: number;
+  debtFilter: DebtOpt;
+  setDebtFilter: (v: DebtOpt) => void;
+  recFilter: RecOpt;
+  setRecFilter: (v: RecOpt) => void;
+  minAnosAcimaSelic: number;
+  setMinAnosAcimaSelic: (v: number) => void;
 }) {
+
   // sensible ranges for sliders
   const bounds: Record<string, [number, number, number]> = {
     pl: [0, 60, 0.5],
