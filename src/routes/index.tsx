@@ -82,6 +82,7 @@ function HomePage() {
   const [filters, setFilters] = useState<Record<string, FilterRange>>(initialFilters);
   const [selected, setSelected] = useState<Stock | null>(null);
   const [chartTicker, setChartTicker] = useState<string | null>(null);
+  const [openSectors, setOpenSectors] = useState<string[]>([]);
 
   const activeFilters = useMemo(
     () =>
