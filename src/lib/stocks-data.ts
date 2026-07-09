@@ -17,6 +17,12 @@ export interface Stock {
   tipo: ShareType;
   preco: number;
   variacaoDia: number;
+  precoD1: number;
+  varD1: number;
+  precoD7: number;
+  varD7: number;
+  precoD30: number;
+  varD30: number;
   pl: number;
   pvp: number;
   dy: number;
@@ -30,7 +36,14 @@ export interface Stock {
   valorMercado: number;
   liquidezDiaria: number;
   dividendos: DividendYear[];
+  /** Nº de anos (últimos 5) em que houve pagamento de proventos > 0 */
+  anosComProventos: number;
+  /** Pagou proventos todos os anos dos últimos 5 */
+  dividendosRecorrentes: boolean;
+  /** Nº de anos em que o yield superou a Selic média ponderada */
+  anosYieldAcimaSelic: number;
 }
+
 
 interface RawRow {
   t: string; n: string; s: string; tp: string;
@@ -64,12 +77,24 @@ function buildStock(r: RawRow): Stock {
   const variacaoDia = Number(((rand() - 0.5) * 6).toFixed(2)); // -3% .. +3%
   const jcpBias = rand() * 0.5; // 0..0.5 fraction as JCP
 
+  // Preços históricos determinísticos derivados do preço atual
+  const mkPrev = (amp: number) => {
+    const delta = (rand() - 0.5) * 2 * amp; // ±amp
+    const prev = r.p / (1 + delta);
+    return { preco: Number(prev.toFixed(2)), variacao: Number((delta * 100).toFixed(2)) };
+  };
+  const d1 = mkPrev(0.02); // ±2%
+  const d7 = mkPrev(0.05); // ±5%
+  const d30 = mkPrev(0.1); // ±10%
+
   // Real DY (%) applied to real price gives current provento/ano
   const proventoAtual = (r.dy / 100) * r.p;
+  const paysDivs = r.dy > 0;
   const dividendos: DividendYear[] = YEARS.map((y, i) => {
     const growth = 1 + (i - 2) * 0.08;
     const noise = 0.75 + rand() * 0.5;
-    const total = Math.max(0.01, proventoAtual * growth * noise);
+    const skip = paysDivs ? rand() < 0.08 : true; // ocasionalmente pula um ano
+    const total = skip ? 0 : Math.max(0.01, proventoAtual * growth * noise);
     const jcp = total * jcpBias;
     const div = total - jcp;
     return {
@@ -81,6 +106,13 @@ function buildStock(r: RawRow): Stock {
     };
   });
 
+  const anosComProventos = dividendos.filter((d) => d.dividendo + d.jcp > 0).length;
+  const dividendosRecorrentes = anosComProventos === YEARS.length;
+  const anosYieldAcimaSelic = dividendos.filter((d) => {
+    const yieldAno = ((d.dividendo + d.jcp) / d.precoMedio) * 100;
+    return yieldAno > d.selicMediaPonderada;
+  }).length;
+
   return {
     ticker: r.t,
     nome: r.n,
@@ -88,6 +120,12 @@ function buildStock(r: RawRow): Stock {
     tipo: (r.tp as ShareType),
     preco: r.p,
     variacaoDia,
+    precoD1: d1.preco,
+    varD1: d1.variacao,
+    precoD7: d7.preco,
+    varD7: d7.variacao,
+    precoD30: d30.preco,
+    varD30: d30.variacao,
     pl: r.pl,
     pvp: r.pvp,
     dy: r.dy,
@@ -102,8 +140,12 @@ function buildStock(r: RawRow): Stock {
     valorMercado: r.vm,
     liquidezDiaria: r.lq,
     dividendos,
+    anosComProventos,
+    dividendosRecorrentes,
+    anosYieldAcimaSelic,
   };
 }
+
 
 export const STOCKS: Stock[] = (raw as RawRow[]).map(buildStock);
 

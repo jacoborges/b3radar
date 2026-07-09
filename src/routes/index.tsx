@@ -64,6 +64,8 @@ export const Route = createFileRoute("/")({
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
+type DebtOpt = "ALL" | "success" | "warning" | "danger";
+type RecOpt = "ALL" | "YES" | "NO";
 
 interface FilterRange {
   min: number | null;
@@ -80,6 +82,9 @@ function HomePage() {
   const [sortKey, setSortKey] = useState<SortKey>("ticker");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filters, setFilters] = useState<Record<string, FilterRange>>(initialFilters);
+  const [debtFilter, setDebtFilter] = useState<DebtOpt>("ALL");
+  const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
+  const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
   const [chartTicker, setChartTicker] = useState<string | null>(null);
   const [openSectors, setOpenSectors] = useState<string[]>([]);
@@ -92,6 +97,11 @@ function HomePage() {
     [filters],
   );
 
+  const extraActiveCount =
+    (debtFilter !== "ALL" ? 1 : 0) +
+    (recFilter !== "ALL" ? 1 : 0) +
+    (minAnosAcimaSelic > 0 ? 1 : 0);
+
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
     return STOCKS.filter((s) => {
@@ -103,9 +113,15 @@ function HomePage() {
         if (r.min !== null && val < r.min) return false;
         if (r.max !== null && val > r.max) return false;
       }
+      if (debtFilter !== "ALL" && debtLevel(s.divBrutaPatrimonio).color !== debtFilter)
+        return false;
+      if (recFilter === "YES" && !s.dividendosRecorrentes) return false;
+      if (recFilter === "NO" && s.dividendosRecorrentes) return false;
+      if (s.anosYieldAcimaSelic < minAnosAcimaSelic) return false;
       return true;
     });
-  }, [search, tipo, activeFilters]);
+  }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic]);
+
 
   const bySector = useMemo(() => {
     const map = new Map<string, Stock[]>();
@@ -198,8 +214,15 @@ function HomePage() {
               <FilterSheet
                 filters={filters}
                 setFilters={setFilters}
-                activeCount={activeFilters.length}
+                activeCount={activeFilters.length + extraActiveCount}
+                debtFilter={debtFilter}
+                setDebtFilter={setDebtFilter}
+                recFilter={recFilter}
+                setRecFilter={setRecFilter}
+                minAnosAcimaSelic={minAnosAcimaSelic}
+                setMinAnosAcimaSelic={setMinAnosAcimaSelic}
               />
+
             </div>
           </div>
 
@@ -268,10 +291,11 @@ function HomePage() {
           <Accordion
             type="multiple"
             value={
-              search.trim() || activeFilters.length > 0
+              search.trim() || activeFilters.length > 0 || extraActiveCount > 0
                 ? SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0)
                 : openSectors
             }
+
             onValueChange={setOpenSectors}
             className="space-y-3"
           >
@@ -462,11 +486,24 @@ function FilterSheet({
   filters,
   setFilters,
   activeCount,
+  debtFilter,
+  setDebtFilter,
+  recFilter,
+  setRecFilter,
+  minAnosAcimaSelic,
+  setMinAnosAcimaSelic,
 }: {
   filters: Record<string, FilterRange>;
   setFilters: (f: Record<string, FilterRange>) => void;
   activeCount: number;
+  debtFilter: DebtOpt;
+  setDebtFilter: (v: DebtOpt) => void;
+  recFilter: RecOpt;
+  setRecFilter: (v: RecOpt) => void;
+  minAnosAcimaSelic: number;
+  setMinAnosAcimaSelic: (v: number) => void;
 }) {
+
   // sensible ranges for sliders
   const bounds: Record<string, [number, number, number]> = {
     pl: [0, 60, 0.5],
@@ -499,9 +536,98 @@ function FilterSheet({
           <SheetTitle>Filtros por indicadores técnicos</SheetTitle>
         </SheetHeader>
         <div className="mt-6 space-y-6 px-4 pb-8">
+          {/* Filtros qualitativos */}
+          <div className="space-y-4 rounded-lg border border-border/60 bg-background/40 p-4">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-sm">
+                Semáforo de endividamento
+                <InfoTip
+                  title="Semáforo de Endividamento"
+                  fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: 0,5x–1,2x. Vermelho: > 1,2x."
+                  tecnica="Ativos mais alavancados costumam ter beta e volatilidade maiores."
+                />
+              </Label>
+              <div className="grid grid-cols-4 gap-1.5">
+                {([
+                  ["ALL", "Todos", "var(--color-muted-foreground)"],
+                  ["success", "Baixo", "var(--color-success)"],
+                  ["warning", "Moderado", "var(--color-warning)"],
+                  ["danger", "Elevado", "var(--color-danger)"],
+                ] as const).map(([val, label, color]) => (
+                  <button
+                    key={val}
+                    onClick={() => setDebtFilter(val as DebtOpt)}
+                    className="rounded-md border px-2 py-1.5 text-xs transition-colors"
+                    style={{
+                      borderColor: debtFilter === val ? color : "var(--color-border)",
+                      color: debtFilter === val ? color : "var(--color-muted-foreground)",
+                      backgroundColor: debtFilter === val ? `color-mix(in oklab, ${color} 12%, transparent)` : "transparent",
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1.5 text-sm">
+                Pagamento recorrente de dividendos
+                <InfoTip
+                  title="Recorrência de proventos"
+                  fundamentalista="Considera recorrente quem pagou dividendos ou JCP em todos os últimos 5 anos."
+                  tecnica="Papéis 'pagadores' costumam ter menor volatilidade e drawdowns mais amenos."
+                />
+              </Label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {([
+                  ["ALL", "Todos"],
+                  ["YES", "Sim (5/5 anos)"],
+                  ["NO", "Não"],
+                ] as const).map(([val, label]) => (
+                  <button
+                    key={val}
+                    onClick={() => setRecFilter(val as RecOpt)}
+                    className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                      recFilter === val
+                        ? "border-primary/70 bg-primary/10 text-primary"
+                        : "border-border/60 text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  Dividendo &gt; Selic
+                  <InfoTip
+                    title="Yield vs. Selic"
+                    fundamentalista="Nº de anos (dos últimos 5) em que o yield de proventos superou a Selic média ponderada do ano."
+                    tecnica="Papéis que batem a Selic sistematicamente tendem a atrair fluxo em ciclos de queda de juros."
+                  />
+                </Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  ≥ {minAnosAcimaSelic}/5 anos
+                </span>
+              </div>
+              <Slider
+                min={0}
+                max={5}
+                step={1}
+                value={[minAnosAcimaSelic]}
+                onValueChange={([v]) => setMinAnosAcimaSelic(v)}
+              />
+            </div>
+          </div>
+
           {FUNDAMENTAL_KEYS.map((k) => {
             const [min, max, step] = bounds[k];
             const cur = filters[k];
+
             const v: [number, number] = [
               cur.min ?? min,
               cur.max ?? max,
@@ -542,7 +668,13 @@ function FilterSheet({
           <Button
             variant="outline"
             className="w-full"
-            onClick={() => setFilters(initialFilters)}
+            onClick={() => {
+              setFilters(initialFilters);
+              setDebtFilter("ALL");
+              setRecFilter("ALL");
+              setMinAnosAcimaSelic(0);
+            }}
+
           >
             Limpar todos os filtros
           </Button>
