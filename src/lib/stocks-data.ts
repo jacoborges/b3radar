@@ -10,6 +10,19 @@ export interface DividendYear {
   precoMedio: number;
 }
 
+export type ProventoTipo = "Dividendo" | "JCP";
+
+export interface ProventoProvisionado {
+  tipo: ProventoTipo;
+  valorPorAcao: number;
+  /** ISO yyyy-mm-dd — última data para ter direito ao provento */
+  dataCom: string;
+  /** ISO yyyy-mm-dd — primeiro pregão sem o direito */
+  dataEx: string;
+  /** ISO yyyy-mm-dd — data prevista de pagamento */
+  dataPagamento: string;
+}
+
 export interface Stock {
   ticker: string;
   nome: string;
