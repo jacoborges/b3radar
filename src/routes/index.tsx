@@ -176,9 +176,13 @@ function HomePage() {
                 <h1 className="text-2xl font-bold tracking-tight">
                   B3 <span className="text-primary">Radar</span>
                 </h1>
-                <span className="hidden rounded-full border border-border/60 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground md:inline">
-                  Bovespa · Tempo real
-                </span>
+                <LiveBadge
+                  updatedAt={live.updatedAt}
+                  isFetching={live.isFetching}
+                  hasError={!!live.error}
+                  count={live.map.size}
+                />
+
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
@@ -368,8 +372,9 @@ function HomePage() {
       />
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        Dados de demonstração · Integração de dados reais via brapi.dev + Fundamentus na próxima fase
+        Cotações atualizadas automaticamente a cada 30s via brapi.dev · Fundamentos via Fundamentus
       </footer>
+
     </div>
   );
 }
