@@ -11,7 +11,9 @@ export interface LiveQuote {
 
 const inputSchema = z.object({
   tickers: z.array(z.string().min(1).max(10)).max(200),
+  token: z.string().trim().min(1).max(120).optional(),
 });
+
 
 const BRAPI_BASE = "https://brapi.dev/api/quote";
 const BATCH_SIZE = 15;
