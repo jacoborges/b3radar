@@ -247,6 +247,20 @@ function HomePage() {
                 setMinAnosAcimaSelic={setMinAnosAcimaSelic}
               />
 
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="border-border/60 bg-input/60"
+                title="Configurações"
+              >
+                <Link to="/configuracoes" aria-label="Configurações">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+
+
+
             </div>
           </div>
 
