@@ -11,7 +11,9 @@ export interface LiveQuote {
 
 const inputSchema = z.object({
   tickers: z.array(z.string().min(1).max(10)).max(200),
+  token: z.string().trim().min(1).max(120).optional(),
 });
+
 
 const BRAPI_BASE = "https://brapi.dev/api/quote";
 const BATCH_SIZE = 15;
@@ -56,7 +58,8 @@ export const fetchLiveQuotes = createServerFn({ method: "POST" })
     const tickers = Array.from(new Set(data.tickers.map((t) => t.toUpperCase())));
     if (tickers.length === 0) return { quotes: [], error: null };
 
-    const token = process.env.BRAPI_TOKEN;
+    const token = data.token ?? process.env.BRAPI_TOKEN;
+
 
     const batches: string[][] = [];
     for (let i = 0; i < tickers.length; i += BATCH_SIZE) {

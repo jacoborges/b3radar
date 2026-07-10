@@ -1,13 +1,15 @@
 import { useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Search,
   LineChart,
   SlidersHorizontal,
+  Settings,
   TrendingUp,
   TrendingDown,
   X,
 } from "lucide-react";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -244,6 +246,20 @@ function HomePage() {
                 minAnosAcimaSelic={minAnosAcimaSelic}
                 setMinAnosAcimaSelic={setMinAnosAcimaSelic}
               />
+
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="border-border/60 bg-input/60"
+                title="Configurações"
+              >
+                <Link to="/configuracoes" aria-label="Configurações">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
+
+
 
             </div>
           </div>
