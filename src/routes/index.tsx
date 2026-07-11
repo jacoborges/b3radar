@@ -178,7 +178,7 @@ function HomePage() {
       });
     }
     return map;
-  }, [filteredLive, sortKey, sortDir]);
+  }, [SECTORS, filteredLive, sortKey, sortDir]);
 
   const total = filtered.length;
 
