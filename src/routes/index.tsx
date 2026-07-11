@@ -378,14 +378,8 @@ function HomePage() {
       <StockDetailModal
         stock={selected}
         onClose={() => setSelected(null)}
-        onOpenChart={(t) => {
-          setChartTicker(t);
-        }}
       />
-      <TradingViewModal
-        ticker={chartTicker}
-        onClose={() => setChartTicker(null)}
-      />
+
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
         Cotações atualizadas automaticamente a cada 30s via brapi.dev · Fundamentos via Fundamentus
