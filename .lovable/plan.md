@@ -1,63 +1,35 @@
-# Dados reais: proventos via B3 + fundamentalistas via brapi (sob demanda no modal)
+## Objetivo
 
-Como você pediu decisão minha: vou pela rota **híbrida pragmática**, sob demanda no modal, sem virar projeto de ETL. Justificativa: 100% CVM exige pipeline Postgres + cron + parsing de dezenas de CSVs anuais e ainda assim divergiria de Fundamentus/StatusInvest por convenções contábeis — desproporcional para dados que já existem prontos em API pública.
+Passar a **priorizar sempre o snapshot do Fundamentus** (`src/lib/stocks-fundamentus.json`, já embarcado em `baseStock`) para os indicadores fundamentalistas. A brapi.dev deixa de sobrescrever esses campos e vira apenas fonte para o **preço ao vivo** (cotação, variação do dia, valor de mercado e liquidez diária derivados do preço). Proventos continuam vindo da B3.
 
-## Fontes por tipo de dado
+## O que muda
 
-| Dado | Fonte | Como |
-|---|---|---|
-| Proventos histórico + provisionados | **B3** endpoint público JSON `GetListedCashDividends` | server fn, cache 1h |
-| P/L, P/VP, DY, ROE, valor de mercado, margens, Dív/PL, LC | **brapi.dev** `/quote/{ticker}?modules=defaultKeyStatistics,summaryProfile,financialData` | server fn, cache 1h |
-| Preço atual, D-1, D-7, D-30 | **brapi.dev** (já integrado) | inalterado |
-| CAGR lucros 5a, free float | mantém simulado + badge "estimado" | — |
+### 1. `src/components/StockDetailModal.tsx` — inverter prioridade do merge
 
-## Arquitetura
+No `useMemo` que constrói `mergedStock`:
 
-### 1. `src/lib/proventos.functions.ts` (nova)
-`getTickerProventos({ ticker })` — server fn:
-- Deriva `issuingCompany` (4 letras iniciais).
-- `fetch` em `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/{base64}` com `{"issuingCompany","language":"pt-br"}`.
-- Normaliza em `{ historico: DividendYear[], provisionados: ProventoProvisionado[] }` no mesmo formato dos tipos atuais.
-- Filtra pela classe do ticker (final 3=ON, 4=PN, 11=UNIT).
-- `setResponseHeader('cache-control','s-maxage=3600')`.
-- Fallback silencioso em erro: `{ historico: null, provisionados: null }`.
+- Remover as chamadas `apply(...)` que sobrescrevem com `fund.*` para: `pl`, `pvp`, `dy`, `roe`, `margemLiquida`, `margemEbit`, `divBrutaPatrimonio`, `liquidezCorrente`.
+- Manter da brapi **apenas** o que é ao vivo/preço-dependente:
+  - `preco` (cotação atual)
+  - `valorMercado` (recalculado pela brapi porque depende do preço)
+  - `liquidezDiaria` (volume × preço do dia)
+- Proventos da B3 seguem sobrescrevendo `dividendos`, `anosComProventos`, `dividendosRecorrentes`, `anosYieldAcimaSelic` e `proventosProvisionados` — sem alteração.
 
-### 2. `src/lib/fundamentals.functions.ts` (nova)
-`getTickerFundamentals({ ticker })` — server fn:
-- `fetch` em `https://brapi.dev/api/quote/{ticker}?modules=defaultKeyStatistics,financialData,summaryProfile` com `Authorization: Bearer ${process.env.BRAPI_TOKEN}`.
-- Extrai e normaliza: `pl`, `pvp`, `dy`, `roe`, `margemLiquida`, `margemEbit`, `divBrutaPatrimonio`, `liquidezCorrente`, `valorMercado`, `liquidezDiaria`.
-- Cache 1h.
-- Fallback silencioso.
+### 2. Badge de fonte no header
 
-### 3. `src/hooks/use-ticker-data.ts` (nova)
-Um único hook com dois `useQuery` (staleTime 1h, `enabled: !!ticker`):
-- `proventos` chamando `getTickerProventos`
-- `fundamentals` chamando `getTickerFundamentals`
+Ajustar `sourceLabel` para refletir a nova hierarquia:
 
-### 4. `src/components/StockDetailModal.tsx`
-- Chama `useTickerData(stock?.ticker)`.
-- Constrói `mergedStock` = `{ ...stock, ...(fundamentals ?? {}), dividendos: proventos?.historico ?? stock.dividendos, proventosProvisionados: proventos?.provisionados ?? stock.proventosProvisionados }`.
-- Toda a UI existente (indicadores, semáforo, gráficos de dividendo/yield/preço vs Selic, painel de provisionamento) passa a ler de `mergedStock`.
-- Enquanto `isLoading`: skeleton nas seções afetadas.
-- Badge no topo:
-  - `Fonte: B3 / brapi.dev · atualizado agora` quando ambos retornaram
-  - `Alguns dados estimados` quando qualquer um falhou
-- Recalcular `anosYieldAcimaSelic` e `anosComProventos` a partir do `historico` real (função pura reutilizada de `stocks-data.ts`, extraída como `computeDividendStats`).
+- Ambos OK → `"Fundamentos: Fundamentus · Proventos: B3 · Preço: brapi.dev"`
+- Só proventos → `"Proventos: B3 · Fundamentos: Fundamentus"`
+- Só brapi → `"Preço: brapi.dev · Fundamentos: Fundamentus"`
+- Nenhum → `"Fundamentos: Fundamentus (offline)"`
 
-### 5. `src/lib/stocks-data.ts`
-- Extrair a lógica de derivação (`anosComProventos`, `dividendosRecorrentes`, `anosYieldAcimaSelic`) para funções puras exportadas, para reuso no modal com dados reais.
-- Sem outras mudanças — listagem e filtros continuam usando o dataset atual.
+### 3. Escopo mantido
 
-## Sem impacto na listagem/filtros
+- Nenhuma mudança em `src/lib/fundamentals.functions.ts`, `src/lib/proventos.functions.ts`, `src/hooks/use-ticker-data.ts` — a brapi continua sendo chamada (precisamos do preço), só ignoramos os campos fundamentalistas no cliente.
+- Nenhuma mudança na listagem `src/routes/index.tsx` (já usa Fundamentus).
+- Nenhuma mudança nos gráficos.
 
-Como o carregamento é sob demanda, filtros da tela principal (P/L, DY, semáforo, etc.) continuam com os dados atuais de `stocks-fundamentus.json`. Apenas o modal do ativo exibe dados reais quando você o abre.
+## Observação
 
-## Chave brapi
-
-`BRAPI_TOKEN` já foi discutido em iteração anterior via `/configuracoes`. Se estiver ausente/expirado, a server function de fundamentals cai no fallback silenciosamente (usa dados simulados existentes) — nada quebra.
-
-## Fora de escopo
-
-- CVM ETL completo (não vale a pena para o ganho marginal em CAGR e free float).
-- Substituir dados na listagem/filtros (exigiria Postgres + cron).
-- Bonificações, desdobramentos, grupamentos, FRE detalhado.
+Como a decisão é "sempre Fundamentus", não há mais divergência a mostrar por card — o dado exibido é sempre o do snapshot local. Se depois você quiser voltar a comparar as duas fontes visualmente, dá para reintroduzir o badge de divergência sem desfazer este plano.
