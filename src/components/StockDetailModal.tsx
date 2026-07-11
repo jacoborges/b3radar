@@ -32,8 +32,8 @@ interface Props {
   onClose: () => void;
 }
 
-export function StockDetailModal({ stock, onClose }: Props) {
-  const ticker = stock?.ticker ?? null;
+export function StockDetailModal({ stock: baseStock, onClose }: Props) {
+  const ticker = baseStock?.ticker ?? null;
   const [chartLoaded, setChartLoaded] = useState(false);
   const { proventos, fundamentals, isLoading, isFetching } = useTickerData(ticker);
 
