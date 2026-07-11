@@ -430,7 +430,7 @@ function StockTable({
                 />
               </span>
             </th>
-            <th className="px-3 py-2.5 text-center font-medium">Gráfico</th>
+            
           </tr>
         </thead>
         <tbody>
