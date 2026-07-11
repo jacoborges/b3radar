@@ -392,12 +392,11 @@ function HomePage() {
 function StockTable({
   stocks,
   onSelect,
-  onChart,
 }: {
   stocks: Stock[];
   onSelect: (s: Stock) => void;
-  onChart: (t: string) => void;
 }) {
+
   return (
     <div className="overflow-x-auto border-t border-border/60">
       <table className="w-full text-sm">
