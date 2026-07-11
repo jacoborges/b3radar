@@ -406,8 +406,9 @@ function HomePage() {
 
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        Cotações atualizadas automaticamente a cada 30s via brapi.dev · Fundamentos via Fundamentus
+        Preços em tempo real via brapi.dev · Fundamentos atualizados do Fundamentus a cada 1 h · Proventos oficiais via B3
       </footer>
+
 
     </div>
   );
