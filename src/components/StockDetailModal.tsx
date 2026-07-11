@@ -35,7 +35,7 @@ interface Props {
 export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const ticker = baseStock?.ticker ?? null;
   const [chartLoaded, setChartLoaded] = useState(false);
-  const { proventos, fundamentals, isLoading, isFetching } = useTickerData(ticker);
+  const { proventos, isLoading, isFetching } = useTickerData(ticker);
 
   useEffect(() => {
     setChartLoaded(false);
@@ -44,22 +44,14 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const mergedStock: Stock | null = useMemo(() => {
     if (!baseStock) return null;
     const stock = baseStock;
-    const fund = fundamentals?.fundamentals ?? null;
     const historico = proventos?.historico ?? null;
+
     const provisionados = proventos?.provisionados ?? null;
 
-    // Merge fundamentalistas: só sobrescreve quando a API retornou valor
+    // Merge fundamentalistas: sempre priorizar Fundamentus (baseStock já vem do snapshot).
+    // brapi não sobrescreve mais nenhum campo fundamentalista nem preço/valor de mercado/liquidez.
     const merged: Stock = { ...stock };
-    if (fund) {
-      const apply = <K extends keyof Stock>(key: K, v: number | null) => {
-        if (v != null && Number.isFinite(v)) (merged[key] as number) = v;
-      };
-      // Priorizar sempre Fundamentus para indicadores fundamentalistas.
-      // Da brapi mantemos apenas o que é ao vivo / dependente do preço.
-      apply("preco", fund.preco);
-      apply("valorMercado", fund.valorMercado);
-      apply("liquidezDiaria", fund.liquidezDiaria);
-    }
+
     if (historico && historico.length > 0) {
       const stats = computeDividendStats(historico, merged.preco);
       merged.dividendos = stats.dividendos;
@@ -71,20 +63,16 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       merged.proventosProvisionados = provisionados;
     }
     return merged;
-  }, [baseStock, fundamentals, proventos]);
+  }, [baseStock, proventos]);
   const stock = mergedStock;
 
   const proventosOk = !!proventos?.historico;
-  const fundamentalsOk = !!fundamentals?.fundamentals;
   const sourceLabel = isLoading
     ? "Carregando dados reais…"
-    : proventosOk && fundamentalsOk
-      ? "Fundamentos: Fundamentus · Proventos: B3 · Preço: brapi.dev"
-      : proventosOk
-        ? "Proventos: B3 · Fundamentos: Fundamentus"
-        : fundamentalsOk
-          ? "Preço: brapi.dev · Fundamentos: Fundamentus"
-          : "Fundamentos: Fundamentus (offline)";
+    : proventosOk
+      ? "Fundamentos + Preço: Fundamentus · Proventos: B3"
+      : "Fundamentos + Preço: Fundamentus (offline)";
+
 
   const chartUrl = useMemo(() => {
     if (!ticker) return "";
