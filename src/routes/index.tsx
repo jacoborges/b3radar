@@ -248,6 +248,8 @@ function HomePage() {
                 setRecFilter={setRecFilter}
                 minAnosAcimaSelic={minAnosAcimaSelic}
                 setMinAnosAcimaSelic={setMinAnosAcimaSelic}
+                minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
+                setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
               />
 
               <Button
