@@ -131,6 +131,18 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 >
                   {stock.setor}
                 </Badge>
+                <Badge
+                  variant="outline"
+                  className="ml-auto border-border/60 text-xs font-normal text-muted-foreground"
+                  title={
+                    isFetching
+                      ? "Atualizando dados oficiais…"
+                      : "Dados oficiais consultados sob demanda"
+                  }
+                >
+                  {isFetching && !isLoading ? "↻ " : ""}
+                  {sourceLabel}
+                </Badge>
               </DialogTitle>
               <DialogDescription className="mt-1 text-base">
                 {stock.nome}
