@@ -64,8 +64,20 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(stocksQueryOptions),
+  errorComponent: ({ error }) => (
+    <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">
+      Falha ao carregar dados: {error instanceof Error ? error.message : String(error)}
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">
+      Página não encontrada.
+    </div>
+  ),
   component: HomePage,
 });
+
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
