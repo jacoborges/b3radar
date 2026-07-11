@@ -123,9 +123,10 @@ function HomePage() {
       if (recFilter === "YES" && !s.dividendosRecorrentes) return false;
       if (recFilter === "NO" && s.dividendosRecorrentes) return false;
       if (s.anosYieldAcimaSelic < minAnosAcimaSelic) return false;
+      if (s.anosPrecoAcimaSelic < minAnosPrecoAcimaSelic) return false;
       return true;
     });
-  }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic]);
+  }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
