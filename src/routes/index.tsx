@@ -89,7 +89,7 @@ function HomePage() {
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
-  const [chartTicker, setChartTicker] = useState<string | null>(null);
+  
   const [openSectors, setOpenSectors] = useState<string[]>([]);
 
   const activeFilters = useMemo(
