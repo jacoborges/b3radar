@@ -14,6 +14,7 @@ import { DebtSemaphore } from "./DebtSemaphore";
 import {
   DividendStackedChart,
   DividendVsSelicChart,
+  PriceVsSelicChart,
 } from "./DividendChart";
 import {
   Table,
