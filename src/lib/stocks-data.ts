@@ -67,6 +67,7 @@ export interface Stock {
   /** Nº de anos em que o yield superou a Selic média ponderada */
   anosYieldAcimaSelic: number;
   /** Proventos anunciados/provisionados a pagar */
+  proventosProvisionados: ProventoProvisionado[];
   /** Preço inicial e final de cada um dos últimos 5 anos vs Selic */
   precosAnuais: PrecoAnual[];
   /** Nº de anos (últimos 5) em que a valorização anual superou a Selic ponderada */
