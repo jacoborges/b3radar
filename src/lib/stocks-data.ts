@@ -23,6 +23,15 @@ export interface ProventoProvisionado {
   dataPagamento: string;
 }
 
+export interface PrecoAnual {
+  year: number;
+  precoInicio: number;
+  precoFim: number;
+  valorizacao: number;
+  selicMediaPonderada: number;
+  bateuSelic: boolean;
+}
+
 export interface Stock {
   ticker: string;
   nome: string;
@@ -59,6 +68,10 @@ export interface Stock {
   anosYieldAcimaSelic: number;
   /** Proventos anunciados/provisionados a pagar */
   proventosProvisionados: ProventoProvisionado[];
+  /** Preço inicial e final de cada um dos últimos 5 anos vs Selic */
+  precosAnuais: PrecoAnual[];
+  /** Nº de anos (últimos 5) em que a valorização anual superou a Selic ponderada */
+  anosPrecoAcimaSelic: number;
 }
 
 
@@ -70,9 +83,9 @@ interface RawRow {
 }
 
 const SELIC: Record<number, number> = {
-  2021: 4.42, 2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15,
+  2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15, 2026: 14.75,
 };
-const YEARS = [2021, 2022, 2023, 2024, 2025];
+const YEARS = [2022, 2023, 2024, 2025, 2026];
 
 // Deterministic pseudo-random from ticker string
 function seed(str: string): () => number {
@@ -155,6 +168,33 @@ function buildStock(r: RawRow): Stock {
     proventosProvisionados.sort((a, b) => a.dataCom.localeCompare(b.dataCom));
   }
 
+  // Preços anuais determinísticos (01/jan e 31/dez de cada um dos últimos 5 anos)
+  // Ancora: precoFim do ano corrente = preço atual. Recuando ano a ano, o
+  // precoInicio de um ano vira o precoFim do ano anterior, com variação
+  // anual pseudo-aleatória em torno da Selic daquele ano.
+  const precosAnuais: PrecoAnual[] = [];
+  let precoFimAno = r.p;
+  for (let i = YEARS.length - 1; i >= 0; i--) {
+    const y = YEARS[i];
+    const selic = SELIC[y];
+    // variação anual: -25%..+45%, enviesada levemente pela Selic
+    const varAnual = (rand() - 0.45) * 0.7 + (selic / 100) * (rand() - 0.3);
+    const precoInicio = Number((precoFimAno / (1 + varAnual)).toFixed(2));
+    const valorizacao = Number((((precoFimAno / precoInicio) - 1) * 100).toFixed(2));
+    precosAnuais.unshift({
+      year: y,
+      precoInicio,
+      precoFim: Number(precoFimAno.toFixed(2)),
+      valorizacao,
+      selicMediaPonderada: selic,
+      bateuSelic: valorizacao > selic,
+    });
+    precoFimAno = precoInicio;
+  }
+  const anosPrecoAcimaSelic = precosAnuais.filter((p) => p.bateuSelic).length;
+
+
+
   return {
     ticker: r.t,
     nome: r.n,
@@ -190,6 +230,8 @@ function buildStock(r: RawRow): Stock {
     dividendosRecorrentes,
     anosYieldAcimaSelic,
     proventosProvisionados,
+    precosAnuais,
+    anosPrecoAcimaSelic,
   };
 }
 

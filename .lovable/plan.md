@@ -1,24 +1,54 @@
 ## Objetivo
-Ao abrir o modal de detalhes de um ativo, exibir o **gráfico do TradingView já expandido no topo**, com todas as demais informações (preço, histórico D-1/D-7/D-30, indicadores fundamentais, dividendos, Yield vs Selic, provisionamento) rolando logo abaixo — sem precisar clicar no botão "Gráfico".
 
-## Mudanças
+Adicionar, logo após o gráfico "Yield da ação vs Selic", um novo gráfico que compara, para cada um dos últimos 5 anos, a **valorização do preço do ativo** (preço em 01/jan vs 31/dez do mesmo ano) contra a **Selic média ponderada** daquele ano, indicando se o ativo bateu ou perdeu para a Selic.
 
-### `src/components/StockDetailModal.tsx`
-- Remover o `TradingViewModal` separado (botão "Ver gráfico") e embutir o **iframe do TradingView direto no topo do modal de detalhes**.
-- Reaproveitar a mesma URL `s.tradingview.com/widgetembed` já usada hoje (símbolo `BMFBOVESPA:<ticker>`, tema dark, studies padrão).
-- Altura fixa confortável (ex.: `h-[480px]` no desktop, `h-[320px]` no mobile) com `rounded-xl` e placeholder "Carregando gráfico…" até o `onLoad`.
-- Abaixo do gráfico, manter na ordem atual: card de preço + variação → histórico D-1/D-7/D-30 → semáforo de endividamento → indicadores fundamentais → dividendos (barra empilhada) → Yield vs Selic → provisionamento.
-- Aumentar a largura do `DialogContent` (ex.: `max-w-6xl`) e garantir `overflow-y-auto` no corpo para o gráfico não empurrar o resto.
+## Escopo
 
-### `src/routes/index.tsx`
-- Remover o botão "Gráfico" da linha do ativo (a função agora vive dentro do próprio modal de detalhes) — clicar no ativo já abre tudo junto.
-- Se preferir manter o botão como atalho, ele passa a apenas abrir o mesmo modal (sem modal separado).
+Apenas frontend/apresentação — dados gerados deterministicamente no mesmo padrão dos dividendos existentes (não há API de histórico anual conectada).
 
-### `src/components/TradingViewModal.tsx`
-- Fica sem uso; pode ser removido para não deixar código morto.
+## Alterações
 
-## Detalhes técnicos
-- O iframe do TradingView é montado com `key={ticker}` para forçar recarregar quando o usuário troca de ativo.
-- Nada muda em dados, filtros, polling brapi ou provisionamento — é só reorganização visual do modal.
+### 1. `src/lib/stocks-data.ts`
+- Estender `SELIC` para incluir 2026 (ano atual, ~14,75%).
+- Mudar `YEARS` para os últimos 5 anos relativos ao ano atual (2022–2026).
+- Adicionar novo tipo:
+  ```ts
+  export interface PrecoAnual {
+    year: number;
+    precoInicio: number;   // 01/jan
+    precoFim: number;      // 31/dez
+    valorizacao: number;   // % ((fim/inicio)-1)*100
+    selicMediaPonderada: number;
+    bateuSelic: boolean;
+  }
+  ```
+- Adicionar `precosAnuais: PrecoAnual[]` em `Stock`.
+- Em `buildStock`, gerar série determinística: usar o preço atual como âncora e recuar ano a ano com fator de crescimento pseudo-aleatório (mesma `seed(ticker)`) para produzir preço inicial e final coerentes de cada ano. O ano corrente (2026) usa `precoFim = preco atual`.
 
-Confirma que quer eu **remover o botão "Gráfico"** da lista (já que o gráfico passa a abrir junto com o detalhe)?
+### 2. `src/components/DividendChart.tsx`
+- Novo componente exportado `PriceVsSelicChart({ data }: { data: PrecoAnual[] })`:
+  - `ComposedChart` (mesmo padrão do `DividendVsSelicChart`).
+  - Barras = valorização % do ativo, cor verde se `bateuSelic`, vermelha caso contrário.
+  - Linha = Selic média ponderada.
+  - `LabelList` no topo com o % da valorização.
+  - Tooltip mostrando preço 01/jan, preço 31/dez, valorização % e Selic %.
+
+### 3. `src/components/StockDetailModal.tsx`
+- Após o bloco atual do `DividendVsSelicChart`, adicionar nova seção:
+  - Título: "Valorização anual vs Selic" com `InfoTip` explicando a comparação.
+  - Renderizar `<PriceVsSelicChart data={stock.precosAnuais} />`.
+  - Resumo textual curto: "Bateu a Selic em X de 5 anos".
+
+## Layout final do modal (ordem)
+
+1. Gráfico TradingView
+2. Cards de preço (D, D-1, D-7, D-30)
+3. Indicadores fundamentalistas + semáforo
+4. Dividendos empilhados
+5. Yield vs Selic
+6. **Valorização anual vs Selic** ← novo
+7. Provisionamento de novos dividendos
+
+## Observação
+
+Os preços anuais são simulados de forma determinística por ticker, seguindo o mesmo padrão dos demais dados históricos do app. Caso, no futuro, uma API de histórico (ex.: brapi `historical-prices`) seja conectada, basta substituir a geração em `buildStock` mantendo a mesma interface.

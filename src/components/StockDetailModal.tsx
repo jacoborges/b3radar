@@ -14,6 +14,7 @@ import { DebtSemaphore } from "./DebtSemaphore";
 import {
   DividendStackedChart,
   DividendVsSelicChart,
+  PriceVsSelicChart,
 } from "./DividendChart";
 import {
   Table,
@@ -198,8 +199,30 @@ export function StockDetailModal({ stock, onClose }: Props) {
                 <DividendVsSelicChart data={stock.dividendos} />
               </div>
 
+              <div className="rounded-lg border border-border/60 bg-card p-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                    Valorização anual do ativo vs. Selic ponderada
+                  </h3>
+                  <InfoTip
+                    title="Preço 01/jan → 31/dez vs. Selic"
+                    fundamentalista="Compara a variação percentual do preço da ação (01/jan → 31/dez) com a Selic média ponderada do mesmo ano. Barras verdes: o ativo bateu a Selic no ano; vermelhas: rendeu menos que o CDI/Selic."
+                    tecnica="Mostra se, ano a ano, apenas a variação de preço (sem contar dividendos) foi suficiente para superar o custo de oportunidade da renda fixa atrelada à Selic."
+                  />
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    Bateu a Selic em{" "}
+                    <span className="font-semibold text-foreground">
+                      {stock.anosPrecoAcimaSelic}
+                    </span>{" "}
+                    de {stock.precosAnuais.length} anos
+                  </span>
+                </div>
+                <PriceVsSelicChart data={stock.precosAnuais} />
+              </div>
+
               <ProvisionamentoPanel stock={stock} />
             </div>
+
 
           </>
         )}

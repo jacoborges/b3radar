@@ -12,7 +12,7 @@ import {
   YAxis,
   LabelList,
 } from "recharts";
-import type { DividendYear } from "@/lib/stocks-data";
+import type { DividendYear, PrecoAnual } from "@/lib/stocks-data";
 
 interface Props {
   data: DividendYear[];
@@ -139,6 +139,78 @@ export function DividendVsSelicChart({ data }: Props) {
               fill="var(--color-foreground)"
               fontSize={11}
               formatter={(v: number) => `${v.toFixed(1)}%`}
+            />
+          </Bar>
+          <Line
+            type="monotone"
+            dataKey="selic"
+            stroke="var(--color-selic)"
+            strokeWidth={2.5}
+            dot={{ r: 4, fill: "var(--color-selic)" }}
+          />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+export function PriceVsSelicChart({ data }: { data: PrecoAnual[] }) {
+  const chartData = data.map((d) => ({
+    year: String(d.year),
+    valorizacao: d.valorizacao,
+    selic: d.selicMediaPonderada,
+    precoInicio: d.precoInicio,
+    precoFim: d.precoFim,
+    bateuSelic: d.bateuSelic,
+  }));
+
+  return (
+    <div className="h-64 w-full">
+      <ResponsiveContainer>
+        <ComposedChart data={chartData} margin={{ top: 24, right: 16, bottom: 8, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+          <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={12} />
+          <YAxis
+            stroke="var(--color-muted-foreground)"
+            fontSize={12}
+            tickFormatter={(v) => `${v}%`}
+          />
+          <Tooltip
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
+            contentStyle={{
+              backgroundColor: "var(--color-popover)",
+              border: "1px solid var(--color-border)",
+              borderRadius: 8,
+              fontSize: 12,
+            }}
+            formatter={(v: number, name: string, item: { payload?: typeof chartData[number] }) => {
+              if (name === "valorizacao") {
+                const p = item.payload;
+                return [
+                  `${v.toFixed(2)}%  (R$ ${p?.precoInicio.toFixed(2)} → R$ ${p?.precoFim.toFixed(2)})`,
+                  "Valorização do ativo",
+                ];
+              }
+              return [`${v.toFixed(2)}%`, "Selic ponderada"];
+            }}
+          />
+          <Legend
+            wrapperStyle={{ fontSize: 12 }}
+            formatter={(v) => (v === "valorizacao" ? "Valorização do ativo" : "Selic ponderada")}
+          />
+          <Bar dataKey="valorizacao" radius={[6, 6, 0, 0]}>
+            {chartData.map((d, i) => (
+              <Cell
+                key={i}
+                fill={d.bateuSelic ? "var(--color-success)" : "var(--color-danger)"}
+              />
+            ))}
+            <LabelList
+              dataKey="valorizacao"
+              position="top"
+              fill="var(--color-foreground)"
+              fontSize={11}
+              formatter={(v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`}
             />
           </Bar>
           <Line
