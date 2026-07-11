@@ -188,15 +188,17 @@ function HomePage() {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div className="mx-auto max-w-[1400px] px-4 py-4 md:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div
-                  className="h-8 w-1 rounded-full"
-                  style={{ backgroundColor: "var(--color-primary)" }}
-                />
-                <h1 className="text-2xl font-bold tracking-tight">
-                  B3 <span className="text-primary">Radar</span>
-                </h1>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className="h-8 w-1 shrink-0 rounded-full"
+                    style={{ backgroundColor: "var(--color-primary)" }}
+                  />
+                  <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                    B3 <span className="text-primary">Radar</span>
+                  </h1>
+                </div>
                 <LiveBadge
                   updatedAt={live.updatedAt}
                   isFetching={live.isFetching}
@@ -204,7 +206,6 @@ function HomePage() {
                   count={live.map.size}
                 />
                 <DataSourceBadge fonte={fonte} updatedAt={updatedAt} error={dataError} />
-
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
@@ -214,7 +215,7 @@ function HomePage() {
 
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 md:w-72 md:flex-none">
+              <div className="relative w-full sm:w-72">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar ticker ou empresa…"
@@ -225,7 +226,7 @@ function HomePage() {
               </div>
 
               <Select value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
-                <SelectTrigger className="w-[110px] bg-input/60 border-border/60">
+                <SelectTrigger className="min-w-0 flex-1 bg-input/60 border-border/60 sm:w-[110px] sm:flex-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -244,7 +245,7 @@ function HomePage() {
                   setSortDir(d as "asc" | "desc");
                 }}
               >
-                <SelectTrigger className="w-[170px] bg-input/60 border-border/60">
+                <SelectTrigger className="min-w-0 flex-1 bg-input/60 border-border/60 sm:w-[170px] sm:flex-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -275,7 +276,7 @@ function HomePage() {
                 asChild
                 variant="outline"
                 size="icon"
-                className="border-border/60 bg-input/60"
+                className="shrink-0 border-border/60 bg-input/60"
                 title="Configurações"
               >
                 <Link to="/configuracoes" aria-label="Configurações">
@@ -287,6 +288,7 @@ function HomePage() {
 
             </div>
           </div>
+
 
           {activeFilters.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
