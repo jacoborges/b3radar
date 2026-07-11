@@ -35,10 +35,60 @@ interface Props {
 export function StockDetailModal({ stock, onClose }: Props) {
   const ticker = stock?.ticker ?? null;
   const [chartLoaded, setChartLoaded] = useState(false);
+  const { proventos, fundamentals, isLoading, isFetching } = useTickerData(ticker);
 
   useEffect(() => {
     setChartLoaded(false);
   }, [ticker]);
+
+  const mergedStock: Stock | null = useMemo(() => {
+    if (!stock) return null;
+    const fund = fundamentals?.fundamentals ?? null;
+    const historico = proventos?.historico ?? null;
+    const provisionados = proventos?.provisionados ?? null;
+
+    // Merge fundamentalistas: só sobrescreve quando a API retornou valor
+    const merged: Stock = { ...stock };
+    if (fund) {
+      const apply = <K extends keyof Stock>(key: K, v: number | null) => {
+        if (v != null && Number.isFinite(v)) (merged[key] as number) = v;
+      };
+      apply("pl", fund.pl);
+      apply("pvp", fund.pvp);
+      apply("dy", fund.dy);
+      apply("roe", fund.roe);
+      apply("margemLiquida", fund.margemLiquida);
+      apply("margemEbit", fund.margemEbit);
+      apply("divBrutaPatrimonio", fund.divBrutaPatrimonio);
+      apply("liquidezCorrente", fund.liquidezCorrente);
+      apply("valorMercado", fund.valorMercado);
+      apply("liquidezDiaria", fund.liquidezDiaria);
+      apply("preco", fund.preco);
+    }
+    if (historico && historico.length > 0) {
+      const stats = computeDividendStats(historico, merged.preco);
+      merged.dividendos = stats.dividendos;
+      merged.anosComProventos = stats.anosComProventos;
+      merged.dividendosRecorrentes = stats.dividendosRecorrentes;
+      merged.anosYieldAcimaSelic = stats.anosYieldAcimaSelic;
+    }
+    if (provisionados) {
+      merged.proventosProvisionados = provisionados;
+    }
+    return merged;
+  }, [stock, fundamentals, proventos]);
+
+  const proventosOk = !!proventos?.historico;
+  const fundamentalsOk = !!fundamentals?.fundamentals;
+  const sourceLabel = isLoading
+    ? "Carregando dados reais…"
+    : proventosOk && fundamentalsOk
+      ? "Fonte: B3 · brapi.dev"
+      : proventosOk
+        ? "Proventos: B3 · fundamentos estimados"
+        : fundamentalsOk
+          ? "Fundamentos: brapi.dev · proventos estimados"
+          : "Dados estimados";
 
   const chartUrl = useMemo(() => {
     if (!ticker) return "";
