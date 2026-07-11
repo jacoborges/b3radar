@@ -77,7 +77,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       merged.proventosProvisionados = provisionados;
     }
     return merged;
-  }, [stock, fundamentals, proventos]);
+  }, [baseStock, fundamentals, proventos]);
+  const stock = mergedStock;
 
   const proventosOk = !!proventos?.historico;
   const fundamentalsOk = !!fundamentals?.fundamentals;
