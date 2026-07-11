@@ -104,7 +104,8 @@ function HomePage() {
   const extraActiveCount =
     (debtFilter !== "ALL" ? 1 : 0) +
     (recFilter !== "ALL" ? 1 : 0) +
-    (minAnosAcimaSelic > 0 ? 1 : 0);
+    (minAnosAcimaSelic > 0 ? 1 : 0) +
+    (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
