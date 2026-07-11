@@ -75,12 +75,13 @@ export interface Stock {
 }
 
 
-interface RawRow {
+export interface RawRow {
   t: string; n: string; s: string; tp: string;
   p: number; pl: number; pvp: number; dy: number;
   roe: number; roic: number; ml: number; me: number;
   dp: number; lc: number; cr: number; vm: number; lq: number;
 }
+
 
 export const SELIC: Record<number, number> = {
   2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15, 2026: 14.75,
@@ -102,7 +103,7 @@ function seed(str: string): () => number {
 }
 
 // Deterministic "variação do dia" and dividend series based on real DY
-function buildStock(r: RawRow): Stock {
+export function buildStock(r: RawRow): Stock {
   const rand = seed(r.t);
   const variacaoDia = Number(((rand() - 0.5) * 6).toFixed(2)); // -3% .. +3%
   const jcpBias = rand() * 0.5; // 0..0.5 fraction as JCP
@@ -236,11 +237,20 @@ function buildStock(r: RawRow): Stock {
 }
 
 
-export const STOCKS: Stock[] = (raw as RawRow[]).map(buildStock);
+export function buildStocks(rows: RawRow[]): Stock[] {
+  return rows.map(buildStock);
+}
 
-export const SECTORS: string[] = Array.from(
-  new Set(STOCKS.map((s) => s.setor)),
-).sort((a, b) => a.localeCompare(b, "pt-BR"));
+export function collectSectors(stocks: Stock[]): string[] {
+  return Array.from(new Set(stocks.map((s) => s.setor))).sort((a, b) =>
+    a.localeCompare(b, "pt-BR"),
+  );
+}
+
+export const STOCKS: Stock[] = buildStocks(raw as RawRow[]);
+
+export const SECTORS: string[] = collectSectors(STOCKS);
+
 
 /**
  * Recalcula estatísticas derivadas quando substituímos `dividendos` por dados reais.

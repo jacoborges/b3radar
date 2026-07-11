@@ -35,13 +35,15 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { STOCKS, SECTORS, type Stock } from "@/lib/stocks-data";
+import { type Stock } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
+import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -62,8 +64,20 @@ export const Route = createFileRoute("/")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  loader: ({ context }) => context.queryClient.ensureQueryData(stocksQueryOptions),
+  errorComponent: ({ error }) => (
+    <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">
+      Falha ao carregar dados: {error instanceof Error ? error.message : String(error)}
+    </div>
+  ),
+  notFoundComponent: () => (
+    <div className="min-h-screen bg-background p-8 text-sm text-muted-foreground">
+      Página não encontrada.
+    </div>
+  ),
   component: HomePage,
 });
+
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
@@ -80,6 +94,7 @@ const initialFilters: Record<string, FilterRange> = Object.fromEntries(
 );
 
 function HomePage() {
+  const { stocks: STOCKS, sectors: SECTORS, fonte, updatedAt, error: dataError } = useAllStocks();
   const [search, setSearch] = useState("");
   const [tipo, setTipo] = useState<Tipo>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("ticker");
@@ -90,8 +105,9 @@ function HomePage() {
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
-  
+
   const [openSectors, setOpenSectors] = useState<string[]>([]);
+
 
   const activeFilters = useMemo(
     () =>
@@ -126,7 +142,7 @@ function HomePage() {
       if (s.anosPrecoAcimaSelic < minAnosPrecoAcimaSelic) return false;
       return true;
     });
-  }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
+  }, [STOCKS, search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
@@ -162,7 +178,7 @@ function HomePage() {
       });
     }
     return map;
-  }, [filteredLive, sortKey, sortDir]);
+  }, [SECTORS, filteredLive, sortKey, sortDir]);
 
   const total = filtered.length;
 
@@ -187,12 +203,15 @@ function HomePage() {
                   hasError={!!live.error}
                   count={live.map.size}
                 />
+                <DataSourceBadge fonte={fonte} updatedAt={updatedAt} error={dataError} />
 
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
               </p>
             </div>
+
+
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 md:w-72 md:flex-none">
@@ -387,8 +406,9 @@ function HomePage() {
 
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        Cotações atualizadas automaticamente a cada 30s via brapi.dev · Fundamentos via Fundamentus
+        Preços em tempo real via brapi.dev · Fundamentos atualizados do Fundamentus a cada 1 h · Proventos oficiais via B3
       </footer>
+
 
     </div>
   );
@@ -794,4 +814,41 @@ function LiveBadge({
     </span>
   );
 }
+
+function DataSourceBadge({
+  fonte,
+  updatedAt,
+  error,
+}: {
+  fonte: "fundamentus" | "snapshot";
+  updatedAt: Date;
+  error: string | null;
+}) {
+  const diffMin = Math.max(0, Math.round((Date.now() - updatedAt.getTime()) / 60000));
+  const ago =
+    diffMin < 1 ? "agora" : diffMin < 60 ? `${diffMin} min` : `${Math.round(diffMin / 60)} h`;
+  const isLive = fonte === "fundamentus";
+  const color = isLive ? "var(--color-success)" : "var(--color-warning)";
+  const label = isLive
+    ? `Fundamentus · ${ago}`
+    : "Snapshot offline";
+  const title = isLive
+    ? `Dados fundamentalistas atualizados do Fundamentus ${ago === "agora" ? "agora" : `há ${ago}`}. Cache de 1 h.`
+    : `Não foi possível consultar o Fundamentus (${error ?? "erro desconhecido"}). Usando snapshot local.`;
+
+  return (
+    <span
+      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      style={{ borderColor: "var(--color-border)", color: "var(--color-muted-foreground)" }}
+      title={title}
+    >
+      <span
+        className="inline-block h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }}
+      />
+      {label}
+    </span>
+  );
+}
+
 
