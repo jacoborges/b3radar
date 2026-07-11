@@ -814,3 +814,40 @@ function LiveBadge({
   );
 }
 
+function DataSourceBadge({
+  fonte,
+  updatedAt,
+  error,
+}: {
+  fonte: "fundamentus" | "snapshot";
+  updatedAt: Date;
+  error: string | null;
+}) {
+  const diffMin = Math.max(0, Math.round((Date.now() - updatedAt.getTime()) / 60000));
+  const ago =
+    diffMin < 1 ? "agora" : diffMin < 60 ? `${diffMin} min` : `${Math.round(diffMin / 60)} h`;
+  const isLive = fonte === "fundamentus";
+  const color = isLive ? "var(--color-success)" : "var(--color-warning)";
+  const label = isLive
+    ? `Fundamentus · ${ago}`
+    : "Snapshot offline";
+  const title = isLive
+    ? `Dados fundamentalistas atualizados do Fundamentus ${ago === "agora" ? "agora" : `há ${ago}`}. Cache de 1 h.`
+    : `Não foi possível consultar o Fundamentus (${error ?? "erro desconhecido"}). Usando snapshot local.`;
+
+  return (
+    <span
+      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      style={{ borderColor: "var(--color-border)", color: "var(--color-muted-foreground)" }}
+      title={title}
+    >
+      <span
+        className="inline-block h-1.5 w-1.5 rounded-full"
+        style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }}
+      />
+      {label}
+    </span>
+  );
+}
+
+
