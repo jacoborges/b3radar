@@ -40,7 +40,7 @@ import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
-import { TradingViewModal } from "@/components/TradingViewModal";
+
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 
 export const Route = createFileRoute("/")({
