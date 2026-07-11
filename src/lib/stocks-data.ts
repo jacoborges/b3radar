@@ -237,11 +237,20 @@ export function buildStock(r: RawRow): Stock {
 }
 
 
-export const STOCKS: Stock[] = (raw as RawRow[]).map(buildStock);
+export function buildStocks(rows: RawRow[]): Stock[] {
+  return rows.map(buildStock);
+}
 
-export const SECTORS: string[] = Array.from(
-  new Set(STOCKS.map((s) => s.setor)),
-).sort((a, b) => a.localeCompare(b, "pt-BR"));
+export function collectSectors(stocks: Stock[]): string[] {
+  return Array.from(new Set(stocks.map((s) => s.setor))).sort((a, b) =>
+    a.localeCompare(b, "pt-BR"),
+  );
+}
+
+export const STOCKS: Stock[] = buildStocks(raw as RawRow[]);
+
+export const SECTORS: string[] = collectSectors(STOCKS);
+
 
 /**
  * Recalcula estatísticas derivadas quando substituímos `dividendos` por dados reais.
