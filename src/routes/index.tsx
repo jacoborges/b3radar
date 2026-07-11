@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Search,
-  LineChart,
   SlidersHorizontal,
   Settings,
   TrendingUp,
   TrendingDown,
   X,
 } from "lucide-react";
+
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
-import { TradingViewModal } from "@/components/TradingViewModal";
+
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 
 export const Route = createFileRoute("/")({
@@ -89,7 +89,7 @@ function HomePage() {
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
-  const [chartTicker, setChartTicker] = useState<string | null>(null);
+  
   const [openSectors, setOpenSectors] = useState<string[]>([]);
 
   const activeFilters = useMemo(
@@ -365,8 +365,8 @@ function HomePage() {
                     <StockTable
                       stocks={items}
                       onSelect={setSelected}
-                      onChart={setChartTicker}
                     />
+
                   </AccordionContent>
                 </AccordionItem>
               );
@@ -378,14 +378,8 @@ function HomePage() {
       <StockDetailModal
         stock={selected}
         onClose={() => setSelected(null)}
-        onOpenChart={(t) => {
-          setChartTicker(t);
-        }}
       />
-      <TradingViewModal
-        ticker={chartTicker}
-        onClose={() => setChartTicker(null)}
-      />
+
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
         Cotações atualizadas automaticamente a cada 30s via brapi.dev · Fundamentos via Fundamentus
@@ -398,12 +392,11 @@ function HomePage() {
 function StockTable({
   stocks,
   onSelect,
-  onChart,
 }: {
   stocks: Stock[];
   onSelect: (s: Stock) => void;
-  onChart: (t: string) => void;
 }) {
+
   return (
     <div className="overflow-x-auto border-t border-border/60">
       <table className="w-full text-sm">
@@ -437,7 +430,7 @@ function StockTable({
                 />
               </span>
             </th>
-            <th className="px-3 py-2.5 text-center font-medium">Gráfico</th>
+            
           </tr>
         </thead>
         <tbody>
@@ -497,20 +490,6 @@ function StockTable({
                   <div className="flex justify-center">
                     <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
                   </div>
-                </td>
-                <td className="px-3 py-3 text-center">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 gap-1.5 px-2 text-primary hover:bg-primary/10 hover:text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChart(s.ticker);
-                    }}
-                  >
-                    <LineChart className="h-4 w-4" />
-                    <span className="hidden md:inline">Ver</span>
-                  </Button>
                 </td>
               </tr>
             );

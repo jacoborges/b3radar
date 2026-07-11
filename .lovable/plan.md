@@ -1,29 +1,24 @@
 ## Objetivo
-Transformar a seção "Provisionamento" do modal de detalhes do ativo de uma aba separada em uma seção contínua exibida logo após "Fundamentos & Dividendos".
+Ao abrir o modal de detalhes de um ativo, exibir o **gráfico do TradingView já expandido no topo**, com todas as demais informações (preço, histórico D-1/D-7/D-30, indicadores fundamentais, dividendos, Yield vs Selic, provisionamento) rolando logo abaixo — sem precisar clicar no botão "Gráfico".
 
-## Alterações propostas
+## Mudanças
 
-### 1. `src/components/StockDetailModal.tsx`
-- Remover o componente `Tabs` e seus subcomponentes (`TabsList`, `TabsTrigger`, `TabsContent`), pois a divisão por abas não será mais necessária.
-- Remover o import de `Tabs`, `TabsContent`, `TabsList`, `TabsTrigger` e do ícone `CalendarClock` (caso deixe de ser usado no título da seção).
-- Manter o conteúdo de "Fundamentos & Dividendos" como está.
-- Inserir o conteúdo do `ProvisionamentoPanel` diretamente após o bloco "Yield da ação vs. Selic", dentro do mesmo fluxo vertical do modal.
-- Preservar o título "Provisionamento de novos dividendos", o tooltip didático, os cards de resumo, a tabela de proventos e a mensagem "Nenhum provento provisionado".
-- Manter a função auxiliar `ProvisionamentoPanel` ou fundi-la no corpo principal, conforme mais limpo.
+### `src/components/StockDetailModal.tsx`
+- Remover o `TradingViewModal` separado (botão "Ver gráfico") e embutir o **iframe do TradingView direto no topo do modal de detalhes**.
+- Reaproveitar a mesma URL `s.tradingview.com/widgetembed` já usada hoje (símbolo `BMFBOVESPA:<ticker>`, tema dark, studies padrão).
+- Altura fixa confortável (ex.: `h-[480px]` no desktop, `h-[320px]` no mobile) com `rounded-xl` e placeholder "Carregando gráfico…" até o `onLoad`.
+- Abaixo do gráfico, manter na ordem atual: card de preço + variação → histórico D-1/D-7/D-30 → semáforo de endividamento → indicadores fundamentais → dividendos (barra empilhada) → Yield vs Selic → provisionamento.
+- Aumentar a largura do `DialogContent` (ex.: `max-w-6xl`) e garantir `overflow-y-auto` no corpo para o gráfico não empurrar o resto.
 
-## Resultado esperado
-Ao abrir o modal de um ativo, o usuário verá, em sequência:
-1. Cabeçalho com ticker, tipo, setor e botão TradingView
-2. Cards de preço, variação, valor de mercado e liquidez
-3. Cards históricos D-1, D-7, D-30
-4. Indicadores fundamentais
-5. Semáforo de endividamento
-6. Gráfico de dividendos empilhados
-7. Gráfico Yield vs Selic
-8. **Provisionamento de novos dividendos** (tabela e resumo)
+### `src/routes/index.tsx`
+- Remover o botão "Gráfico" da linha do ativo (a função agora vive dentro do próprio modal de detalhes) — clicar no ativo já abre tudo junto.
+- Se preferir manter o botão como atalho, ele passa a apenas abrir o mesmo modal (sem modal separado).
 
-Sem necessidade de clicar em abas.
+### `src/components/TradingViewModal.tsx`
+- Fica sem uso; pode ser removido para não deixar código morto.
 
-## Escopo
-- Apenas refatoração de UI no modal de detalhes.
-- Nenhuma alteração em dados, filtros, rotas ou server functions.
+## Detalhes técnicos
+- O iframe do TradingView é montado com `key={ticker}` para forçar recarregar quando o usuário troca de ativo.
+- Nada muda em dados, filtros, polling brapi ou provisionamento — é só reorganização visual do modal.
+
+Confirma que quer eu **remover o botão "Gráfico"** da lista (já que o gráfico passa a abrir junto com o detalhe)?

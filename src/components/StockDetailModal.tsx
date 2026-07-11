@@ -1,3 +1,4 @@
+import { useMemo, useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -6,8 +7,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { LineChart } from "lucide-react";
 import type { Stock } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { InfoTip } from "./InfoTip";
@@ -28,44 +27,79 @@ import {
 interface Props {
   stock: Stock | null;
   onClose: () => void;
-  onOpenChart: (ticker: string) => void;
 }
 
-export function StockDetailModal({ stock, onClose, onOpenChart }: Props) {
+export function StockDetailModal({ stock, onClose }: Props) {
+  const ticker = stock?.ticker ?? null;
+  const [chartLoaded, setChartLoaded] = useState(false);
+
+  useEffect(() => {
+    setChartLoaded(false);
+  }, [ticker]);
+
+  const chartUrl = useMemo(() => {
+    if (!ticker) return "";
+    const params = new URLSearchParams({
+      symbol: `BMFBOVESPA:${ticker}`,
+      interval: "D",
+      timezone: "America/Sao_Paulo",
+      theme: "dark",
+      style: "1",
+      locale: "br",
+      allow_symbol_change: "1",
+      hide_side_toolbar: "0",
+      withdateranges: "1",
+      details: "1",
+      hotlist: "0",
+      calendar: "0",
+      support_host: "https://www.tradingview.com",
+    });
+    params.append("studies", "MASimple@tv-basicstudies");
+    params.append("studies", "Volume@tv-basicstudies");
+    return `https://s.tradingview.com/widgetembed/?${params.toString()}`;
+  }, [ticker]);
+
   return (
     <Dialog open={!!stock} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto border-border/60">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[92vh] overflow-y-auto border-border/60">
         {stock && (
           <>
             <DialogHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <DialogTitle className="flex items-center gap-3 text-2xl">
-                    <span className="font-mono text-primary">{stock.ticker}</span>
-                    <Badge variant="outline" className="border-border/60">
-                      {stock.tipo}
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className="border-border/60 text-muted-foreground"
-                    >
-                      {stock.setor}
-                    </Badge>
-                  </DialogTitle>
-                  <DialogDescription className="mt-1 text-base">
-                    {stock.nome}
-                  </DialogDescription>
-                </div>
-                <Button
-                  onClick={() => onOpenChart(stock.ticker)}
-                  className="gap-2"
-                  variant="secondary"
+              <DialogTitle className="flex flex-wrap items-center gap-3 text-2xl">
+                <span className="font-mono text-primary">{stock.ticker}</span>
+                <Badge variant="outline" className="border-border/60">
+                  {stock.tipo}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className="border-border/60 text-muted-foreground"
                 >
-                  <LineChart className="h-4 w-4" />
-                  Gráfico TradingView
-                </Button>
-              </div>
+                  {stock.setor}
+                </Badge>
+              </DialogTitle>
+              <DialogDescription className="mt-1 text-base">
+                {stock.nome}
+              </DialogDescription>
             </DialogHeader>
+
+            <div className="relative mt-4 h-[320px] w-full overflow-hidden rounded-xl border border-border/60 bg-background md:h-[480px]">
+              {!chartLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+                  Carregando gráfico…
+                </div>
+              )}
+              {chartUrl && (
+                <iframe
+                  key={chartUrl}
+                  title={`Gráfico TradingView ${ticker}`}
+                  src={chartUrl}
+                  className="h-full w-full border-0"
+                  allow="clipboard-write; fullscreen"
+                  referrerPolicy="origin-when-cross-origin"
+                  onLoad={() => setChartLoaded(true)}
+                />
+              )}
+            </div>
 
             <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
               <PriceCard label="Preço" value={`R$ ${stock.preco.toFixed(2)}`} />
