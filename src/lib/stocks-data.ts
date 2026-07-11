@@ -75,12 +75,13 @@ export interface Stock {
 }
 
 
-interface RawRow {
+export interface RawRow {
   t: string; n: string; s: string; tp: string;
   p: number; pl: number; pvp: number; dy: number;
   roe: number; roic: number; ml: number; me: number;
   dp: number; lc: number; cr: number; vm: number; lq: number;
 }
+
 
 export const SELIC: Record<number, number> = {
   2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15, 2026: 14.75,
