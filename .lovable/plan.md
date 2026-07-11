@@ -1,54 +1,46 @@
 ## Objetivo
 
-Adicionar, logo após o gráfico "Yield da ação vs Selic", um novo gráfico que compara, para cada um dos últimos 5 anos, a **valorização do preço do ativo** (preço em 01/jan vs 31/dez do mesmo ano) contra a **Selic média ponderada** daquele ano, indicando se o ativo bateu ou perdeu para a Selic.
+Expor no painel de **Filtros** todos os parâmetros fundamentalistas disponíveis no dataset. Hoje o filtro cobre 11 indicadores + 3 qualitativos; faltam alguns que já existem em `INDICATORS`/`Stock` mas não estão selecionáveis.
 
-## Escopo
+## O que falta hoje
 
-Apenas frontend/apresentação — dados gerados deterministicamente no mesmo padrão dos dividendos existentes (não há API de histórico anual conectada).
+Já filtráveis (11): P/L, P/VP, DY, ROE, ROIC, Marg. Líq., Marg. EBIT, Dív/PL, Liq. Corrente, CAGR Lucros 5a, Free Float.
 
-## Alterações
+Ausentes do filtro mas presentes nos dados:
+- **Valor de Mercado** (`valorMercado`, R$ bi)
+- **Liquidez Diária** (`liquidezDiaria`, R$ mi)
+- **Preço** (`preco`, R$) — útil para filtrar faixas de ticker "barato/caro"
+- **Variação no dia / 7d / 30d** (`variacaoDia`, `varD7`, `varD30`, em %)
+- **Preço bateu Selic** (`anosPrecoAcimaSelic`, 0–5) — paralelo ao filtro de yield vs Selic que já existe
 
-### 1. `src/lib/stocks-data.ts`
-- Estender `SELIC` para incluir 2026 (ano atual, ~14,75%).
-- Mudar `YEARS` para os últimos 5 anos relativos ao ano atual (2022–2026).
-- Adicionar novo tipo:
-  ```ts
-  export interface PrecoAnual {
-    year: number;
-    precoInicio: number;   // 01/jan
-    precoFim: number;      // 31/dez
-    valorizacao: number;   // % ((fim/inicio)-1)*100
-    selicMediaPonderada: number;
-    bateuSelic: boolean;
-  }
-  ```
-- Adicionar `precosAnuais: PrecoAnual[]` em `Stock`.
-- Em `buildStock`, gerar série determinística: usar o preço atual como âncora e recuar ano a ano com fator de crescimento pseudo-aleatório (mesma `seed(ticker)`) para produzir preço inicial e final coerentes de cada ano. O ano corrente (2026) usa `precoFim = preco atual`.
+## Mudanças
 
-### 2. `src/components/DividendChart.tsx`
-- Novo componente exportado `PriceVsSelicChart({ data }: { data: PrecoAnual[] })`:
-  - `ComposedChart` (mesmo padrão do `DividendVsSelicChart`).
-  - Barras = valorização % do ativo, cor verde se `bateuSelic`, vermelha caso contrário.
-  - Linha = Selic média ponderada.
-  - `LabelList` no topo com o % da valorização.
-  - Tooltip mostrando preço 01/jan, preço 31/dez, valorização % e Selic %.
+### 1. `src/lib/indicators.ts`
+- Adicionar entradas em `INDICATORS` para: `variacaoDia`, `varD7`, `varD30` (com textos fundamentalista/técnica).
+- Estender `FUNDAMENTAL_KEYS` incluindo, nesta ordem lógica:
+  `preco, valorMercado, liquidezDiaria, pl, pvp, dy, roe, roic, margemLiquida, margemEbit, divBrutaPatrimonio, liquidezCorrente, cagrLucros5a, freeFloat, variacaoDia, varD7, varD30`.
 
-### 3. `src/components/StockDetailModal.tsx`
-- Após o bloco atual do `DividendVsSelicChart`, adicionar nova seção:
-  - Título: "Valorização anual vs Selic" com `InfoTip` explicando a comparação.
-  - Renderizar `<PriceVsSelicChart data={stock.precosAnuais} />`.
-  - Resumo textual curto: "Bateu a Selic em X de 5 anos".
+### 2. `src/routes/index.tsx` (`FilterSheet`)
+- Adicionar `bounds` para as novas chaves:
+  - `preco`: [0, 500, 1]
+  - `valorMercado`: [0, 800, 5]  (bi)
+  - `liquidezDiaria`: [0, 500, 5] (mi)
+  - `variacaoDia`, `varD7`, `varD30`: [-30, 30, 0.5]
+- Adicionar novo filtro qualitativo no bloco superior, ao lado de "Dividendo > Selic":
+  - **"Preço bateu Selic"** — slider 0–5 controlando novo estado `minAnosPrecoAcimaSelic`.
+- Estado + propagação: novos `useState`, prop em `FilterSheet`, inclusão em `activeFilters`/`extraActiveCount`, aplicação no `.filter()` (`s.anosPrecoAcimaSelic >= minAnosPrecoAcimaSelic`), e reset no botão "Limpar".
 
-## Layout final do modal (ordem)
+### 3. Sem mudanças em dados
+Nenhuma alteração em `stocks-data.ts` — todos os campos já existem no `Stock`.
 
-1. Gráfico TradingView
-2. Cards de preço (D, D-1, D-7, D-30)
-3. Indicadores fundamentalistas + semáforo
-4. Dividendos empilhados
-5. Yield vs Selic
-6. **Valorização anual vs Selic** ← novo
-7. Provisionamento de novos dividendos
+## Detalhes técnicos
 
-## Observação
+- Como o filtro genérico usa `s[k as keyof Stock] as number`, incluir os novos campos em `FUNDAMENTAL_KEYS` já os aplica automaticamente no filtro numérico.
+- Formatação dos chips ativos continua vindo de `INDICATORS[k].format`, então cada novo indicador precisa de `format` coerente (%, R$, bi, mi).
+- Sem mudanças na tabela, no modal ou no gráfico — escopo estritamente do painel de filtros.
 
-Os preços anuais são simulados de forma determinística por ticker, seguindo o mesmo padrão dos demais dados históricos do app. Caso, no futuro, uma API de histórico (ex.: brapi `historical-prices`) seja conectada, basta substituir a geração em `buildStock` mantendo a mesma interface.
+## Fora de escopo
+
+- Não adicionar colunas novas à tabela.
+- Não mexer em ordenação (`SortKey`) — segue igual.
+- Não alterar dados de origem nem o modal de detalhes.
