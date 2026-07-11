@@ -154,9 +154,42 @@ export const INDICATORS: Record<string, IndicatorInfo> = {
     tecnica:
       "Free float baixo reduz liquidez e amplifica volatilidade — movimentos bruscos com pouco volume. Free float alto favorece formação de preço mais eficiente e menor slippage.",
   },
+  variacaoDia: {
+    key: "variacaoDia",
+    label: "Var. Dia",
+    short: "Variação no dia (%)",
+    format: pct,
+    fundamentalista:
+      "Movimento do preço no pregão atual. Isoladamente é ruído; ganha sentido junto a notícias, resultados e fluxo do setor.",
+    tecnica:
+      "Variações intradiárias muito acima da média sinalizam mudança de regime — reavalie stops e alvos.",
+  },
+  varD7: {
+    key: "varD7",
+    label: "Var. 7d",
+    short: "Variação em 7 dias (%)",
+    format: pct,
+    fundamentalista:
+      "Movimento semanal ajuda a contextualizar o preço atual dentro do ciclo recente de notícias e resultados.",
+    tecnica:
+      "Filtro comum para setups de pullback e continuação de tendência de curto prazo.",
+  },
+  varD30: {
+    key: "varD30",
+    label: "Var. 30d",
+    short: "Variação em 30 dias (%)",
+    format: pct,
+    fundamentalista:
+      "Retorno mensal aproxima o desempenho recente do ativo ao ciclo de resultados e macro.",
+    tecnica:
+      "Base para momentum: ativos com forte variação em 30d costumam manter o viés no curto prazo.",
+  },
 };
 
 export const FUNDAMENTAL_KEYS = [
+  "preco",
+  "valorMercado",
+  "liquidezDiaria",
   "pl",
   "pvp",
   "dy",
@@ -168,6 +201,9 @@ export const FUNDAMENTAL_KEYS = [
   "liquidezCorrente",
   "cagrLucros5a",
   "freeFloat",
+  "variacaoDia",
+  "varD7",
+  "varD30",
 ] as const;
 
 export type IndicatorKey = (typeof FUNDAMENTAL_KEYS)[number];

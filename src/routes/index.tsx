@@ -88,6 +88,7 @@ function HomePage() {
   const [debtFilter, setDebtFilter] = useState<DebtOpt>("ALL");
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
+  const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
   
   const [openSectors, setOpenSectors] = useState<string[]>([]);
@@ -103,7 +104,8 @@ function HomePage() {
   const extraActiveCount =
     (debtFilter !== "ALL" ? 1 : 0) +
     (recFilter !== "ALL" ? 1 : 0) +
-    (minAnosAcimaSelic > 0 ? 1 : 0);
+    (minAnosAcimaSelic > 0 ? 1 : 0) +
+    (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
@@ -121,9 +123,10 @@ function HomePage() {
       if (recFilter === "YES" && !s.dividendosRecorrentes) return false;
       if (recFilter === "NO" && s.dividendosRecorrentes) return false;
       if (s.anosYieldAcimaSelic < minAnosAcimaSelic) return false;
+      if (s.anosPrecoAcimaSelic < minAnosPrecoAcimaSelic) return false;
       return true;
     });
-  }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic]);
+  }, [search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
@@ -245,6 +248,8 @@ function HomePage() {
                 setRecFilter={setRecFilter}
                 minAnosAcimaSelic={minAnosAcimaSelic}
                 setMinAnosAcimaSelic={setMinAnosAcimaSelic}
+                minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
+                setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
               />
 
               <Button
@@ -510,6 +515,8 @@ function FilterSheet({
   setRecFilter,
   minAnosAcimaSelic,
   setMinAnosAcimaSelic,
+  minAnosPrecoAcimaSelic,
+  setMinAnosPrecoAcimaSelic,
 }: {
   filters: Record<string, FilterRange>;
   setFilters: (f: Record<string, FilterRange>) => void;
@@ -520,10 +527,15 @@ function FilterSheet({
   setRecFilter: (v: RecOpt) => void;
   minAnosAcimaSelic: number;
   setMinAnosAcimaSelic: (v: number) => void;
+  minAnosPrecoAcimaSelic: number;
+  setMinAnosPrecoAcimaSelic: (v: number) => void;
 }) {
 
   // sensible ranges for sliders
   const bounds: Record<string, [number, number, number]> = {
+    preco: [0, 500, 1],
+    valorMercado: [0, 800, 5],
+    liquidezDiaria: [0, 500, 5],
     pl: [0, 60, 0.5],
     pvp: [0, 10, 0.1],
     dy: [0, 20, 0.1],
@@ -535,6 +547,9 @@ function FilterSheet({
     liquidezCorrente: [0, 5, 0.05],
     cagrLucros5a: [-30, 50, 0.5],
     freeFloat: [0, 100, 1],
+    variacaoDia: [-30, 30, 0.5],
+    varD7: [-30, 30, 0.5],
+    varD30: [-30, 30, 0.5],
   };
 
   return (
@@ -641,6 +656,29 @@ function FilterSheet({
                 onValueChange={([v]) => setMinAnosAcimaSelic(v)}
               />
             </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  Preço bateu Selic
+                  <InfoTip
+                    title="Valorização anual vs. Selic"
+                    fundamentalista="Nº de anos (dos últimos 5) em que a valorização do preço (01/jan → 31/dez) superou a Selic média ponderada do ano."
+                    tecnica="Consistência em bater a Selic no preço indica força relativa duradoura frente à renda fixa."
+                  />
+                </Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  ≥ {minAnosPrecoAcimaSelic}/5 anos
+                </span>
+              </div>
+              <Slider
+                min={0}
+                max={5}
+                step={1}
+                value={[minAnosPrecoAcimaSelic]}
+                onValueChange={([v]) => setMinAnosPrecoAcimaSelic(v)}
+              />
+            </div>
           </div>
 
           {FUNDAMENTAL_KEYS.map((k) => {
@@ -692,6 +730,7 @@ function FilterSheet({
               setDebtFilter("ALL");
               setRecFilter("ALL");
               setMinAnosAcimaSelic(0);
+              setMinAnosPrecoAcimaSelic(0);
             }}
 
           >
