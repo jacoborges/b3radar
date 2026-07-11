@@ -188,15 +188,17 @@ function HomePage() {
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div className="mx-auto max-w-[1400px] px-4 py-4 md:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <div
-                  className="h-8 w-1 rounded-full"
-                  style={{ backgroundColor: "var(--color-primary)" }}
-                />
-                <h1 className="text-2xl font-bold tracking-tight">
-                  B3 <span className="text-primary">Radar</span>
-                </h1>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className="h-8 w-1 shrink-0 rounded-full"
+                    style={{ backgroundColor: "var(--color-primary)" }}
+                  />
+                  <h1 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
+                    B3 <span className="text-primary">Radar</span>
+                  </h1>
+                </div>
                 <LiveBadge
                   updatedAt={live.updatedAt}
                   isFetching={live.isFetching}
@@ -204,7 +206,6 @@ function HomePage() {
                   count={live.map.size}
                 />
                 <DataSourceBadge fonte={fonte} updatedAt={updatedAt} error={dataError} />
-
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
@@ -214,7 +215,7 @@ function HomePage() {
 
 
             <div className="flex flex-wrap items-center gap-2">
-              <div className="relative flex-1 md:w-72 md:flex-none">
+              <div className="relative w-full sm:w-72">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar ticker ou empresa…"
@@ -225,7 +226,7 @@ function HomePage() {
               </div>
 
               <Select value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
-                <SelectTrigger className="w-[110px] bg-input/60 border-border/60">
+                <SelectTrigger className="min-w-0 flex-1 bg-input/60 border-border/60 sm:w-[110px] sm:flex-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -244,7 +245,7 @@ function HomePage() {
                   setSortDir(d as "asc" | "desc");
                 }}
               >
-                <SelectTrigger className="w-[170px] bg-input/60 border-border/60">
+                <SelectTrigger className="min-w-0 flex-1 bg-input/60 border-border/60 sm:w-[170px] sm:flex-none">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -275,7 +276,7 @@ function HomePage() {
                 asChild
                 variant="outline"
                 size="icon"
-                className="border-border/60 bg-input/60"
+                className="shrink-0 border-border/60 bg-input/60"
                 title="Configurações"
               >
                 <Link to="/configuracoes" aria-label="Configurações">
@@ -287,6 +288,7 @@ function HomePage() {
 
             </div>
           </div>
+
 
           {activeFilters.length > 0 && (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -421,109 +423,185 @@ function StockTable({
   stocks: Stock[];
   onSelect: (s: Stock) => void;
 }) {
-
   return (
-    <div className="overflow-x-auto border-t border-border/60">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border/40 bg-background/30 text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-2.5 text-left font-medium">Ticker</th>
-            <th className="px-3 py-2.5 text-right font-medium">Preço</th>
-            <th className="px-3 py-2.5 text-right font-medium">Dia</th>
-            {FUNDAMENTAL_KEYS.slice(0, 6).map((k) => (
-              <th
-                key={k}
-                className="px-3 py-2.5 text-right font-medium"
-              >
-                <span className="inline-flex items-center gap-1">
-                  {INDICATORS[k].label}
-                  <InfoTip
-                    title={INDICATORS[k].short}
-                    fundamentalista={INDICATORS[k].fundamentalista}
-                    tecnica={INDICATORS[k].tecnica}
-                  />
-                </span>
-              </th>
-            ))}
-            <th className="px-3 py-2.5 text-center font-medium">
-              <span className="inline-flex items-center gap-1">
-                Dívida
-                <InfoTip
-                  title="Semáforo de Endividamento"
-                  fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: entre 0,5x e 1,2x. Vermelho: > 1,2x."
-                  tecnica="Empresas mais endividadas amplificam movimentos e exigem stops mais largos."
-                />
-              </span>
-            </th>
-            
-          </tr>
-        </thead>
-        <tbody>
-          {stocks.map((s) => {
-            const dl = debtLevel(s.divBrutaPatrimonio);
-            return (
-              <tr
-                key={s.ticker}
-                onClick={() => onSelect(s)}
-                className="cursor-pointer border-b border-border/20 transition-colors last:border-0 hover:bg-primary/5"
-              >
-                <td className="px-4 py-3">
+    <>
+      {/* Mobile: card list */}
+      <div className="flex flex-col divide-y divide-border/30 border-t border-border/60 md:hidden">
+        {stocks.map((s) => {
+          const positive = s.variacaoDia >= 0;
+          const color = positive ? "var(--color-success)" : "var(--color-danger)";
+          return (
+            <button
+              key={s.ticker}
+              onClick={() => onSelect(s)}
+              className="flex flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-primary/5 active:bg-primary/10"
+            >
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-semibold text-primary">
+                    <span className="font-mono text-base font-semibold text-primary">
                       {s.ticker}
                     </span>
                     <Badge
                       variant="outline"
-                      className="border-border/50 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+                      className="shrink-0 border-border/50 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
                     >
                       {s.tipo}
                     </Badge>
                   </div>
-                  <div className="text-xs text-muted-foreground">{s.nome}</div>
-                </td>
-                <td className="px-3 py-3 text-right font-mono">
-                  R$ {s.preco.toFixed(2)}
-                </td>
-                <td
-                  className="px-3 py-3 text-right font-mono"
-                  style={{
-                    color:
-                      s.variacaoDia >= 0
-                        ? "var(--color-success)"
-                        : "var(--color-danger)",
-                  }}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    {s.variacaoDia >= 0 ? (
+                  <div className="truncate text-xs text-muted-foreground">
+                    {s.nome}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <div className="font-mono text-sm font-semibold">
+                    R$ {s.preco.toFixed(2)}
+                  </div>
+                  <div
+                    className="inline-flex items-center gap-0.5 font-mono text-xs"
+                    style={{ color }}
+                  >
+                    {positive ? (
                       <TrendingUp className="h-3 w-3" />
                     ) : (
                       <TrendingDown className="h-3 w-3" />
                     )}
-                    {s.variacaoDia >= 0 ? "+" : ""}
+                    {positive ? "+" : ""}
                     {s.variacaoDia.toFixed(2)}%
-                  </span>
-                </td>
-                {FUNDAMENTAL_KEYS.slice(0, 6).map((k) => {
-                  const val = s[k as keyof Stock] as number;
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-2 text-[11px]">
+                {(["dy", "pl", "pvp", "roe"] as const).map((k) => {
+                  const val = s[k] as number;
                   return (
-                    <td key={k} className="px-3 py-3 text-right font-mono">
-                      {INDICATORS[k].format(val)}
-                    </td>
+                    <div key={k} className="min-w-0 rounded-md bg-background/40 px-2 py-1">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                        {INDICATORS[k].label}
+                      </div>
+                      <div className="truncate font-mono">
+                        {INDICATORS[k].format(val)}
+                      </div>
+                    </div>
                   );
                 })}
-                <td className="px-3 py-3 text-center" title={dl.label}>
-                  <div className="flex justify-center">
-                    <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+              </div>
+              <div className="flex items-center justify-end">
+                <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tablet+ : real table with progressive columns */}
+      <div className="hidden overflow-x-auto border-t border-border/60 md:block">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/40 bg-background/30 text-xs uppercase tracking-wide text-muted-foreground">
+              <th className="px-4 py-2.5 text-left font-medium">Ticker</th>
+              <th className="px-3 py-2.5 text-right font-medium">Preço</th>
+              <th className="px-3 py-2.5 text-right font-medium">Dia</th>
+              {FUNDAMENTAL_KEYS.slice(0, 6).map((k, i) => (
+                <th
+                  key={k}
+                  className={`px-3 py-2.5 text-right font-medium ${i >= 4 ? "hidden lg:table-cell" : i >= 2 ? "hidden md:table-cell lg:table-cell" : ""}`}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    {INDICATORS[k].label}
+                    <InfoTip
+                      title={INDICATORS[k].short}
+                      fundamentalista={INDICATORS[k].fundamentalista}
+                      tecnica={INDICATORS[k].tecnica}
+                    />
+                  </span>
+                </th>
+              ))}
+              <th className="px-3 py-2.5 text-center font-medium">
+                <span className="inline-flex items-center gap-1">
+                  Dívida
+                  <InfoTip
+                    title="Semáforo de Endividamento"
+                    fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: entre 0,5x e 1,2x. Vermelho: > 1,2x."
+                    tecnica="Empresas mais endividadas amplificam movimentos e exigem stops mais largos."
+                  />
+                </span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {stocks.map((s) => {
+              const dl = debtLevel(s.divBrutaPatrimonio);
+              return (
+                <tr
+                  key={s.ticker}
+                  onClick={() => onSelect(s)}
+                  className="cursor-pointer border-b border-border/20 transition-colors last:border-0 hover:bg-primary/5"
+                >
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-semibold text-primary">
+                        {s.ticker}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="border-border/50 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
+                      >
+                        {s.tipo}
+                      </Badge>
+                    </div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {s.nome}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-right font-mono">
+                    R$ {s.preco.toFixed(2)}
+                  </td>
+                  <td
+                    className="px-3 py-3 text-right font-mono"
+                    style={{
+                      color:
+                        s.variacaoDia >= 0
+                          ? "var(--color-success)"
+                          : "var(--color-danger)",
+                    }}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      {s.variacaoDia >= 0 ? (
+                        <TrendingUp className="h-3 w-3" />
+                      ) : (
+                        <TrendingDown className="h-3 w-3" />
+                      )}
+                      {s.variacaoDia >= 0 ? "+" : ""}
+                      {s.variacaoDia.toFixed(2)}%
+                    </span>
+                  </td>
+                  {FUNDAMENTAL_KEYS.slice(0, 6).map((k, i) => {
+                    const val = s[k as keyof Stock] as number;
+                    return (
+                      <td
+                        key={k}
+                        className={`px-3 py-3 text-right font-mono ${i >= 4 ? "hidden lg:table-cell" : i >= 2 ? "hidden md:table-cell lg:table-cell" : ""}`}
+                      >
+                        {INDICATORS[k].format(val)}
+                      </td>
+                    );
+                  })}
+                  <td className="px-3 py-3 text-center" title={dl.label}>
+                    <div className="flex justify-center">
+                      <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </>
   );
 }
+
 
 function FilterSheet({
   filters,
@@ -795,7 +873,7 @@ function LiveBadge({
 
   return (
     <span
-      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
       style={{
         borderColor: "var(--color-border)",
         color: "var(--color-muted-foreground)",
@@ -838,7 +916,7 @@ function DataSourceBadge({
 
   return (
     <span
-      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
       style={{ borderColor: "var(--color-border)", color: "var(--color-muted-foreground)" }}
       title={title}
     >

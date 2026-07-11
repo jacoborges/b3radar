@@ -131,7 +131,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="relative mt-4 h-[320px] w-full overflow-hidden rounded-xl border border-border/60 bg-background md:h-[480px]">
+            <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl border border-border/60 bg-background sm:aspect-[16/10] sm:max-h-[70vh]">
               {!chartLoaded && (
                 <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
                   Carregando gráfico…
@@ -150,7 +150,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               )}
             </div>
 
-            <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+
               <PriceCard label="Preço" value={`R$ ${stock.preco.toFixed(2)}`} />
               <PriceCard
                 label="Variação Dia"
@@ -167,7 +168,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               />
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <HistoryCard
                 label="Fech. D-1 (ontem)"
                 preco={stock.precoD1}
@@ -191,7 +192,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Indicadores Fundamentais
                 </h3>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {FUNDAMENTAL_KEYS.map((k) => {
                     const ind = INDICATORS[k];
                     const val = stock[k as keyof Stock] as number;
@@ -365,7 +366,7 @@ function ProvisionamentoPanel({ stock }: { stock: Stock }) {
           </p>
         ) : (
           <>
-            <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+            <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
               <PriceCard
                 label="Anúncios pendentes"
                 value={String(items.length)}
