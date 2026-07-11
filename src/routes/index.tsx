@@ -365,8 +365,8 @@ function HomePage() {
                     <StockTable
                       stocks={items}
                       onSelect={setSelected}
-                      onChart={setChartTicker}
                     />
+
                   </AccordionContent>
                 </AccordionItem>
               );
