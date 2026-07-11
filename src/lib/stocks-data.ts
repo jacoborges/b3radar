@@ -241,3 +241,35 @@ export const STOCKS: Stock[] = (raw as RawRow[]).map(buildStock);
 export const SECTORS: string[] = Array.from(
   new Set(STOCKS.map((s) => s.setor)),
 ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+/**
+ * Recalcula estatísticas derivadas quando substituímos `dividendos` por dados reais.
+ * `precoAtual` é usado para preencher `precoMedio` quando a série real não traz.
+ */
+export function computeDividendStats(
+  dividendos: DividendYear[],
+  precoAtual: number,
+): {
+  dividendos: DividendYear[];
+  anosComProventos: number;
+  dividendosRecorrentes: boolean;
+  anosYieldAcimaSelic: number;
+} {
+  const preenchidos = dividendos.map((d) => ({
+    ...d,
+    precoMedio: d.precoMedio > 0 ? d.precoMedio : precoAtual,
+  }));
+  const anosComProventos = preenchidos.filter((d) => d.dividendo + d.jcp > 0).length;
+  const anosYieldAcimaSelic = preenchidos.filter((d) => {
+    if (!d.precoMedio) return false;
+    const yieldAno = ((d.dividendo + d.jcp) / d.precoMedio) * 100;
+    return yieldAno > d.selicMediaPonderada;
+  }).length;
+  return {
+    dividendos: preenchidos,
+    anosComProventos,
+    dividendosRecorrentes: anosComProventos === preenchidos.length,
+    anosYieldAcimaSelic,
+  };
+}
+
