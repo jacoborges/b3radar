@@ -730,6 +730,7 @@ function FilterSheet({
               setDebtFilter("ALL");
               setRecFilter("ALL");
               setMinAnosAcimaSelic(0);
+              setMinAnosPrecoAcimaSelic(0);
             }}
 
           >
