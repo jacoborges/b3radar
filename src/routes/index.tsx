@@ -515,6 +515,8 @@ function FilterSheet({
   setRecFilter,
   minAnosAcimaSelic,
   setMinAnosAcimaSelic,
+  minAnosPrecoAcimaSelic,
+  setMinAnosPrecoAcimaSelic,
 }: {
   filters: Record<string, FilterRange>;
   setFilters: (f: Record<string, FilterRange>) => void;
@@ -525,10 +527,15 @@ function FilterSheet({
   setRecFilter: (v: RecOpt) => void;
   minAnosAcimaSelic: number;
   setMinAnosAcimaSelic: (v: number) => void;
+  minAnosPrecoAcimaSelic: number;
+  setMinAnosPrecoAcimaSelic: (v: number) => void;
 }) {
 
   // sensible ranges for sliders
   const bounds: Record<string, [number, number, number]> = {
+    preco: [0, 500, 1],
+    valorMercado: [0, 800, 5],
+    liquidezDiaria: [0, 500, 5],
     pl: [0, 60, 0.5],
     pvp: [0, 10, 0.1],
     dy: [0, 20, 0.1],
@@ -540,6 +547,9 @@ function FilterSheet({
     liquidezCorrente: [0, 5, 0.05],
     cagrLucros5a: [-30, 50, 0.5],
     freeFloat: [0, 100, 1],
+    variacaoDia: [-30, 30, 0.5],
+    varD7: [-30, 30, 0.5],
+    varD30: [-30, 30, 0.5],
   };
 
   return (
