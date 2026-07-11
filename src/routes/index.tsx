@@ -491,20 +491,6 @@ function StockTable({
                     <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
                   </div>
                 </td>
-                <td className="px-3 py-3 text-center">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 gap-1.5 px-2 text-primary hover:bg-primary/10 hover:text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onChart(s.ticker);
-                    }}
-                  >
-                    <LineChart className="h-4 w-4" />
-                    <span className="hidden md:inline">Ver</span>
-                  </Button>
-                </td>
               </tr>
             );
           })}
