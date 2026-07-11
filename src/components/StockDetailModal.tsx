@@ -79,12 +79,12 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const sourceLabel = isLoading
     ? "Carregando dados reais…"
     : proventosOk && fundamentalsOk
-      ? "Fonte: B3 · brapi.dev"
+      ? "Fundamentos: Fundamentus · Proventos: B3 · Preço: brapi.dev"
       : proventosOk
-        ? "Proventos: B3 · fundamentos estimados"
+        ? "Proventos: B3 · Fundamentos: Fundamentus"
         : fundamentalsOk
-          ? "Fundamentos: brapi.dev · proventos estimados"
-          : "Dados estimados";
+          ? "Preço: brapi.dev · Fundamentos: Fundamentus"
+          : "Fundamentos: Fundamentus (offline)";
 
   const chartUrl = useMemo(() => {
     if (!ticker) return "";
