@@ -103,7 +103,7 @@ function seed(str: string): () => number {
 }
 
 // Deterministic "variação do dia" and dividend series based on real DY
-function buildStock(r: RawRow): Stock {
+export function buildStock(r: RawRow): Stock {
   const rand = seed(r.t);
   const variacaoDia = Number(((rand() - 0.5) * 6).toFixed(2)); // -3% .. +3%
   const jcpBias = rand() * 0.5; // 0..0.5 fraction as JCP
