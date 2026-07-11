@@ -54,17 +54,11 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       const apply = <K extends keyof Stock>(key: K, v: number | null) => {
         if (v != null && Number.isFinite(v)) (merged[key] as number) = v;
       };
-      apply("pl", fund.pl);
-      apply("pvp", fund.pvp);
-      apply("dy", fund.dy);
-      apply("roe", fund.roe);
-      apply("margemLiquida", fund.margemLiquida);
-      apply("margemEbit", fund.margemEbit);
-      apply("divBrutaPatrimonio", fund.divBrutaPatrimonio);
-      apply("liquidezCorrente", fund.liquidezCorrente);
+      // Priorizar sempre Fundamentus para indicadores fundamentalistas.
+      // Da brapi mantemos apenas o que é ao vivo / dependente do preço.
+      apply("preco", fund.preco);
       apply("valorMercado", fund.valorMercado);
       apply("liquidezDiaria", fund.liquidezDiaria);
-      apply("preco", fund.preco);
     }
     if (historico && historico.length > 0) {
       const stats = computeDividendStats(historico, merged.preco);
@@ -85,12 +79,12 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const sourceLabel = isLoading
     ? "Carregando dados reais…"
     : proventosOk && fundamentalsOk
-      ? "Fonte: B3 · brapi.dev"
+      ? "Fundamentos: Fundamentus · Proventos: B3 · Preço: brapi.dev"
       : proventosOk
-        ? "Proventos: B3 · fundamentos estimados"
+        ? "Proventos: B3 · Fundamentos: Fundamentus"
         : fundamentalsOk
-          ? "Fundamentos: brapi.dev · proventos estimados"
-          : "Dados estimados";
+          ? "Preço: brapi.dev · Fundamentos: Fundamentus"
+          : "Fundamentos: Fundamentus (offline)";
 
   const chartUrl = useMemo(() => {
     if (!ticker) return "";
