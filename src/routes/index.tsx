@@ -656,6 +656,29 @@ function FilterSheet({
                 onValueChange={([v]) => setMinAnosAcimaSelic(v)}
               />
             </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  Preço bateu Selic
+                  <InfoTip
+                    title="Valorização anual vs. Selic"
+                    fundamentalista="Nº de anos (dos últimos 5) em que a valorização do preço (01/jan → 31/dez) superou a Selic média ponderada do ano."
+                    tecnica="Consistência em bater a Selic no preço indica força relativa duradoura frente à renda fixa."
+                  />
+                </Label>
+                <span className="font-mono text-xs text-muted-foreground">
+                  ≥ {minAnosPrecoAcimaSelic}/5 anos
+                </span>
+              </div>
+              <Slider
+                min={0}
+                max={5}
+                step={1}
+                value={[minAnosPrecoAcimaSelic]}
+                onValueChange={([v]) => setMinAnosPrecoAcimaSelic(v)}
+              />
+            </div>
           </div>
 
           {FUNDAMENTAL_KEYS.map((k) => {
