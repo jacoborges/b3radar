@@ -35,13 +35,15 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
-import { STOCKS, SECTORS, type Stock } from "@/lib/stocks-data";
+import { type Stock } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
+import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
