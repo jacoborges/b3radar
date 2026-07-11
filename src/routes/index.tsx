@@ -203,12 +203,15 @@ function HomePage() {
                   hasError={!!live.error}
                   count={live.map.size}
                 />
+                <DataSourceBadge fonte={fonte} updatedAt={updatedAt} error={dataError} />
 
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
               </p>
             </div>
+
+
 
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1 md:w-72 md:flex-none">
