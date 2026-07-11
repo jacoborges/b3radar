@@ -23,6 +23,15 @@ export interface ProventoProvisionado {
   dataPagamento: string;
 }
 
+export interface PrecoAnual {
+  year: number;
+  precoInicio: number;
+  precoFim: number;
+  valorizacao: number;
+  selicMediaPonderada: number;
+  bateuSelic: boolean;
+}
+
 export interface Stock {
   ticker: string;
   nome: string;
