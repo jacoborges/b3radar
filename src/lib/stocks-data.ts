@@ -82,7 +82,7 @@ interface RawRow {
   dp: number; lc: number; cr: number; vm: number; lq: number;
 }
 
-const SELIC: Record<number, number> = {
+export const SELIC: Record<number, number> = {
   2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15, 2026: 14.75,
 };
 const YEARS = [2022, 2023, 2024, 2025, 2026];
@@ -241,3 +241,35 @@ export const STOCKS: Stock[] = (raw as RawRow[]).map(buildStock);
 export const SECTORS: string[] = Array.from(
   new Set(STOCKS.map((s) => s.setor)),
 ).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+/**
+ * Recalcula estatísticas derivadas quando substituímos `dividendos` por dados reais.
+ * `precoAtual` é usado para preencher `precoMedio` quando a série real não traz.
+ */
+export function computeDividendStats(
+  dividendos: DividendYear[],
+  precoAtual: number,
+): {
+  dividendos: DividendYear[];
+  anosComProventos: number;
+  dividendosRecorrentes: boolean;
+  anosYieldAcimaSelic: number;
+} {
+  const preenchidos = dividendos.map((d) => ({
+    ...d,
+    precoMedio: d.precoMedio > 0 ? d.precoMedio : precoAtual,
+  }));
+  const anosComProventos = preenchidos.filter((d) => d.dividendo + d.jcp > 0).length;
+  const anosYieldAcimaSelic = preenchidos.filter((d) => {
+    if (!d.precoMedio) return false;
+    const yieldAno = ((d.dividendo + d.jcp) / d.precoMedio) * 100;
+    return yieldAno > d.selicMediaPonderada;
+  }).length;
+  return {
+    dividendos: preenchidos,
+    anosComProventos,
+    dividendosRecorrentes: anosComProventos === preenchidos.length,
+    anosYieldAcimaSelic,
+  };
+}
+
