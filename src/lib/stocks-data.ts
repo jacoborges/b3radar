@@ -168,6 +168,33 @@ function buildStock(r: RawRow): Stock {
     proventosProvisionados.sort((a, b) => a.dataCom.localeCompare(b.dataCom));
   }
 
+  // Preços anuais determinísticos (01/jan e 31/dez de cada um dos últimos 5 anos)
+  // Ancora: precoFim do ano corrente = preço atual. Recuando ano a ano, o
+  // precoInicio de um ano vira o precoFim do ano anterior, com variação
+  // anual pseudo-aleatória em torno da Selic daquele ano.
+  const precosAnuais: PrecoAnual[] = [];
+  let precoFimAno = r.p;
+  for (let i = YEARS.length - 1; i >= 0; i--) {
+    const y = YEARS[i];
+    const selic = SELIC[y];
+    // variação anual: -25%..+45%, enviesada levemente pela Selic
+    const varAnual = (rand() - 0.45) * 0.7 + (selic / 100) * (rand() - 0.3);
+    const precoInicio = Number((precoFimAno / (1 + varAnual)).toFixed(2));
+    const valorizacao = Number((((precoFimAno / precoInicio) - 1) * 100).toFixed(2));
+    precosAnuais.unshift({
+      year: y,
+      precoInicio,
+      precoFim: Number(precoFimAno.toFixed(2)),
+      valorizacao,
+      selicMediaPonderada: selic,
+      bateuSelic: valorizacao > selic,
+    });
+    precoFimAno = precoInicio;
+  }
+  const anosPrecoAcimaSelic = precosAnuais.filter((p) => p.bateuSelic).length;
+
+
+
   return {
     ticker: r.t,
     nome: r.n,
