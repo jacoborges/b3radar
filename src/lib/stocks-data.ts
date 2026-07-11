@@ -230,6 +230,8 @@ function buildStock(r: RawRow): Stock {
     dividendosRecorrentes,
     anosYieldAcimaSelic,
     proventosProvisionados,
+    precosAnuais,
+    anosPrecoAcimaSelic,
   };
 }
 
