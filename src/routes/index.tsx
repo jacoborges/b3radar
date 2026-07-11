@@ -873,7 +873,7 @@ function LiveBadge({
 
   return (
     <span
-      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
       style={{
         borderColor: "var(--color-border)",
         color: "var(--color-muted-foreground)",
@@ -916,7 +916,7 @@ function DataSourceBadge({
 
   return (
     <span
-      className="hidden items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider md:inline-flex"
+      className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider"
       style={{ borderColor: "var(--color-border)", color: "var(--color-muted-foreground)" }}
       title={title}
     >
