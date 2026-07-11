@@ -2,13 +2,13 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Search,
-  LineChart,
   SlidersHorizontal,
   Settings,
   TrendingUp,
   TrendingDown,
   X,
 } from "lucide-react";
+
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
