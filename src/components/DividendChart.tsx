@@ -12,7 +12,7 @@ import {
   YAxis,
   LabelList,
 } from "recharts";
-import type { DividendYear } from "@/lib/stocks-data";
+import type { DividendYear, PrecoAnual } from "@/lib/stocks-data";
 
 interface Props {
   data: DividendYear[];
