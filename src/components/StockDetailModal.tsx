@@ -48,18 +48,10 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     const historico = proventos?.historico ?? null;
     const provisionados = proventos?.provisionados ?? null;
 
-    // Merge fundamentalistas: só sobrescreve quando a API retornou valor
+    // Merge fundamentalistas: sempre priorizar Fundamentus (baseStock já vem do snapshot).
+    // brapi não sobrescreve mais nenhum campo fundamentalista nem preço/valor de mercado/liquidez.
     const merged: Stock = { ...stock };
-    if (fund) {
-      const apply = <K extends keyof Stock>(key: K, v: number | null) => {
-        if (v != null && Number.isFinite(v)) (merged[key] as number) = v;
-      };
-      // Priorizar sempre Fundamentus para indicadores fundamentalistas.
-      // Da brapi mantemos apenas o que é ao vivo / dependente do preço.
-      apply("preco", fund.preco);
-      apply("valorMercado", fund.valorMercado);
-      apply("liquidezDiaria", fund.liquidezDiaria);
-    }
+
     if (historico && historico.length > 0) {
       const stats = computeDividendStats(historico, merged.preco);
       merged.dividendos = stats.dividendos;
