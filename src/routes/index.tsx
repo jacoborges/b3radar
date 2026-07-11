@@ -94,6 +94,7 @@ const initialFilters: Record<string, FilterRange> = Object.fromEntries(
 );
 
 function HomePage() {
+  const { stocks: STOCKS, sectors: SECTORS, fonte, updatedAt, error: dataError } = useAllStocks();
   const [search, setSearch] = useState("");
   const [tipo, setTipo] = useState<Tipo>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("ticker");
@@ -104,8 +105,9 @@ function HomePage() {
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
-  
+
   const [openSectors, setOpenSectors] = useState<string[]>([]);
+
 
   const activeFilters = useMemo(
     () =>
