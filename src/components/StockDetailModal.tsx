@@ -35,7 +35,7 @@ interface Props {
 export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const ticker = baseStock?.ticker ?? null;
   const [chartLoaded, setChartLoaded] = useState(false);
-  const { proventos, fundamentals, isLoading, isFetching } = useTickerData(ticker);
+  const { proventos, isLoading, isFetching } = useTickerData(ticker);
 
   useEffect(() => {
     setChartLoaded(false);
@@ -44,8 +44,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const mergedStock: Stock | null = useMemo(() => {
     if (!baseStock) return null;
     const stock = baseStock;
-    const fund = fundamentals?.fundamentals ?? null;
     const historico = proventos?.historico ?? null;
+
     const provisionados = proventos?.provisionados ?? null;
 
     // Merge fundamentalistas: sempre priorizar Fundamentus (baseStock já vem do snapshot).
