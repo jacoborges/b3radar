@@ -1,19 +1,16 @@
 import { useMemo } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { getAllStocks, type StocksPayload } from "@/lib/stocks.functions";
+import { getAllStocks } from "@/lib/stocks.functions";
 import { buildStocks, collectSectors, type Stock } from "@/lib/stocks-data";
 
 const ONE_HOUR = 60 * 60 * 1000;
 
-export function stocksQueryOptions(fn: () => Promise<StocksPayload>) {
-  return queryOptions({
-    queryKey: ["stocks-all"],
-    queryFn: fn,
-    staleTime: ONE_HOUR,
-    gcTime: ONE_HOUR * 2,
-  });
-}
+export const stocksQueryOptions = queryOptions({
+  queryKey: ["stocks-all"],
+  queryFn: () => getAllStocks(),
+  staleTime: ONE_HOUR,
+  gcTime: ONE_HOUR * 2,
+});
 
 export interface UseAllStocksResult {
   stocks: Stock[];
@@ -25,9 +22,7 @@ export interface UseAllStocksResult {
 }
 
 export function useAllStocks(): UseAllStocksResult {
-  const fn = useServerFn(getAllStocks);
-  const { data, isFetching } = useSuspenseQuery(stocksQueryOptions(fn));
-
+  const { data, isFetching } = useSuspenseQuery(stocksQueryOptions);
   const stocks = useMemo(() => buildStocks(data.rows), [data.rows]);
   const sectors = useMemo(() => collectSectors(stocks), [stocks]);
 
