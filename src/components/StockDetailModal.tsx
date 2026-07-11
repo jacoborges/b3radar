@@ -42,7 +42,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   }, [ticker]);
 
   const mergedStock: Stock | null = useMemo(() => {
-    if (!stock) return null;
+    if (!baseStock) return null;
+    const stock = baseStock;
     const fund = fundamentals?.fundamentals ?? null;
     const historico = proventos?.historico ?? null;
     const provisionados = proventos?.provisionados ?? null;
