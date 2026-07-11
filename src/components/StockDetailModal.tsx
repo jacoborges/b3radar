@@ -168,7 +168,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               />
             </div>
 
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <HistoryCard
                 label="Fech. D-1 (ontem)"
                 preco={stock.precoD1}
@@ -192,7 +192,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Indicadores Fundamentais
                 </h3>
-                <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
                   {FUNDAMENTAL_KEYS.map((k) => {
                     const ind = INDICATORS[k];
                     const val = stock[k as keyof Stock] as number;
@@ -366,7 +366,7 @@ function ProvisionamentoPanel({ stock }: { stock: Stock }) {
           </p>
         ) : (
           <>
-            <div className="mb-3 grid grid-cols-2 gap-3 md:grid-cols-3">
+            <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
               <PriceCard
                 label="Anúncios pendentes"
                 value={String(items.length)}
