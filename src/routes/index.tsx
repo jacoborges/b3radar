@@ -88,6 +88,7 @@ function HomePage() {
   const [debtFilter, setDebtFilter] = useState<DebtOpt>("ALL");
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
+  const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
   const [selected, setSelected] = useState<Stock | null>(null);
   
   const [openSectors, setOpenSectors] = useState<string[]>([]);
