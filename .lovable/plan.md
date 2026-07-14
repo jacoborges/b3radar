@@ -1,89 +1,103 @@
-# TradingView técnico + consenso de analistas por ativo
+# Módulo de inteligência de proventos
 
-## Objetivo
-Remover a rota `/consenso` e mover a informação para **dentro do modal** de cada ativo, mostrando **dois semáforos lado a lado** (Analistas | Técnico TradingView) — sem fundir. Adicionar **filtro por viés** na lista principal para pesquisar ativos por rating.
+Objetivo: transformar a seção "Provisionamento de novos dividendos" numa camada analítica e criar uma rota dedicada `/dividendos` com ranking de qualidade e histórico completo por ticker.
 
-## 1. Fonte de dados TradingView
+## 1. Coleta de dados (B3 — mesmo proxy já usado)
 
-Endpoint público usado pelo próprio site (mesmo do link `/technicals/`):
+Estender `src/lib/proventos.functions.ts` (renomear internamente ou dividir em `proventos-b3.server.ts` + `proventos.functions.ts`):
 
-```
-POST https://scanner.tradingview.com/brazil/scan
-body: { "symbols": { "tickers": ["BMFBOVESPA:BBSE3", ...] },
-        "columns": ["Recommend.All|1", "Recommend.MA|1", "Recommend.Other|1",
-                    "Recommend.All|15", "Recommend.All|60",
-                    "Recommend.All", "Recommend.All|1W",
-                    "RSI", "Stoch.K", "CCI20", "ADX", "AO", "Mom", "MACD.macd", "MACD.signal"] }
-```
+- `GetListedCashDividends` → dividendos e JCP (já existe).
+- `GetListedSupplementCompany` / `GetListedStockDividends` → **bonificações, grupamentos, desdobramentos** (novo).
+- Unificar em um único retorno `TickerProventosCompleto`:
+  - `historico`: 5 anos (dividendo, JCP) — já existe.
+  - `historicoCompleto`: lista bruta ordenada por data com `{ tipo: 'Dividendo'|'JCP'|'Bonificacao'|'Grupamento'|'Desdobramento', valor, ratio, dataCom, dataEx, dataPagamento, dataAprovacao }`.
+  - `provisionados`: eventos futuros já anunciados (já existe, adiciona eventos societários).
+- Cache 1h no Worker (mantém `stale-while-revalidate`).
 
-- Retorna floats de -1 a +1 que mapeiam para: `≥0.5` Strong Buy, `≥0.1` Buy, `>-0.1` Neutral, `>-0.5` Sell, `≤-0.5` Strong Sell — **mesma escala que o site mostra**.
-- `Recommend.MA` = resumo das médias móveis; `Recommend.Other` = resumo dos osciladores; `Recommend.All` = geral.
-- Suporta batch de ~50 tickers por request. Fresco em tempo real (delay ~15s, igual ao site).
+Nova server fn `getProventosBatch({ tickers })` para a rota de ranking: retorna só métricas agregadas por ticker (freq, gap médio, DY 12m, score) — sem histórico bruto, para caber em uma requisição.
 
-**Server function nova** `src/lib/tradingview.functions.ts`:
-- `getTradingViewTechnical({ ticker })` → um ativo, todos timeframes (1m, 15m, 1h, 1D, 1W).
-- `getTradingViewBatch({ tickers })` → só o timeframe **1D** de todos (para o filtro/lista).
-- Cache 60s no Worker; sem crumb/cookie (endpoint aberto).
+## 2. Modelo de previsão + score
 
-## 2. UI dentro do modal (`StockDetailModal.tsx`)
+Novo módulo `src/lib/dividend-intelligence.ts` (puro, sem IO):
 
-Após a seção de fundamentos, nova seção **"Consenso do mercado"** com dois cards lado a lado:
+**Estimativa do próximo pagamento** (função `estimateNextPayout(historicoCompleto)`):
+- Detecta frequência dominante (mensal / trimestral / semestral / anual / irregular) por gap mediano entre datas COM dos últimos 24 meses.
+- Próxima data COM esperada = última data COM + gap mediano.
+- Faixa esperada de valor = mediana e IQR (p25–p75) dos últimos N pagamentos do mesmo tipo, corrigidos pelo crescimento CAGR simples.
+- Retorna `{ proximaDataComEstimada, faixaValor: [min, esperado, max], tipoProvavel, confiabilidade }`.
+
+**Score de confiabilidade (0–100)** — média ponderada de:
+- Regularidade (desvio padrão dos gaps / gap mediano) — peso 35.
+- Anos consecutivos pagando — peso 25.
+- Consistência de valor (1 − coef. variação) — peso 20.
+- Cobertura por lucro (payout ≤ 100%, usando `margemLiquida` como proxy) — peso 10.
+- Ausência de cortes bruscos (>50% ano/ano) — peso 10.
+
+**Classificação** (função `classifyDividendQuality(score, freq)`):
+- 80+ e ≥ trimestral → "Elite"
+- 65–79 → "Consistente"
+- 45–64 → "Regular"
+- 20–44 → "Irregular"
+- <20 ou sem histórico → "Sem cobertura"
+
+## 3. UI dentro do modal (`StockDetailModal.tsx`)
+
+Substituir a seção atual "Provisionamento de novos dividendos" por **"Inteligência de proventos"**, dividida em três blocos empilhados:
 
 ```text
-┌──────────────────────┬──────────────────────┐
-│ Analistas (Yahoo)    │ Técnico (TradingView)│
-│ ● Compra Forte  4.6  │ Timeframe: [1D ▼]    │
-│ ▓▓▓▓▓▓░░ 18 casas    │ ● Compra   +0.32     │
-│ Melhorando ↑         │ Médias:  Compra      │
-│                      │ Oscilad: Neutro      │
-│                      │ 1m 15m 1h 1D 1W      │
-│                      │ ● ● ○ ● ●            │
-└──────────────────────┴──────────────────────┘
+┌ Próximo pagamento (previsto) ──────────────────────┐
+│ Tipo provável: Dividendo  •  Frequência: Trimestral│
+│ Data COM esperada: 12/03/2026 (± 8 dias)           │
+│ Faixa de valor: R$ 0,18 – R$ 0,24 (mediana 0,21)   │
+│ Confiabilidade: ●●●●○ 78/100 — Consistente         │
+└────────────────────────────────────────────────────┘
+
+┌ Provisionados oficiais (já anunciados) ────────────┐
+│ (tabela atual — mantém como está)                  │
+└────────────────────────────────────────────────────┘
+
+┌ Histórico completo de eventos ─────────────────────┐
+│ Filtro: [Todos] [Div] [JCP] [Bonif] [Split] [Grup] │
+│ Tabela paginada: Data COM · Tipo · Valor/Ratio ·   │
+│ Data Ex · Pagamento                                │
+└────────────────────────────────────────────────────┘
 ```
 
-- Reaproveita `RATING_META`/`StackedDistribution` já existentes.
-- Card TradingView tem seletor de timeframe + mini-strip mostrando o rating em cada timeframe (bolinhas coloridas) para dar visão multi-tempo.
-- Ambos os cards deixam explícito na label: **"Analistas — Yahoo/Refinitiv"** e **"Técnico — TradingView (tempo real)"**.
+O bloco de previsão fica visualmente destacado (borda accent) e deixa explícito que é **estimativa estatística**, não anúncio oficial.
 
-## 3. Filtro por viés na lista principal
+## 4. Nova rota `/dividendos`
 
-Em `src/routes/index.tsx` / `FilterSheet`, nova seção **"Viés de mercado"** com dois blocos de chips independentes:
+`src/routes/dividendos.tsx` — ranking de qualidade de proventos:
 
-- **Analistas**: `[C.Forte] [Compra] [Neutro] [Venda] [V.Forte]` (multi-select)
-- **Técnico TradingView (1D)**: mesmos 5 chips
+- Header com filtros: setor, classificação (Elite / Consistente / Regular / Irregular), frequência mínima, DY mínimo.
+- Tabela ordenável por: Score, DY 12m, Frequência, Anos consecutivos, Próxima data COM.
+- Cada linha clicável abre o `StockDetailModal` já existente do ativo, rolando direto para a seção "Inteligência de proventos".
+- Usa `getProventosBatch` com `useQuery` (staleTime 1h). Fallback progressivo: mostra os 200 ativos com maior liquidez primeiro.
+- `head()` próprio: title "Ranking de proventos — B3 Radar", description específica.
 
-Aplica-se combinando com os filtros existentes. Como precisa do rating por ticker na lista, adiciono hook `useBiasBatch(tickers)` que:
-- Roda `getConsensusBatch` (já existe) + `getTradingViewBatch` (novo).
-- Query única com refresh a cada 5 min, `keepPreviousData`.
-- Retorna `Map<ticker, { analyst?: rating, technical?: rating }>`.
+Botão "Proventos" volta ao header em `src/routes/index.tsx` (mesma posição do antigo "Consenso" que foi removido).
 
-Ativos sem cobertura ficam visíveis por padrão; o filtro só esconde se o usuário marcar chips.
+## 5. Alertas
 
-## 4. Remover /consenso
+Fora do escopo por decisão sua. Nenhum badge, push ou e-mail nesta fase.
 
-- Deletar `src/routes/consenso.tsx`.
-- Remover botão "Consenso" do header em `src/routes/index.tsx`.
-- Manter `src/lib/consensus-rating.ts`, `consensus.functions.ts` e `use-consensus.ts` — passam a servir ao modal e ao filtro.
-- `routeTree.gen.ts` regenera automaticamente no build.
+## Arquivos afetados
 
-## 5. Arquivos afetados
+**Novos**
+- `src/lib/dividend-intelligence.ts` — modelo de previsão + score + classificação (puro).
+- `src/hooks/use-dividend-batch.ts` — batch para a rota de ranking.
+- `src/routes/dividendos.tsx` — nova rota.
+- `src/components/DividendIntelligencePanel.tsx` — bloco reutilizável do modal.
 
-**Novos:**
-- `src/lib/tradingview.functions.ts` — server functions do scanner.
-- `src/lib/tradingview-rating.ts` — mapeamento float→rating + metadata (reusando as chaves de `consensus-rating.ts`).
-- `src/hooks/use-tradingview.ts` — hooks single/batch.
-- `src/hooks/use-bias-batch.ts` — combina analistas + técnico para a lista.
-
-**Editados:**
-- `src/components/StockDetailModal.tsx` — nova seção "Consenso do mercado" com os dois cards.
-- `src/routes/index.tsx` — remove botão consenso, adiciona chips de viés no FilterSheet e aplica filtro na lista.
-
-**Removidos:**
-- `src/routes/consenso.tsx`.
+**Editados**
+- `src/lib/proventos.functions.ts` — passa a buscar também bonificações/grupamentos/desdobramentos e a retornar `historicoCompleto`. Adiciona `getProventosBatch`.
+- `src/lib/stocks-data.ts` — adiciona tipos `EventoSocietario`, `TickerProventosCompleto`, `DividendQuality`.
+- `src/components/StockDetailModal.tsx` — troca a seção atual pelo novo `<DividendIntelligencePanel />`.
+- `src/routes/index.tsx` — reintroduz botão "Proventos" no header apontando para `/dividendos`.
 
 ## Notas técnicas
 
-- Endpoint TradingView aceita User-Agent normal; sem auth. Já vi outros projetos OSS usando o mesmo scanner sem problemas de bloqueio em Worker.
-- Se o Cloudflare Worker for bloqueado por IP em algum momento, o fallback será "Sem cobertura" (mesmo tratamento atual do Yahoo).
-- Nenhum dado sensível; nenhum secret novo.
-- **Não** vou tocar em fundamentos, dividendos, proventos ou preço — só na camada de consenso.
+- Sem novos secrets, sem Lovable Cloud (tudo derivado do que a B3 já expõe publicamente).
+- Toda a inteligência (previsão + score) roda no cliente sobre o payload cacheado — sem custo extra de infra.
+- A previsão é apresentada com faixa de incerteza + score para deixar claro que **não** é anúncio oficial da empresa.
+- Não altero nada em fundamentos, preço, TradingView ou consenso de analistas.
