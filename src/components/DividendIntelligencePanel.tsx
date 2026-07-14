@@ -219,6 +219,44 @@ export function DividendIntelligencePanel({ stock }: Props) {
         )}
       </div>
 
+      {/* Análise por IA (Gemini) */}
+      <AiCard
+        loading={aiLoading}
+        result={ai}
+        onRun={async () => {
+          setAiLoading(true);
+          try {
+            const r = await callAi({
+              data: {
+                ticker: stock.ticker,
+                nome: stock.nome,
+                setor: stock.setor,
+                ultimosEventos: historico
+                  .filter((e) => e.valor > 0 && (e.tipo === "Dividendo" || e.tipo === "JCP"))
+                  .slice(0, 10)
+                  .map((e) => ({ tipo: e.tipo, valor: e.valor, dataCom: e.dataCom })),
+                proximaDataComEstimada: intel?.next.proximaDataComEstimada ?? null,
+                frequencia: intel?.next.frequencia,
+                score: intel?.score,
+                classificacao: intel?.classification,
+              },
+            });
+            setAi(r);
+          } catch {
+            setAi({
+              content: null,
+              cached: false,
+              updatedAt: new Date().toISOString(),
+              error: "Falha ao contatar o servidor.",
+            });
+          } finally {
+            setAiLoading(false);
+          }
+        }}
+      />
+
+
+
       {/* Provisionados oficiais */}
       <div className="rounded-lg border border-border/60 bg-card p-4">
         <div className="mb-3 flex items-center gap-2">
