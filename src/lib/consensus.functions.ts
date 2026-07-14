@@ -33,11 +33,91 @@ function normalizeTicker(ticker: string): string {
   return t.endsWith(".SA") ? t : `${t}.SA`;
 }
 
+// Yahoo exige um "crumb" + cookies para quoteSummary.
+// Guardamos por isolate do Worker; expira em 30 min.
+interface YahooAuth {
+  crumb: string;
+  cookie: string;
+  expiresAt: number;
+}
+let cachedAuth: YahooAuth | null = null;
+let authPromise: Promise<YahooAuth | null> | null = null;
+
+async function fetchYahooAuth(): Promise<YahooAuth | null> {
+  try {
+    // 1) Semear cookies.
+    const seed = await fetch("https://fc.yahoo.com/", {
+      headers: { "user-agent": UA, accept: "text/html" },
+      redirect: "manual",
+    });
+    let cookies = extractCookies(seed.headers);
+    if (cookies.length === 0) {
+      const seed2 = await fetch("https://finance.yahoo.com/quote/AAPL/", {
+        headers: { "user-agent": UA, accept: "text/html" },
+        redirect: "manual",
+      });
+      cookies = extractCookies(seed2.headers);
+    }
+    if (cookies.length === 0) return null;
+    const cookieHeader = cookies.join("; ");
+
+    // 2) Buscar crumb.
+    const crumbRes = await fetch(
+      "https://query2.finance.yahoo.com/v1/test/getcrumb",
+      {
+        headers: {
+          "user-agent": UA,
+          cookie: cookieHeader,
+          accept: "text/plain",
+        },
+      },
+    );
+    if (!crumbRes.ok) return null;
+    const crumb = (await crumbRes.text()).trim();
+    if (!crumb || crumb.length > 32 || /\s/.test(crumb)) return null;
+
+    return {
+      crumb,
+      cookie: cookieHeader,
+      expiresAt: Date.now() + 30 * 60 * 1000,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function extractCookies(headers: Headers): string[] {
+  const raw =
+    (headers as unknown as { getSetCookie?: () => string[] }).getSetCookie?.() ??
+    headers.get("set-cookie")?.split(/,(?=[^;]+=)/g) ??
+    [];
+  return raw
+    .map((c) => c.split(";")[0].trim())
+    .filter((c) => c.length > 0);
+}
+
+async function getYahooAuth(): Promise<YahooAuth | null> {
+  if (cachedAuth && cachedAuth.expiresAt > Date.now()) return cachedAuth;
+  if (authPromise) return authPromise;
+  authPromise = (async () => {
+    const auth = await fetchYahooAuth();
+    if (auth) cachedAuth = auth;
+    authPromise = null;
+    return auth;
+  })();
+  return authPromise;
+}
+
 async function fetchYahooConsensus(ticker: string): Promise<ConsensusResult> {
   const symbol = normalizeTicker(ticker);
+  const auth = await getYahooAuth();
+  if (!auth) {
+    return { ticker, available: false, reason: "Yahoo indisponível" };
+  }
+
   const url = `https://query2.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(
     symbol,
-  )}?modules=recommendationTrend`;
+  )}?modules=recommendationTrend&crumb=${encodeURIComponent(auth.crumb)}`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8_000);
@@ -48,10 +128,16 @@ async function fetchYahooConsensus(ticker: string): Promise<ConsensusResult> {
         "user-agent": UA,
         accept: "application/json,text/plain,*/*",
         "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
+        cookie: auth.cookie,
       },
       signal: controller.signal,
     });
 
+    if (res.status === 401 || res.status === 403) {
+      // Crumb pode ter expirado.
+      cachedAuth = null;
+      return { ticker, available: false, reason: "Auth expirada" };
+    }
     if (!res.ok) {
       return {
         ticker,
