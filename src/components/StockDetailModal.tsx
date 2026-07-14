@@ -450,37 +450,52 @@ function ProvisionamentoPanel({ stock }: { stock: Stock }) {
   );
 }
 
-function ConsensusPanel({ ticker }: { ticker: string }) {
-  const { data, isLoading, isError } = useAnalystConsensus(ticker);
-
+function MarketConsensusPanel({ ticker }: { ticker: string }) {
   return (
     <div className="rounded-lg border border-border/60 bg-card p-4">
       <div className="mb-3 flex items-center gap-2">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Consenso de analistas
+          Consenso do mercado
         </h3>
         <InfoTip
-          title="Como o semáforo é calculado"
-          fundamentalista="Agregamos as recomendações das principais casas (BTG, XP, Itaú BBA, JP Morgan, Morgan Stanley, Goldman, Bradesco BBI etc.) publicadas via Yahoo Finance/Refinitiv nos últimos meses. O score vai de 1 (Venda Forte) a 5 (Compra Forte)."
-          tecnica="Mudanças rápidas no consenso costumam vir após resultados trimestrais, guidance ou eventos relevantes. Combine com o gráfico: rating melhorando + tendência de alta é sinal mais robusto que rating isolado."
+          title="Dois semáforos independentes"
+          fundamentalista="À esquerda, o consenso dos analistas sell-side (BTG, XP, Itaú BBA, JPM, Morgan Stanley, Goldman etc.) via Yahoo/Refinitiv. À direita, o resumo técnico do TradingView (médias móveis + osciladores) em vários timeframes."
+          tecnica="Use os dois em conjunto: quando analistas e técnico apontam na mesma direção, o sinal é mais confiável. Divergências pedem cautela e leitura contextual (resultados, fluxo, macro)."
         />
+      </div>
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <AnalystConsensusCard ticker={ticker} />
+        <TradingViewCard ticker={ticker} />
+      </div>
+    </div>
+  );
+}
+
+function AnalystConsensusCard({ ticker }: { ticker: string }) {
+  const { data, isLoading, isError } = useAnalystConsensus(ticker);
+
+  return (
+    <div className="rounded-md border border-border/40 bg-background/40 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Analistas
+        </div>
+        <span className="text-[10px] text-muted-foreground">Yahoo/Refinitiv</span>
       </div>
 
       {isLoading ? (
         <div className="h-24 animate-pulse rounded-md bg-border/30" />
       ) : isError || !data ? (
-        <p className="text-sm text-muted-foreground">
-          Não foi possível carregar o consenso agora.
-        </p>
+        <p className="text-sm text-muted-foreground">Não foi possível carregar.</p>
       ) : !isConsensusAvailable(data) ? (
         <p className="text-sm text-muted-foreground">
-          Sem cobertura de analistas para este ativo no Yahoo Finance ({data.reason}).
+          Sem cobertura de analistas ({data.reason}).
         </p>
       ) : (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-4">
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
             <div
-              className="rounded-lg border px-4 py-2 text-center"
+              className="rounded-lg border px-3 py-1.5 text-center"
               style={{
                 borderColor: RATING_META[data.rating].border,
                 background: RATING_META[data.rating].bg,
@@ -490,20 +505,19 @@ function ConsensusPanel({ ticker }: { ticker: string }) {
               <div className="text-[10px] font-semibold uppercase tracking-wide">
                 {RATING_META[data.rating].label}
               </div>
-              <div className="font-mono text-2xl font-bold leading-tight">
+              <div className="font-mono text-xl font-bold leading-tight">
                 {formatScore(data.score)}
               </div>
-              <div className="text-[10px] text-muted-foreground">score 1–5</div>
+              <div className="text-[9px] text-muted-foreground">score 1–5</div>
             </div>
-            <div className="text-xs text-muted-foreground">
+            <div className="text-[11px] text-muted-foreground">
               <div>
                 <span className="font-semibold text-foreground">
                   {data.totalAnalysts}
                 </span>{" "}
-                casas cobrindo (último mês)
+                casas · último mês
               </div>
-              <div className="mt-1 flex items-center gap-1">
-                Tendência:
+              <div className="mt-0.5 flex items-center gap-1">
                 {data.trend > 0.05 ? (
                   <>
                     <TrendingUp
@@ -511,7 +525,7 @@ function ConsensusPanel({ ticker }: { ticker: string }) {
                       style={{ color: "var(--color-success)" }}
                     />
                     <span style={{ color: "var(--color-success)" }}>
-                      +{data.trend.toFixed(2)} vs. meses anteriores
+                      melhorando (+{data.trend.toFixed(2)})
                     </span>
                   </>
                 ) : data.trend < -0.05 ? (
@@ -521,7 +535,7 @@ function ConsensusPanel({ ticker }: { ticker: string }) {
                       style={{ color: "var(--color-danger)" }}
                     />
                     <span style={{ color: "var(--color-danger)" }}>
-                      {data.trend.toFixed(2)} vs. meses anteriores
+                      piorando ({data.trend.toFixed(2)})
                     </span>
                   </>
                 ) : (
@@ -531,45 +545,151 @@ function ConsensusPanel({ ticker }: { ticker: string }) {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-md border border-border/40">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Período</TableHead>
-                  <TableHead className="text-right">Compra Forte</TableHead>
-                  <TableHead className="text-right">Compra</TableHead>
-                  <TableHead className="text-right">Neutro</TableHead>
-                  <TableHead className="text-right">Venda</TableHead>
-                  <TableHead className="text-right">Venda Forte</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.months.map((m) => (
-                  <TableRow key={m.period}>
-                    <TableCell className="font-mono">{m.period}</TableCell>
-                    <TableCell className="text-right font-mono">{m.strongBuy}</TableCell>
-                    <TableCell className="text-right font-mono">{m.buy}</TableCell>
-                    <TableCell className="text-right font-mono">{m.hold}</TableCell>
-                    <TableCell className="text-right font-mono">{m.sell}</TableCell>
-                    <TableCell className="text-right font-mono">{m.strongSell}</TableCell>
-                    <TableCell className="text-right font-mono font-semibold">
-                      {m.total}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          <p className="text-xs text-muted-foreground">
-            Fonte: Yahoo Finance / Refinitiv. Conteúdo educacional, não é recomendação de
-            investimento.
-          </p>
+          <RatingDistributionBar
+            segments={[
+              { pct: data.distribution.strongBuy, color: "var(--color-success)", opacity: 1 },
+              { pct: data.distribution.buy, color: "var(--color-success)", opacity: 0.65 },
+              { pct: data.distribution.hold, color: "var(--color-warning)", opacity: 0.9 },
+              { pct: data.distribution.sell, color: "var(--color-danger)", opacity: 0.65 },
+              { pct: data.distribution.strongSell, color: "var(--color-danger)", opacity: 1 },
+            ]}
+          />
         </div>
       )}
     </div>
   );
 }
+
+function TradingViewCard({ ticker }: { ticker: string }) {
+  const { data, isLoading, isError } = useTradingViewTechnical(ticker);
+  const [tf, setTf] = useState<TvTimeframe>("1D");
+
+  return (
+    <div className="rounded-md border border-border/40 bg-background/40 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Técnico
+        </div>
+        <span className="text-[10px] text-muted-foreground">
+          TradingView · tempo real
+        </span>
+      </div>
+
+      {isLoading ? (
+        <div className="h-24 animate-pulse rounded-md bg-border/30" />
+      ) : isError || !data ? (
+        <p className="text-sm text-muted-foreground">Não foi possível carregar.</p>
+      ) : !isTvAvailable(data) ? (
+        <p className="text-sm text-muted-foreground">
+          Sem sinal técnico ({data.reason}).
+        </p>
+      ) : (() => {
+        const current = data.signals.find((s) => s.timeframe === tf) ?? data.signals[0];
+        if (!current) {
+          return (
+            <p className="text-sm text-muted-foreground">Sem sinal para este timeframe.</p>
+          );
+        }
+        const meta = RATING_META[current.rating];
+        const metaMA = RATING_META[current.ratingMA];
+        const metaOsc = RATING_META[current.ratingOsc];
+        return (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {TV_TIMEFRAMES.map((t) => {
+                const sig = data.signals.find((s) => s.timeframe === t.key);
+                const active = t.key === tf;
+                const dotColor = sig ? RATING_META[sig.rating].color : "var(--color-border)";
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setTf(t.key)}
+                    className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] transition"
+                    style={{
+                      borderColor: active ? meta.color : "var(--color-border)",
+                      background: active ? meta.bg : "transparent",
+                      color: active
+                        ? meta.color
+                        : "var(--color-muted-foreground)",
+                    }}
+                    title={sig ? RATING_META[sig.rating].label : "sem dado"}
+                  >
+                    <span
+                      className="inline-block h-1.5 w-1.5 rounded-full"
+                      style={{ background: dotColor }}
+                    />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div
+                className="rounded-lg border px-3 py-1.5 text-center"
+                style={{
+                  borderColor: meta.border,
+                  background: meta.bg,
+                  color: meta.color,
+                }}
+              >
+                <div className="text-[10px] font-semibold uppercase tracking-wide">
+                  {meta.label}
+                </div>
+                <div className="font-mono text-xl font-bold leading-tight">
+                  {(current.overall >= 0 ? "+" : "") + current.overall.toFixed(2)}
+                </div>
+                <div className="text-[9px] text-muted-foreground">-1 a +1</div>
+              </div>
+              <div className="grid gap-1 text-[11px]">
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Médias:</span>
+                  <span style={{ color: metaMA.color }}>{metaMA.label}</span>
+                  <span className="font-mono text-muted-foreground">
+                    ({(current.ma >= 0 ? "+" : "") + current.ma.toFixed(2)})
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-muted-foreground">Oscilad.:</span>
+                  <span style={{ color: metaOsc.color }}>{metaOsc.label}</span>
+                  <span className="font-mono text-muted-foreground">
+                    ({(current.oscillators >= 0 ? "+" : "") + current.oscillators.toFixed(2)})
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p className="text-[10px] text-muted-foreground">
+              Réplica do resumo técnico exibido em{" "}
+              <span className="font-mono">tradingview.com/.../technicals/</span>.
+            </p>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
+function RatingDistributionBar({
+  segments,
+}: {
+  segments: { pct: number; color: string; opacity: number }[];
+}) {
+  return (
+    <div className="flex h-2 w-full overflow-hidden rounded-full bg-border/40">
+      {segments.map((s, i) =>
+        s.pct > 0 ? (
+          <div
+            key={i}
+            title={`${s.pct.toFixed(0)}%`}
+            style={{ width: `${s.pct}%`, background: s.color, opacity: s.opacity }}
+          />
+        ) : null,
+      )}
+    </div>
+  );
+}
+
 
 
