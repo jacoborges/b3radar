@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
+import ReactMarkdown from "react-markdown";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -16,6 +21,10 @@ import {
   classMeta,
   type EventoTipo,
 } from "@/lib/dividend-intelligence";
+import {
+  analyzeDividendsWithGemini,
+  type DividendAiResult,
+} from "@/lib/dividend-ai.functions";
 
 interface Props {
   stock: Stock;
