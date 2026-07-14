@@ -12,11 +12,17 @@ import { computeDividendStats } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
 import { useAnalystConsensus } from "@/hooks/use-consensus";
+import { useTradingViewTechnical } from "@/hooks/use-tradingview";
 import {
   RATING_META,
   formatScore,
   isConsensusAvailable,
 } from "@/lib/consensus-rating";
+import {
+  TV_TIMEFRAMES,
+  isTvAvailable,
+  type TvTimeframe,
+} from "@/lib/tradingview-rating";
 import { InfoTip } from "./InfoTip";
 import { DebtSemaphore } from "./DebtSemaphore";
 import {
