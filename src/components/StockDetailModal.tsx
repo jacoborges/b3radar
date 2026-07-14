@@ -284,7 +284,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
               <ProvisionamentoPanel stock={stock} />
 
-              <ConsensusPanel ticker={stock.ticker} />
+              <MarketConsensusPanel ticker={stock.ticker} />
             </div>
 
 
