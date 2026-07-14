@@ -6,7 +6,7 @@ import {
   Settings,
   TrendingUp,
   TrendingDown,
-  Gauge,
+  
   X,
 } from "lucide-react";
 
