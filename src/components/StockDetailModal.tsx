@@ -344,10 +344,6 @@ function HistoryCard({
   );
 }
 
-function fmtDate(iso: string) {
-  const [y, m, d] = iso.split("-");
-  return `${d}/${m}/${y}`;
-}
 
 
 function MarketConsensusPanel({ ticker }: { ticker: string }) {
