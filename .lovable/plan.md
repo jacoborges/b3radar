@@ -1,64 +1,77 @@
-## Objetivo
+## Camada 1 — Semáforo de Consenso de Analistas (Yahoo Finance, grátis)
 
-Fazer o app se adaptar automaticamente à largura da tela (do celular ~360px ao desktop wide), sem scroll horizontal indesejado, sem texto cortado e sem "espremer" tabela de 10 colunas em 384px. A ideia é **reflow real**, não só `overflow-x`.
+Novo botão "Consenso" no header e rota `/consenso` com ranking baseado nas recomendações agregadas das principais casas (BTG, XP, Itaú BBA, JP Morgan, Morgan Stanley, Goldman, Bradesco BBI etc.) via Yahoo Finance/Refinitiv.
 
-## Diagnóstico atual
+### Fonte de dados
 
-- **Header (`src/routes/index.tsx`)**: título + 2 badges + campo de busca + 2 selects + botão de filtro + botão de configurações competem por espaço; em 384px os selects/botões quebram feio.
-- **Tabela de ativos** (`StockTable`): 10 colunas fixas (Ticker, Preço, Dia, 6 indicadores, Dívida). Em mobile vira barra de scroll horizontal — o usuário perde a coluna do ticker ao rolar.
-- **Modal de detalhe (`StockDetailModal`)**: grids `md:grid-cols-4` e `md:grid-cols-5` só quebram a partir de 768px; entre 400–767px ficam com 2 colunas apertadas e valores truncando.
-- **Chart do TradingView**: altura fixa `h-[320px]` mobile / `h-[480px]` desktop — ok, mas dá pra usar `aspect-ratio` para acompanhar melhor.
-- **Tabelas de provisionamento**: 5 colunas com datas — em mobile o `overflow-x-auto` atual serve, mas dá pra melhorar.
+**Yahoo Finance** — endpoint público sem token:
+`https://query2.finance.yahoo.com/v10/finance/quoteSummary/{TICKER}.SA?modules=recommendationTrend,financialData`
 
-## Estratégia
+- Chamada server-side (server fn) com User-Agent de browser real.
+- Retorna `recommendationTrend.trend[]` — contagens dos últimos 4 períodos mensais: `strongBuy`, `buy`, `hold`, `sell`, `strongSell`.
+- Também traz `financialData.recommendationKey` e `recommendationMean` (score consolidado atual da Yahoo).
 
-Mobile-first com breakpoints do Tailwind (`sm` 640, `md` 768, `lg` 1024, `xl` 1280). Usar `grid-cols-[minmax(0,1fr)_auto]` + `min-w-0` + `shrink-0` + `truncate` conforme o guia de responsive-layout. Em mobile, a tabela deixa de ser tabela e vira **lista de cards**; em `md+` volta a ser tabela.
+### "Tempo real" — o que isso significa aqui
 
-## Mudanças por arquivo
+Recomendações de analistas **não mudam a cada segundo** — casas revisam ratings quando saem resultados, guidance ou eventos relevantes (frequência típica: semanal a mensal por papel). O Yahoo agrega e republica em tempo quase real conforme as casas emitem.
 
-### 1. `src/routes/index.tsx` — Header
-- Envolver título/badges em um bloco `min-w-0` com `truncate` nos textos longos; badges com `shrink-0`.
-- Barra de controles: em mobile, busca ocupa 100% em uma linha; selects + filtro + settings numa segunda linha usando `flex flex-wrap` com botões `flex-1 min-w-0`.
-- Selects de largura fixa (`w-[110px]`, `w-[170px]`) viram `w-full sm:w-[110px]` etc.
-- Chips de filtros ativos já usam `flex-wrap`; adicionar `max-w-full` e `truncate` no valor.
+Estratégia de frescor:
+- **Server fn sem cache HTTP** (`cache-control: no-store`) → sempre bate no Yahoo.
+- **TanStack Query no cliente** com `staleTime: 5 min` + `refetchInterval: 5 min` → atualiza sozinho a cada 5 min enquanto a aba `/consenso` está aberta.
+- Botão "Atualizar agora" no header da rota força `refetch` imediato.
+- Timestamp visível: "Atualizado há X segundos".
 
-### 2. `src/routes/index.tsx` — `StockTable` (mudança principal)
-Componente ganha dois modos:
-- **`< md` (mobile/tablet estreito)**: renderiza uma **lista de cards** (`div` empilhado). Cada card tem:
-  - Linha 1: `Ticker` (grande, mono) + `Preço` + `Variação Dia` (à direita, cor).
-  - Linha 2: grid `grid-cols-3 gap-2` com os 3 indicadores mais importantes (DY, P/L, ROE) + semáforo de dívida como pill.
-  - Toque no card = mesmo `onSelect(s)`.
-- **`>= md`**: tabela atual, mas com colunas priorizadas e classes `hidden lg:table-cell` nos indicadores menos importantes (P/VP, LPA, Margem…), de modo que em `md` mostre 4 colunas e em `lg+` mostre as 6.
-- Remove o `overflow-x-auto` no modo card; mantém no modo tabela como safety net.
+Sem cache HTTP + ~990 tickers = risco de rate limit. Mitigações:
+- Lotes de 8 tickers em paralelo, 300ms entre lotes.
+- Só carrega tickers do setor filtrado (default: mostrar top 50 por liquidez até o usuário filtrar).
+- Fallback silencioso: 429/5xx marcam ticker como "atualização pendente" sem quebrar o grid.
 
-### 3. `src/components/StockDetailModal.tsx`
-- Grids de cards de preço: `grid-cols-2 sm:grid-cols-4` (em vez de `md:grid-cols-4`) — 2 colunas confortáveis em qualquer mobile, 4 a partir de 640px.
-- Histórico D-1/D-7/D-30: `grid-cols-1 sm:grid-cols-3`.
-- Indicadores fundamentais: `grid-cols-2 sm:grid-cols-3 lg:grid-cols-5`.
-- Provisionamento: usar `grid-cols-2 sm:grid-cols-3` nos 3 KPIs; a tabela mantém `overflow-x-auto`, mas com `text-xs sm:text-sm` para caber melhor.
-- Chart do TradingView: trocar `h-[320px] md:h-[480px]` por `aspect-[4/3] sm:aspect-[16/10] max-h-[70vh]` para acompanhar a proporção da tela.
-- `DialogContent`: `max-w-6xl w-[95vw] max-h-[92vh]` já é fluido; nada a mudar.
+### Lógica do semáforo
 
-### 4. `src/components/DividendChart.tsx` (verificação)
-Os charts já são `ResponsiveContainer width="100%"`. Só garantir que o wrapper pai não force largura mínima. Adicionar `min-w-0` no card contêiner se necessário.
+Agrega os 4 últimos períodos mensais retornados pelo Yahoo (≈ últimos 4 meses, janela mais recente disponível — Yahoo não expõe histórico de 24m por esse endpoint; assumimos os dados mais atuais como o retrato do consenso).
 
-### 5. `src/styles.css`
-Nenhuma nova variável de tema. Opcional: adicionar `@utility no-scrollbar` para esconder scrollbar horizontal em containers de badges/tags quando eles ainda precisarem de scroll em telas muito estreitas (não crítico).
+`score = (5×SB + 4×B + 3×H + 2×S + 1×SS) / total`
 
-## O que **não** muda
+| Rating | Faixa | Cor |
+|---|---|---|
+| Compra Forte | score ≥ 4.3 | verde intenso |
+| Compra | 3.5 ≤ score < 4.3 | verde |
+| Neutro | 2.5 ≤ score < 3.5 | amarelo |
+| Venda | 1.7 ≤ score < 2.5 | laranja |
+| Venda Forte | score < 1.7 | vermelho |
 
-- Lógica de dados, filtros, ordenação, hooks (`useAllStocks`, `useLiveQuotes`, `useTickerData`).
-- Fonte dos dados (Fundamentus/B3/brapi).
-- Rotas, server functions, cache.
-- Cores, tipografia, tema dark — só layout/reflow.
+Extras exibidos: total de casas, distribuição em barra empilhada (SB/B/H/S/SS), seta de tendência (último mês vs. média dos 3 anteriores).
 
-## Validação
+### Arquivos
 
-1. Preview em **mobile 384px** (viewport atual do usuário): verificar header sem overflow, cards de ativo legíveis, modal com 2 colunas.
-2. Preview em **tablet 768px**: tabela volta com 4 colunas de indicadores.
-3. Preview em **desktop 1280px**: tabela com todas as 6 colunas + grids `lg:grid-cols-5` no modal.
-4. Screenshot via Playwright em 3 larguras (390 / 768 / 1440) para confirmar que nada corta.
+**Novos:**
+- `src/lib/consensus.functions.ts` — server fns:
+  - `getAnalystConsensus(ticker)`: fetch Yahoo, normaliza, calcula score/rating/tendência. Timeout 8s. `no-store`.
+  - `getConsensusBatch(tickers[])`: processa em lotes de 8 com 300ms, retorna `Record<ticker, ConsensusData | { available: false, reason }>`.
+- `src/lib/consensus-rating.ts` — helpers puros client-safe: `scoreToRating(score)`, cores (tokens semânticos existentes: `success`, `warning`, `danger`), labels PT-BR, formatação.
+- `src/hooks/use-consensus.ts` — `useAnalystConsensus(ticker)` (single, usado no modal, staleTime 5min) e `useConsensusBatch(tickers)` (batch, refetchInterval 5min, usado na rota).
+- `src/routes/consenso.tsx` — rota dedicada:
+  - `head()` próprio (title, description, og).
+  - Cabeçalho: título, disclaimer breve, badge "Atualizado há Xs", botão "Atualizar agora".
+  - Filtros: chips por rating (Compra Forte / Compra / Neutro / Venda / Venda Forte), select de setor.
+  - Grid responsivo (mesmo padrão de `/`): cards com ticker, nome, setor, badge grande colorido do rating, score numérico, nº de casas, barra empilhada da distribuição, seta de tendência.
+  - Ordenação default: score desc.
+  - Loading progressivo (mostra tickers já retornados enquanto lotes seguintes carregam).
+  - Clique no card abre `StockDetailModal`.
+  - Disclaimer no rodapé: "Consenso agregado via Yahoo Finance/Refinitiv. Conteúdo educacional, não é recomendação de investimento."
 
-## Risco
+**Editar:**
+- `src/routes/index.tsx` — botão `<Link to="/consenso">` no header com ícone `Gauge`, ao lado de "Configurações".
+- `src/components/StockDetailModal.tsx` — nova seção "Consenso de analistas" após "Provisionamento": semáforo grande com score/rating, distribuição empilhada, mini-tabela com as leituras mensais brutas retornadas pelo Yahoo. Usa `useAnalystConsensus(ticker)` on-demand.
 
-- Transformar tabela em cards altera a densidade em mobile — algumas colunas (P/VP, LPA) só aparecerão ao abrir o modal. É a única forma de caber em 360–400px sem scroll horizontal. Se você preferir manter a tabela sempre, posso ao invés disso reduzir font-size + esconder colunas progressivamente, mas fica menos legível.
+### Limitações honestas
+
+- Tickers `.SA` cobrem ações; units (final 11), FIIs e BDRs frequentemente retornam vazio no Yahoo — tratados como "sem cobertura".
+- Endpoint Yahoo é não-oficial; se mudar, a rota degrada graciosamente para estado vazio.
+- Rate limit do Yahoo é por IP do Worker; se houver bloqueio pontual, TanStack Query faz retry automático no próximo ciclo de 5 min.
+
+### Fora do escopo
+
+- Carteiras CVM/ANBIMA (Camada 2).
+- Alertas de mudança de rating.
+- Histórico maior que os 4 períodos que o Yahoo devolve.
