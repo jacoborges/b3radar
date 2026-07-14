@@ -1,5 +1,10 @@
 import { useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
+import { Link } from "@tanstack/react-router";
+import ReactMarkdown from "react-markdown";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -16,6 +21,10 @@ import {
   classMeta,
   type EventoTipo,
 } from "@/lib/dividend-intelligence";
+import {
+  analyzeDividendsWithGemini,
+  type DividendAiResult,
+} from "@/lib/dividend-ai.functions";
 
 interface Props {
   stock: Stock;
@@ -48,6 +57,9 @@ export function DividendIntelligencePanel({ stock }: Props) {
   const { proventos, isLoading, isFetching } = useTickerData(stock.ticker);
   const [filtro, setFiltro] = useState<"ALL" | EventoTipo>("ALL");
   const [showAll, setShowAll] = useState(false);
+  const callAi = useServerFn(analyzeDividendsWithGemini);
+  const [ai, setAi] = useState<DividendAiResult | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   const historico = proventos?.historicoCompleto ?? [];
   const intel = useMemo(
@@ -206,6 +218,44 @@ export function DividendIntelligencePanel({ stock }: Props) {
           </div>
         )}
       </div>
+
+      {/* Análise por IA (Gemini) */}
+      <AiCard
+        loading={aiLoading}
+        result={ai}
+        onRun={async () => {
+          setAiLoading(true);
+          try {
+            const r = await callAi({
+              data: {
+                ticker: stock.ticker,
+                nome: stock.nome,
+                setor: stock.setor,
+                ultimosEventos: historico
+                  .filter((e) => e.valor > 0 && (e.tipo === "Dividendo" || e.tipo === "JCP"))
+                  .slice(0, 10)
+                  .map((e) => ({ tipo: e.tipo, valor: e.valor, dataCom: e.dataCom })),
+                proximaDataComEstimada: intel?.next.proximaDataComEstimada ?? null,
+                frequencia: intel?.next.frequencia,
+                score: intel?.score,
+                classificacao: intel?.classification,
+              },
+            });
+            setAi(r);
+          } catch {
+            setAi({
+              content: null,
+              cached: false,
+              updatedAt: new Date().toISOString(),
+              error: "Falha ao contatar o servidor.",
+            });
+          } finally {
+            setAiLoading(false);
+          }
+        }}
+      />
+
+
 
       {/* Provisionados oficiais */}
       <div className="rounded-lg border border-border/60 bg-card p-4">
@@ -407,3 +457,83 @@ function BreakdownItem({ label, v }: { label: string; v: number }) {
     </div>
   );
 }
+
+function AiCard({
+  loading,
+  result,
+  onRun,
+}: {
+  loading: boolean;
+  result: DividendAiResult | null;
+  onRun: () => void;
+}) {
+  const needsKey =
+    result?.error?.toLowerCase().includes("chave do gemini não configurada") ?? false;
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-card p-4">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h4 className="text-sm font-semibold">Análise por IA (Gemini)</h4>
+        <InfoTip
+          title="Como funciona"
+          fundamentalista="Envia o histórico oficial da B3 deste ativo para o Google Gemini, que devolve um resumo da política de dividendos e possíveis eventos anunciados no RI. Resposta cacheada por 24h por ticker."
+          tecnica="Usa a sua chave gratuita do Gemini (aistudio.google.com/apikey), sem consumir créditos da Lovable. Confirme sempre no RI oficial antes de decidir."
+        />
+        <div className="ml-auto flex items-center gap-2">
+          {result?.cached && (
+            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              cache 24h
+            </span>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={onRun}
+            disabled={loading}
+            className="gap-2"
+          >
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            {loading ? "Analisando…" : result ? "Analisar novamente" : "Analisar com IA"}
+          </Button>
+        </div>
+      </div>
+
+      {!result && !loading && (
+        <p className="text-sm text-muted-foreground">
+          Clique em <strong>Analisar com IA</strong> para gerar um resumo da política de
+          dividendos e dos próximos eventos anunciados no RI deste ativo.
+        </p>
+      )}
+
+      {result?.error && (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+          {result.error}
+          {needsKey && (
+            <div className="mt-2 text-xs">
+              <Link to="/configuracoes" className="underline underline-offset-2">
+                Abrir configurações →
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {result?.content && (
+        <>
+          <div className="prose prose-sm prose-invert max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-headings:text-sm prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+            <ReactMarkdown>{result.content}</ReactMarkdown>
+          </div>
+          <p className="mt-3 text-[11px] text-muted-foreground">
+            Gerado por IA a partir de dados públicos. Confirme no RI oficial antes de decidir.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
