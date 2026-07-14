@@ -11,6 +11,12 @@ import type { Stock } from "@/lib/stocks-data";
 import { computeDividendStats } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
+import { useAnalystConsensus } from "@/hooks/use-consensus";
+import {
+  RATING_META,
+  formatScore,
+  isConsensusAvailable,
+} from "@/lib/consensus-rating";
 import { InfoTip } from "./InfoTip";
 import { DebtSemaphore } from "./DebtSemaphore";
 import {
@@ -18,6 +24,7 @@ import {
   DividendVsSelicChart,
   PriceVsSelicChart,
 } from "./DividendChart";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -270,6 +277,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </div>
 
               <ProvisionamentoPanel stock={stock} />
+
+              <ConsensusPanel ticker={stock.ticker} />
             </div>
 
 
