@@ -32,14 +32,6 @@ import {
 } from "./DividendChart";
 import { DividendIntelligencePanel } from "./DividendIntelligencePanel";
 import { TrendingDown, TrendingUp } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 interface Props {
   stock: Stock | null;
