@@ -1,103 +1,50 @@
-# Módulo de inteligência de proventos
+# Análise IA de Proventos via Gemini (grátis, chave própria)
 
-Objetivo: transformar a seção "Provisionamento de novos dividendos" numa camada analítica e criar uma rota dedicada `/dividendos` com ranking de qualidade e histórico completo por ticker.
+Adicionar botão **"Analisar com IA"** no painel Inteligência de Proventos, chamando a API do Google Gemini diretamente com a sua chave — sem passar pelo Lovable AI Gateway, sem consumir créditos Lovable.
 
-## 1. Coleta de dados (B3 — mesmo proxy já usado)
+## Fluxo do usuário
 
-Estender `src/lib/proventos.functions.ts` (renomear internamente ou dividir em `proventos-b3.server.ts` + `proventos.functions.ts`):
+1. Você cria a chave gratuita em `https://aistudio.google.com/apikey` (leva 1 minuto, precisa só de conta Google).
+2. Cola no formulário seguro que o app abrir. Fica salva como `GEMINI_API_KEY` nos secrets do projeto.
+3. No modal de qualquer ativo, seção Inteligência de Proventos, aparece o botão **"Analisar com IA"**.
+4. Clica → server function chama Gemini → resposta em markdown aparece abaixo.
+5. Se você não configurou a chave ainda, o botão explica onde pegar e leva pra tela de configurações.
 
-- `GetListedCashDividends` → dividendos e JCP (já existe).
-- `GetListedSupplementCompany` / `GetListedStockDividends` → **bonificações, grupamentos, desdobramentos** (novo).
-- Unificar em um único retorno `TickerProventosCompleto`:
-  - `historico`: 5 anos (dividendo, JCP) — já existe.
-  - `historicoCompleto`: lista bruta ordenada por data com `{ tipo: 'Dividendo'|'JCP'|'Bonificacao'|'Grupamento'|'Desdobramento', valor, ratio, dataCom, dataEx, dataPagamento, dataAprovacao }`.
-  - `provisionados`: eventos futuros já anunciados (já existe, adiciona eventos societários).
-- Cache 1h no Worker (mantém `stale-while-revalidate`).
+## O que a IA vai retornar
 
-Nova server fn `getProventosBatch({ tickers })` para a rota de ranking: retorna só métricas agregadas por ticker (freq, gap médio, DY 12m, score) — sem histórico bruto, para caber em uma requisição.
+Duas seções curtas em markdown, geradas a partir do prompt + histórico real da B3 que enviamos:
 
-## 2. Modelo de previsão + score
+- **Política de dividendos** — frequência declarada, payout alvo, padrão histórico recente.
+- **Próximos eventos anunciados no RI** — dividendos/JCP aprovados e ainda não pagos, quando o modelo conhecer.
 
-Novo módulo `src/lib/dividend-intelligence.ts` (puro, sem IO):
+Rodapé fixo: *"Gerado por IA a partir de dados públicos. Confirme no RI oficial antes de decidir."*
 
-**Estimativa do próximo pagamento** (função `estimateNextPayout(historicoCompleto)`):
-- Detecta frequência dominante (mensal / trimestral / semestral / anual / irregular) por gap mediano entre datas COM dos últimos 24 meses.
-- Próxima data COM esperada = última data COM + gap mediano.
-- Faixa esperada de valor = mediana e IQR (p25–p75) dos últimos N pagamentos do mesmo tipo, corrigidos pelo crescimento CAGR simples.
-- Retorna `{ proximaDataComEstimada, faixaValor: [min, esperado, max], tipoProvavel, confiabilidade }`.
+Modelo: `gemini-2.5-flash` (grátis, rápido, contexto grande). Endpoint REST direto:
+`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=...`
 
-**Score de confiabilidade (0–100)** — média ponderada de:
-- Regularidade (desvio padrão dos gaps / gap mediano) — peso 35.
-- Anos consecutivos pagando — peso 25.
-- Consistência de valor (1 − coef. variação) — peso 20.
-- Cobertura por lucro (payout ≤ 100%, usando `margemLiquida` como proxy) — peso 10.
-- Ausência de cortes bruscos (>50% ano/ano) — peso 10.
+## Cache 24h (em memória)
 
-**Classificação** (função `classifyDividendQuality(score, freq)`):
-- 80+ e ≥ trimestral → "Elite"
-- 65–79 → "Consistente"
-- 45–64 → "Regular"
-- 20–44 → "Irregular"
-- <20 ou sem histórico → "Sem cobertura"
+- Server function mantém um `Map<ticker, {content, ts}>` no módulo.
+- Se `Date.now() - ts < 24h`, devolve do cache. Senão, chama Gemini, salva, devolve.
+- Simples, zero setup, sem banco. Reset quando o worker recicla (aceitável — pior caso é uma chamada extra à API do Google, que é grátis).
 
-## 3. UI dentro do modal (`StockDetailModal.tsx`)
+## Erros tratados
 
-Substituir a seção atual "Provisionamento de novos dividendos" por **"Inteligência de proventos"**, dividida em três blocos empilhados:
+- Chave ausente → mensagem clara com link para `/configuracoes`.
+- 429 do Google (limite diário estourou) → "Limite gratuito do Gemini atingido, tente novamente mais tarde."
+- Timeout/rede → "Não foi possível gerar a análise agora."
 
-```text
-┌ Próximo pagamento (previsto) ──────────────────────┐
-│ Tipo provável: Dividendo  •  Frequência: Trimestral│
-│ Data COM esperada: 12/03/2026 (± 8 dias)           │
-│ Faixa de valor: R$ 0,18 – R$ 0,24 (mediana 0,21)   │
-│ Confiabilidade: ●●●●○ 78/100 — Consistente         │
-└────────────────────────────────────────────────────┘
+## Arquivos
 
-┌ Provisionados oficiais (já anunciados) ────────────┐
-│ (tabela atual — mantém como está)                  │
-└────────────────────────────────────────────────────┘
+- `src/lib/dividend-ai.functions.ts` — nova server function `analyzeDividendsWithGemini` (POST, valida ticker + recebe contexto já calculado localmente, monta prompt PT-BR, chama Gemini REST, cacheia 24h).
+- `src/components/DividendIntelligencePanel.tsx` — botão "Analisar com IA", estado loading/erro, render markdown (usa `react-markdown`; se não estiver instalado, adicionar).
+- `src/routes/configuracoes.tsx` — adicionar seção "Chave Gemini (opcional)" com link para o AI Studio e botão para salvar via `add_secret`.
+- `package.json` — adicionar `react-markdown` se ausente.
 
-┌ Histórico completo de eventos ─────────────────────┐
-│ Filtro: [Todos] [Div] [JCP] [Bonif] [Split] [Grup] │
-│ Tabela paginada: Data COM · Tipo · Valor/Ratio ·   │
-│ Data Ex · Pagamento                                │
-└────────────────────────────────────────────────────┘
-```
+Nenhum arquivo existente é reescrito além dessas adições pontuais. Sem alterações no schema de dados, sem Lovable Cloud, sem custo de créditos.
 
-O bloco de previsão fica visualmente destacado (borda accent) e deixa explícito que é **estimativa estatística**, não anúncio oficial.
+## Fora do escopo
 
-## 4. Nova rota `/dividendos`
-
-`src/routes/dividendos.tsx` — ranking de qualidade de proventos:
-
-- Header com filtros: setor, classificação (Elite / Consistente / Regular / Irregular), frequência mínima, DY mínimo.
-- Tabela ordenável por: Score, DY 12m, Frequência, Anos consecutivos, Próxima data COM.
-- Cada linha clicável abre o `StockDetailModal` já existente do ativo, rolando direto para a seção "Inteligência de proventos".
-- Usa `getProventosBatch` com `useQuery` (staleTime 1h). Fallback progressivo: mostra os 200 ativos com maior liquidez primeiro.
-- `head()` próprio: title "Ranking de proventos — B3 Radar", description específica.
-
-Botão "Proventos" volta ao header em `src/routes/index.tsx` (mesma posição do antigo "Consenso" que foi removido).
-
-## 5. Alertas
-
-Fora do escopo por decisão sua. Nenhum badge, push ou e-mail nesta fase.
-
-## Arquivos afetados
-
-**Novos**
-- `src/lib/dividend-intelligence.ts` — modelo de previsão + score + classificação (puro).
-- `src/hooks/use-dividend-batch.ts` — batch para a rota de ranking.
-- `src/routes/dividendos.tsx` — nova rota.
-- `src/components/DividendIntelligencePanel.tsx` — bloco reutilizável do modal.
-
-**Editados**
-- `src/lib/proventos.functions.ts` — passa a buscar também bonificações/grupamentos/desdobramentos e a retornar `historicoCompleto`. Adiciona `getProventosBatch`.
-- `src/lib/stocks-data.ts` — adiciona tipos `EventoSocietario`, `TickerProventosCompleto`, `DividendQuality`.
-- `src/components/StockDetailModal.tsx` — troca a seção atual pelo novo `<DividendIntelligencePanel />`.
-- `src/routes/index.tsx` — reintroduz botão "Proventos" no header apontando para `/dividendos`.
-
-## Notas técnicas
-
-- Sem novos secrets, sem Lovable Cloud (tudo derivado do que a B3 já expõe publicamente).
-- Toda a inteligência (previsão + score) roda no cliente sobre o payload cacheado — sem custo extra de infra.
-- A previsão é apresentada com faixa de incerteza + score para deixar claro que **não** é anúncio oficial da empresa.
-- Não altero nada em fundamentos, preço, TradingView ou consenso de analistas.
+- Não vamos scrapear sites de RI de cada empresa (formato diferente por empresa, quebra fácil).
+- Não vamos ativar Lovable Cloud nem persistir análises em banco.
+- Análise permanece sob demanda por ativo — sem rodar em massa para os 950+ tickers.
