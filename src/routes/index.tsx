@@ -6,7 +6,7 @@ import {
   Settings,
   TrendingUp,
   TrendingDown,
-  Gauge,
+  
   X,
 } from "lucide-react";
 
@@ -273,18 +273,8 @@ function HomePage() {
                 setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
               />
 
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="shrink-0 gap-2 border-border/60 bg-input/60"
-                title="Consenso de analistas"
-              >
-                <Link to="/consenso" aria-label="Consenso de analistas">
-                  <Gauge className="h-4 w-4" />
-                  <span className="hidden sm:inline">Consenso</span>
-                </Link>
-              </Button>
+
+
 
               <Button
                 asChild
