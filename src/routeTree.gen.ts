@@ -9,15 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ConsensoRouteImport } from './routes/consenso'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
 
-const ConsensoRoute = ConsensoRouteImport.update({
-  id: '/consenso',
-  path: '/consenso',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
   id: '/configuracoes',
   path: '/configuracoes',
@@ -32,42 +26,31 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/consenso': typeof ConsensoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/consenso': typeof ConsensoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
-  '/consenso': typeof ConsensoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/configuracoes' | '/consenso'
+  fullPaths: '/' | '/configuracoes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/configuracoes' | '/consenso'
-  id: '__root__' | '/' | '/configuracoes' | '/consenso'
+  to: '/' | '/configuracoes'
+  id: '__root__' | '/' | '/configuracoes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
-  ConsensoRoute: typeof ConsensoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/consenso': {
-      id: '/consenso'
-      path: '/consenso'
-      fullPath: '/consenso'
-      preLoaderRoute: typeof ConsensoRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/configuracoes': {
       id: '/configuracoes'
       path: '/configuracoes'
@@ -88,7 +71,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
-  ConsensoRoute: ConsensoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
