@@ -11,6 +11,12 @@ import type { Stock } from "@/lib/stocks-data";
 import { computeDividendStats } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
+import { useAnalystConsensus } from "@/hooks/use-consensus";
+import {
+  RATING_META,
+  formatScore,
+  isConsensusAvailable,
+} from "@/lib/consensus-rating";
 import { InfoTip } from "./InfoTip";
 import { DebtSemaphore } from "./DebtSemaphore";
 import {
@@ -18,6 +24,7 @@ import {
   DividendVsSelicChart,
   PriceVsSelicChart,
 } from "./DividendChart";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -270,6 +277,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </div>
 
               <ProvisionamentoPanel stock={stock} />
+
+              <ConsensusPanel ticker={stock.ticker} />
             </div>
 
 
@@ -431,6 +440,128 @@ function ProvisionamentoPanel({ stock }: { stock: Stock }) {
           </>
         )}
       </div>
+    </div>
+  );
+}
+
+function ConsensusPanel({ ticker }: { ticker: string }) {
+  const { data, isLoading, isError } = useAnalystConsensus(ticker);
+
+  return (
+    <div className="rounded-lg border border-border/60 bg-card p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Consenso de analistas
+        </h3>
+        <InfoTip
+          title="Como o semáforo é calculado"
+          fundamentalista="Agregamos as recomendações das principais casas (BTG, XP, Itaú BBA, JP Morgan, Morgan Stanley, Goldman, Bradesco BBI etc.) publicadas via Yahoo Finance/Refinitiv nos últimos meses. O score vai de 1 (Venda Forte) a 5 (Compra Forte)."
+          tecnica="Mudanças rápidas no consenso costumam vir após resultados trimestrais, guidance ou eventos relevantes. Combine com o gráfico: rating melhorando + tendência de alta é sinal mais robusto que rating isolado."
+        />
+      </div>
+
+      {isLoading ? (
+        <div className="h-24 animate-pulse rounded-md bg-border/30" />
+      ) : isError || !data ? (
+        <p className="text-sm text-muted-foreground">
+          Não foi possível carregar o consenso agora.
+        </p>
+      ) : !isConsensusAvailable(data) ? (
+        <p className="text-sm text-muted-foreground">
+          Sem cobertura de analistas para este ativo no Yahoo Finance ({data.reason}).
+        </p>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div
+              className="rounded-lg border px-4 py-2 text-center"
+              style={{
+                borderColor: RATING_META[data.rating].border,
+                background: RATING_META[data.rating].bg,
+                color: RATING_META[data.rating].color,
+              }}
+            >
+              <div className="text-[10px] font-semibold uppercase tracking-wide">
+                {RATING_META[data.rating].label}
+              </div>
+              <div className="font-mono text-2xl font-bold leading-tight">
+                {formatScore(data.score)}
+              </div>
+              <div className="text-[10px] text-muted-foreground">score 1–5</div>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <div>
+                <span className="font-semibold text-foreground">
+                  {data.totalAnalysts}
+                </span>{" "}
+                casas cobrindo (último mês)
+              </div>
+              <div className="mt-1 flex items-center gap-1">
+                Tendência:
+                {data.trend > 0.05 ? (
+                  <>
+                    <TrendingUp
+                      className="h-3 w-3"
+                      style={{ color: "var(--color-success)" }}
+                    />
+                    <span style={{ color: "var(--color-success)" }}>
+                      +{data.trend.toFixed(2)} vs. meses anteriores
+                    </span>
+                  </>
+                ) : data.trend < -0.05 ? (
+                  <>
+                    <TrendingDown
+                      className="h-3 w-3"
+                      style={{ color: "var(--color-danger)" }}
+                    />
+                    <span style={{ color: "var(--color-danger)" }}>
+                      {data.trend.toFixed(2)} vs. meses anteriores
+                    </span>
+                  </>
+                ) : (
+                  <span>estável</span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto rounded-md border border-border/40">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Período</TableHead>
+                  <TableHead className="text-right">Compra Forte</TableHead>
+                  <TableHead className="text-right">Compra</TableHead>
+                  <TableHead className="text-right">Neutro</TableHead>
+                  <TableHead className="text-right">Venda</TableHead>
+                  <TableHead className="text-right">Venda Forte</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.months.map((m) => (
+                  <TableRow key={m.period}>
+                    <TableCell className="font-mono">{m.period}</TableCell>
+                    <TableCell className="text-right font-mono">{m.strongBuy}</TableCell>
+                    <TableCell className="text-right font-mono">{m.buy}</TableCell>
+                    <TableCell className="text-right font-mono">{m.hold}</TableCell>
+                    <TableCell className="text-right font-mono">{m.sell}</TableCell>
+                    <TableCell className="text-right font-mono">{m.strongSell}</TableCell>
+                    <TableCell className="text-right font-mono font-semibold">
+                      {m.total}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            Fonte: Yahoo Finance / Refinitiv. Conteúdo educacional, não é recomendação de
+            investimento.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
