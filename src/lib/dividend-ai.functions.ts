@@ -27,7 +27,9 @@ export interface DividendAiResult {
   cached: boolean;
   updatedAt: string;
   error: string | null;
+  citations?: string[];
 }
+
 
 const CACHE = new Map<string, { content: string; ts: number }>();
 const TTL_MS = 24 * 60 * 60 * 1000;
