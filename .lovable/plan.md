@@ -1,50 +1,54 @@
-# Análise IA de Proventos via Gemini (grátis, chave própria)
 
-Adicionar botão **"Analisar com IA"** no painel Inteligência de Proventos, chamando a API do Google Gemini diretamente com a sua chave — sem passar pelo Lovable AI Gateway, sem consumir créditos Lovable.
+# Análise de proventos via Perplexity (busca real em RI/CVM/B3)
 
-## Fluxo do usuário
+Sim, dá pra fazer. A Perplexity está disponível como **connector padrão do Lovable** — ela faz busca web em tempo real e retorna resposta com citações. Diferente do Gemini (que só usa o conhecimento do treinamento), a Perplexity de fato consulta as páginas de RI da empresa, portal da CVM e site da B3 na hora da pergunta.
 
-1. Você cria a chave gratuita em `https://aistudio.google.com/apikey` (leva 1 minuto, precisa só de conta Google).
-2. Cola no formulário seguro que o app abrir. Fica salva como `GEMINI_API_KEY` nos secrets do projeto.
-3. No modal de qualquer ativo, seção Inteligência de Proventos, aparece o botão **"Analisar com IA"**.
-4. Clica → server function chama Gemini → resposta em markdown aparece abaixo.
-5. Se você não configurou a chave ainda, o botão explica onde pegar e leva pra tela de configurações.
+## Como vai funcionar pro usuário
 
-## O que a IA vai retornar
+No painel **Inteligência de Proventos** (dentro do modal de cada ativo), além do botão "Analisar com IA" (Gemini) que já existe, entra um segundo botão: **"Buscar no RI/CVM/B3 (Perplexity)"**.
 
-Duas seções curtas em markdown, geradas a partir do prompt + histórico real da B3 que enviamos:
+Ao clicar:
+1. Server function chama a Perplexity com `search_domain_filter` restrito a fontes oficiais.
+2. Resposta em markdown aparece abaixo, com **lista de fontes clicáveis** (RI da empresa, CVM, B3, fatos relevantes).
+3. Cache de 24h em memória por ticker (mesmo padrão do Gemini já implementado).
 
-- **Política de dividendos** — frequência declarada, payout alvo, padrão histórico recente.
-- **Próximos eventos anunciados no RI** — dividendos/JCP aprovados e ainda não pagos, quando o modelo conhecer.
+## O que a Perplexity vai retornar
 
-Rodapé fixo: *"Gerado por IA a partir de dados públicos. Confirme no RI oficial antes de decidir."*
+Três seções curtas, geradas a partir do prompt + histórico real da B3 que já calculamos localmente:
 
-Modelo: `gemini-2.5-flash` (grátis, rápido, contexto grande). Endpoint REST direto:
-`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=...`
+- **Política de dividendos oficial** — o que consta no site de RI da empresa (frequência, payout mínimo estatutário).
+- **Eventos aprovados e pendentes** — dividendos/JCP declarados em fato relevante, com Data COM, Data EX, valor por ação e data de pagamento, extraídos das fontes oficiais.
+- **Fontes consultadas** — links diretos (RI, CVM, B3) para o usuário validar.
 
-## Cache 24h (em memória)
+Rodapé fixo: *"Dados extraídos por IA de fontes públicas. Confirme no RI oficial antes de operar."*
 
-- Server function mantém um `Map<ticker, {content, ts}>` no módulo.
-- Se `Date.now() - ts < 24h`, devolve do cache. Senão, chama Gemini, salva, devolve.
-- Simples, zero setup, sem banco. Reset quando o worker recicla (aceitável — pior caso é uma chamada extra à API do Google, que é grátis).
+## Configuração da chave
 
-## Erros tratados
+Perplexity é um connector — o usuário clica em **conectar** uma vez (não precisa gerar chave manual, não precisa pagar cartão pra testar; Perplexity oferece créditos iniciais). A chave vira `PERPLEXITY_API_KEY` no ambiente do servidor automaticamente.
 
-- Chave ausente → mensagem clara com link para `/configuracoes`.
-- 429 do Google (limite diário estourou) → "Limite gratuito do Gemini atingido, tente novamente mais tarde."
-- Timeout/rede → "Não foi possível gerar a análise agora."
+Se a chave/conexão não estiver linkada, o botão mostra mensagem clara: "Conecte a Perplexity nas configurações do projeto".
+
+## Detalhes técnicos
+
+- **Modelo**: `sonar` (rápido, barato, tem busca web nativa). `sonar-pro` opcional se a resposta ficar rasa.
+- **Filtros de busca**: `search_domain_filter` com sites do RI conhecidos + `ri.` + `cvm.gov.br` + `b3.com.br` + `-reddit.com`, `-twitter.com`.
+- **Recency**: `search_recency_filter: 'month'` pra priorizar fatos relevantes recentes.
+- **Endpoint**: `https://api.perplexity.ai/chat/completions` (chamada REST direta do servidor, mesma abordagem do Gemini).
+- **Erros tratados**:
+  - `401 insufficient_quota` → "Créditos Perplexity esgotados. Adicione crédito em console.perplexity.ai."
+  - `429` → "Limite momentâneo, tente em alguns segundos."
+  - Sem chave → CTA pra conectar.
 
 ## Arquivos
 
-- `src/lib/dividend-ai.functions.ts` — nova server function `analyzeDividendsWithGemini` (POST, valida ticker + recebe contexto já calculado localmente, monta prompt PT-BR, chama Gemini REST, cacheia 24h).
-- `src/components/DividendIntelligencePanel.tsx` — botão "Analisar com IA", estado loading/erro, render markdown (usa `react-markdown`; se não estiver instalado, adicionar).
-- `src/routes/configuracoes.tsx` — adicionar seção "Chave Gemini (opcional)" com link para o AI Studio e botão para salvar via `add_secret`.
-- `package.json` — adicionar `react-markdown` se ausente.
+- `src/lib/dividend-ai.functions.ts` — adicionar nova server function `analyzeDividendsWithPerplexity` ao lado da já existente `analyzeDividendsWithGemini`. Cache separado (`Map` próprio, TTL 24h).
+- `src/components/DividendIntelligencePanel.tsx` — segundo botão "Buscar no RI/CVM/B3", com seu próprio estado loading/erro e render markdown + lista de citações.
+- Connector Perplexity — linkado via ferramenta de connectors (não é edição de código; roda no momento da implementação).
 
-Nenhum arquivo existente é reescrito além dessas adições pontuais. Sem alterações no schema de dados, sem Lovable Cloud, sem custo de créditos.
+Nenhum arquivo existente é reescrito além dessas adições pontuais. O botão Gemini atual continua funcionando; os dois convivem — Gemini é offline/instantâneo, Perplexity é online/com fontes.
 
 ## Fora do escopo
 
-- Não vamos scrapear sites de RI de cada empresa (formato diferente por empresa, quebra fácil).
-- Não vamos ativar Lovable Cloud nem persistir análises em banco.
-- Análise permanece sob demanda por ativo — sem rodar em massa para os 950+ tickers.
+- Não vamos rodar Perplexity em massa nos 994 tickers (custo e rate limit — Perplexity é paga por chamada após os créditos gratuitos).
+- Não vamos persistir análises em banco (cache em memória já basta).
+- Não vamos substituir o botão Gemini — ficam os dois.
