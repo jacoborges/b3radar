@@ -176,3 +176,179 @@ Regras:
       };
     }
   });
+
+// =============================================================
+// Perplexity — busca real em RI da empresa, CVM e B3
+// =============================================================
+
+const PPLX_CACHE = new Map<string, { content: string; ts: number; citations: string[] }>();
+
+interface PerplexityResponse {
+  choices?: Array<{ message?: { content?: string } }>;
+  citations?: string[];
+  error?: { message?: string };
+}
+
+export const analyzeDividendsWithPerplexity = createServerFn({ method: "POST" })
+  .inputValidator((data) => inputSchema.parse(data))
+  .handler(async ({ data }): Promise<DividendAiResult> => {
+    setResponseHeader("cache-control", "no-store");
+
+    const apiKey = process.env.PERPLEXITY_API_KEY;
+    if (!apiKey) {
+      return {
+        content: null,
+        cached: false,
+        updatedAt: new Date().toISOString(),
+        error:
+          "Conector Perplexity não está linkado ao projeto. Peça ao Lovable para conectar Perplexity.",
+      };
+    }
+
+    const cached = PPLX_CACHE.get(data.ticker);
+    if (cached && Date.now() - cached.ts < TTL_MS) {
+      return {
+        content: cached.content,
+        cached: true,
+        updatedAt: new Date(cached.ts).toISOString(),
+        error: null,
+        citations: cached.citations,
+      };
+    }
+
+    const eventosTxt =
+      data.ultimosEventos && data.ultimosEventos.length
+        ? data.ultimosEventos
+            .map(
+              (e) =>
+                `- ${e.dataCom ?? "s/ data"} · ${e.tipo} · R$ ${e.valor.toFixed(4)}`,
+            )
+            .join("\n")
+        : "(sem histórico enviado)";
+
+    const userPrompt = `Ativo: ${data.ticker}${data.nome ? ` (${data.nome})` : ""}
+Setor: ${data.setor ?? "não informado"}
+
+Últimos pagamentos já conhecidos (Data COM · Tipo · Valor por ação):
+${eventosTxt}
+
+Pesquise **agora** nas fontes oficiais (site de Relações com Investidores da empresa, portal da CVM em cvm.gov.br, site da B3 em b3.com.br, fatos relevantes e comunicados ao mercado) e responda em português brasileiro, em markdown, com EXATAMENTE três seções nesta ordem:
+
+## Política de dividendos oficial
+2 a 4 frases citando o que consta no site de RI da empresa: frequência declarada, payout mínimo estatutário ou alvo, periodicidade histórica. Se não localizar publicamente, escreva "não localizado nas fontes consultadas".
+
+## Eventos aprovados e pendentes
+Liste dividendos ou JCP **já aprovados pela companhia e ainda não pagos** que você encontrar em fato relevante, comunicado ao mercado ou aviso na B3. Formato:
+- **Tipo** · Data COM · Data EX · Valor por ação · Data de pagamento · (fonte curta)
+
+Se não houver eventos pendentes localizados, escreva: "Sem eventos pendentes localizados nas fontes oficiais consultadas."
+
+## Observações
+Uma linha curta sobre a última atualização relevante encontrada (data do último fato relevante sobre proventos).
+
+Regras estritas:
+- Não invente datas, valores ou fatos relevantes. Se não achar, diga que não achou.
+- Priorize fontes oficiais sobre agregadores.
+- Máximo 220 palavras no total.`;
+
+    try {
+      const res = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [
+            {
+              role: "system",
+              content:
+                "Você é um analista de renda variável brasileira. Consulta apenas fontes oficiais (RI da empresa, CVM, B3) e nunca inventa datas ou valores. Responde em português brasileiro, conciso.",
+            },
+            { role: "user", content: userPrompt },
+          ],
+          temperature: 0.2,
+          max_tokens: 700,
+          search_recency_filter: "month",
+          search_domain_filter: [
+            "cvm.gov.br",
+            "b3.com.br",
+            "rad.cvm.gov.br",
+            "sistemaswebb3-listados.b3.com.br",
+            "-reddit.com",
+            "-twitter.com",
+            "-x.com",
+          ],
+        }),
+      });
+
+      if (res.status === 429) {
+        return {
+          content: null,
+          cached: false,
+          updatedAt: new Date().toISOString(),
+          error: "Limite momentâneo da Perplexity atingido. Tente novamente em alguns segundos.",
+        };
+      }
+      if (res.status === 401) {
+        const body = await res.text();
+        if (body.includes("insufficient_quota")) {
+          return {
+            content: null,
+            cached: false,
+            updatedAt: new Date().toISOString(),
+            error:
+              "Créditos da Perplexity esgotados. Adicione crédito em console.perplexity.ai (créditos de API são separados do Perplexity Pro).",
+          };
+        }
+        return {
+          content: null,
+          cached: false,
+          updatedAt: new Date().toISOString(),
+          error: "Chave da Perplexity inválida. Reconecte o conector.",
+        };
+      }
+      if (!res.ok) {
+        const body = await res.text();
+        console.error("[perplexity] http", res.status, body);
+        return {
+          content: null,
+          cached: false,
+          updatedAt: new Date().toISOString(),
+          error: `Falha na API da Perplexity (HTTP ${res.status}).`,
+        };
+      }
+
+      const json = (await res.json()) as PerplexityResponse;
+      const text = json.choices?.[0]?.message?.content?.trim();
+      const citations = Array.isArray(json.citations) ? json.citations.slice(0, 10) : [];
+
+      if (!text) {
+        return {
+          content: null,
+          cached: false,
+          updatedAt: new Date().toISOString(),
+          error: json.error?.message ?? "Resposta vazia da Perplexity.",
+        };
+      }
+
+      PPLX_CACHE.set(data.ticker, { content: text, ts: Date.now(), citations });
+      return {
+        content: text,
+        cached: false,
+        updatedAt: new Date().toISOString(),
+        error: null,
+        citations,
+      };
+    } catch (err) {
+      console.error("[analyzeDividendsWithPerplexity] failed", data.ticker, err);
+      return {
+        content: null,
+        cached: false,
+        updatedAt: new Date().toISOString(),
+        error: "Não foi possível contatar a Perplexity agora.",
+      };
+    }
+  });
+
