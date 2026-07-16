@@ -60,8 +60,12 @@ export function DividendIntelligencePanel({ stock }: Props) {
   const [filtro, setFiltro] = useState<"ALL" | EventoTipo>("ALL");
   const [showAll, setShowAll] = useState(false);
   const callAi = useServerFn(analyzeDividendsWithGemini);
+  const callPplx = useServerFn(analyzeDividendsWithPerplexity);
   const [ai, setAi] = useState<DividendAiResult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [pplx, setPplx] = useState<DividendAiResult | null>(null);
+  const [pplxLoading, setPplxLoading] = useState(false);
+
 
   const historico = proventos?.historicoCompleto ?? [];
   const intel = useMemo(
