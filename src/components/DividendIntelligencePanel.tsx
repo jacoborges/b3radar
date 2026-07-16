@@ -23,8 +23,10 @@ import {
 } from "@/lib/dividend-intelligence";
 import {
   analyzeDividendsWithGemini,
+  analyzeDividendsWithPerplexity,
   type DividendAiResult,
 } from "@/lib/dividend-ai.functions";
+
 
 interface Props {
   stock: Stock;
