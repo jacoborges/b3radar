@@ -23,8 +23,10 @@ import {
 } from "@/lib/dividend-intelligence";
 import {
   analyzeDividendsWithGemini,
+  analyzeDividendsWithPerplexity,
   type DividendAiResult,
 } from "@/lib/dividend-ai.functions";
+
 
 interface Props {
   stock: Stock;
@@ -58,8 +60,12 @@ export function DividendIntelligencePanel({ stock }: Props) {
   const [filtro, setFiltro] = useState<"ALL" | EventoTipo>("ALL");
   const [showAll, setShowAll] = useState(false);
   const callAi = useServerFn(analyzeDividendsWithGemini);
+  const callPplx = useServerFn(analyzeDividendsWithPerplexity);
   const [ai, setAi] = useState<DividendAiResult | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [pplx, setPplx] = useState<DividendAiResult | null>(null);
+  const [pplxLoading, setPplxLoading] = useState(false);
+
 
   const historico = proventos?.historicoCompleto ?? [];
   const intel = useMemo(
@@ -221,6 +227,9 @@ export function DividendIntelligencePanel({ stock }: Props) {
 
       {/* Análise por IA (Gemini) */}
       <AiCard
+        title="Análise por IA (Gemini)"
+        description="Resumo da política de dividendos deste ativo baseado no conhecimento do modelo, usando sua chave gratuita do Gemini."
+        ctaLabel="Analisar com IA"
         loading={aiLoading}
         result={ai}
         onRun={async () => {
@@ -254,6 +263,46 @@ export function DividendIntelligencePanel({ stock }: Props) {
           }
         }}
       />
+
+      {/* Busca ao vivo (Perplexity) — RI, CVM e B3 */}
+      <AiCard
+        title="Busca no RI / CVM / B3 (Perplexity)"
+        description="Pesquisa em tempo real nas fontes oficiais: site de RI da empresa, portal da CVM e site da B3, para localizar dividendos e JCP aprovados e ainda não pagos."
+        ctaLabel="Buscar no RI/CVM/B3"
+        loading={pplxLoading}
+        result={pplx}
+        onRun={async () => {
+          setPplxLoading(true);
+          try {
+            const r = await callPplx({
+              data: {
+                ticker: stock.ticker,
+                nome: stock.nome,
+                setor: stock.setor,
+                ultimosEventos: historico
+                  .filter((e) => e.valor > 0 && (e.tipo === "Dividendo" || e.tipo === "JCP"))
+                  .slice(0, 10)
+                  .map((e) => ({ tipo: e.tipo, valor: e.valor, dataCom: e.dataCom })),
+                proximaDataComEstimada: intel?.next.proximaDataComEstimada ?? null,
+                frequencia: intel?.next.frequencia,
+                score: intel?.score,
+                classificacao: intel?.classification,
+              },
+            });
+            setPplx(r);
+          } catch {
+            setPplx({
+              content: null,
+              cached: false,
+              updatedAt: new Date().toISOString(),
+              error: "Falha ao contatar o servidor.",
+            });
+          } finally {
+            setPplxLoading(false);
+          }
+        }}
+      />
+
 
 
 
@@ -459,10 +508,16 @@ function BreakdownItem({ label, v }: { label: string; v: number }) {
 }
 
 function AiCard({
+  title,
+  description,
+  ctaLabel,
   loading,
   result,
   onRun,
 }: {
+  title: string;
+  description: string;
+  ctaLabel: string;
   loading: boolean;
   result: DividendAiResult | null;
   onRun: () => void;
@@ -474,12 +529,7 @@ function AiCard({
     <div className="rounded-lg border border-border/60 bg-card p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Sparkles className="h-4 w-4 text-primary" />
-        <h4 className="text-sm font-semibold">Análise por IA (Gemini)</h4>
-        <InfoTip
-          title="Como funciona"
-          fundamentalista="Envia o histórico oficial da B3 deste ativo para o Google Gemini, que devolve um resumo da política de dividendos e possíveis eventos anunciados no RI. Resposta cacheada por 24h por ticker."
-          tecnica="Usa a sua chave gratuita do Gemini (aistudio.google.com/apikey), sem consumir créditos da Lovable. Confirme sempre no RI oficial antes de decidir."
-        />
+        <h4 className="text-sm font-semibold">{title}</h4>
         <div className="ml-auto flex items-center gap-2">
           {result?.cached && (
             <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
@@ -498,16 +548,13 @@ function AiCard({
             ) : (
               <Sparkles className="h-3.5 w-3.5" />
             )}
-            {loading ? "Analisando…" : result ? "Analisar novamente" : "Analisar com IA"}
+            {loading ? "Analisando…" : result ? "Atualizar" : ctaLabel}
           </Button>
         </div>
       </div>
 
       {!result && !loading && (
-        <p className="text-sm text-muted-foreground">
-          Clique em <strong>Analisar com IA</strong> para gerar um resumo da política de
-          dividendos e dos próximos eventos anunciados no RI deste ativo.
-        </p>
+        <p className="text-sm text-muted-foreground">{description}</p>
       )}
 
       {result?.error && (
@@ -528,6 +575,28 @@ function AiCard({
           <div className="prose prose-sm prose-invert max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-headings:text-sm prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0">
             <ReactMarkdown>{result.content}</ReactMarkdown>
           </div>
+          {result.citations && result.citations.length > 0 && (
+            <div className="mt-3 border-t border-border/40 pt-2">
+              <div className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                Fontes consultadas
+              </div>
+              <ol className="space-y-0.5 text-xs">
+                {result.citations.map((url, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="font-mono text-muted-foreground">[{i + 1}]</span>
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="truncate text-primary underline underline-offset-2 hover:opacity-80"
+                    >
+                      {url}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
           <p className="mt-3 text-[11px] text-muted-foreground">
             Gerado por IA a partir de dados públicos. Confirme no RI oficial antes de decidir.
           </p>
@@ -536,4 +605,5 @@ function AiCard({
     </div>
   );
 }
+
 
