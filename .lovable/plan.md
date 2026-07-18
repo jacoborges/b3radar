@@ -1,54 +1,30 @@
+## Objetivo
+Ajustar a busca Perplexity na aba **Inteligência de proventos** para:
+1. Usar consulta no formato `"<NOME_EMPRESA/TICKER>" + RI + dividendos + fatos relevantes`.
+2. Exibir o resultado como a Perplexity mostra: texto corrido com citações numeradas `[1] [2]` inline, e a lista de links das fontes clicáveis abaixo.
 
-# Análise de proventos via Perplexity (busca real em RI/CVM/B3)
+## Mudanças
 
-Sim, dá pra fazer. A Perplexity está disponível como **connector padrão do Lovable** — ela faz busca web em tempo real e retorna resposta com citações. Diferente do Gemini (que só usa o conhecimento do treinamento), a Perplexity de fato consulta as páginas de RI da empresa, portal da CVM e site da B3 na hora da pergunta.
+### 1. `src/lib/dividend-ai.functions.ts` — `analyzeDividendsWithPerplexity`
+- Trocar o `userPrompt` estruturado (3 seções fixas) por uma **query de busca** simples:
+  ```
+  "<nome da empresa>" (<TICKER>) RI dividendos fatos relevantes
+  ```
+  Ex.: `"Banco do Brasil" (BBAS3) RI dividendos fatos relevantes`.
+- Ajustar o `system` para: "Responda em português, cite as fontes com marcadores numéricos [1], [2] etc. no texto, priorize site de RI, CVM e B3, não invente valores/datas."
+- Remover `search_recency_filter: "month"` (mensagens do usuário exigem localizar fatos relevantes recentes mas também política vigente; deixar padrão amplo).
+- Manter `search_domain_filter` atual (RI/CVM/B3 e blacklist redes sociais).
+- Manter cache 24h, tratamento de 401/429, retorno de `citations`.
 
-## Como vai funcionar pro usuário
-
-No painel **Inteligência de Proventos** (dentro do modal de cada ativo), além do botão "Analisar com IA" (Gemini) que já existe, entra um segundo botão: **"Buscar no RI/CVM/B3 (Perplexity)"**.
-
-Ao clicar:
-1. Server function chama a Perplexity com `search_domain_filter` restrito a fontes oficiais.
-2. Resposta em markdown aparece abaixo, com **lista de fontes clicáveis** (RI da empresa, CVM, B3, fatos relevantes).
-3. Cache de 24h em memória por ticker (mesmo padrão do Gemini já implementado).
-
-## O que a Perplexity vai retornar
-
-Três seções curtas, geradas a partir do prompt + histórico real da B3 que já calculamos localmente:
-
-- **Política de dividendos oficial** — o que consta no site de RI da empresa (frequência, payout mínimo estatutário).
-- **Eventos aprovados e pendentes** — dividendos/JCP declarados em fato relevante, com Data COM, Data EX, valor por ação e data de pagamento, extraídos das fontes oficiais.
-- **Fontes consultadas** — links diretos (RI, CVM, B3) para o usuário validar.
-
-Rodapé fixo: *"Dados extraídos por IA de fontes públicas. Confirme no RI oficial antes de operar."*
-
-## Configuração da chave
-
-Perplexity é um connector — o usuário clica em **conectar** uma vez (não precisa gerar chave manual, não precisa pagar cartão pra testar; Perplexity oferece créditos iniciais). A chave vira `PERPLEXITY_API_KEY` no ambiente do servidor automaticamente.
-
-Se a chave/conexão não estiver linkada, o botão mostra mensagem clara: "Conecte a Perplexity nas configurações do projeto".
-
-## Detalhes técnicos
-
-- **Modelo**: `sonar` (rápido, barato, tem busca web nativa). `sonar-pro` opcional se a resposta ficar rasa.
-- **Filtros de busca**: `search_domain_filter` com sites do RI conhecidos + `ri.` + `cvm.gov.br` + `b3.com.br` + `-reddit.com`, `-twitter.com`.
-- **Recency**: `search_recency_filter: 'month'` pra priorizar fatos relevantes recentes.
-- **Endpoint**: `https://api.perplexity.ai/chat/completions` (chamada REST direta do servidor, mesma abordagem do Gemini).
-- **Erros tratados**:
-  - `401 insufficient_quota` → "Créditos Perplexity esgotados. Adicione crédito em console.perplexity.ai."
-  - `429` → "Limite momentâneo, tente em alguns segundos."
-  - Sem chave → CTA pra conectar.
-
-## Arquivos
-
-- `src/lib/dividend-ai.functions.ts` — adicionar nova server function `analyzeDividendsWithPerplexity` ao lado da já existente `analyzeDividendsWithGemini`. Cache separado (`Map` próprio, TTL 24h).
-- `src/components/DividendIntelligencePanel.tsx` — segundo botão "Buscar no RI/CVM/B3", com seu próprio estado loading/erro e render markdown + lista de citações.
-- Connector Perplexity — linkado via ferramenta de connectors (não é edição de código; roda no momento da implementação).
-
-Nenhum arquivo existente é reescrito além dessas adições pontuais. O botão Gemini atual continua funcionando; os dois convivem — Gemini é offline/instantâneo, Perplexity é online/com fontes.
+### 2. `src/components/DividendIntelligencePanel.tsx` — bloco Perplexity
+- Alterar `description` do `AiCard` do Perplexity para refletir a nova forma: "Busca ao vivo com a query `\"empresa\" RI dividendos fatos relevantes`. Resultado com citações e links das fontes."
+- Garantir que o markdown renderizado converta as citações `[1]`, `[2]` em links clicáveis para as URLs correspondentes em `result.citations`. Fazer isso via um pré-processamento simples do `content` antes do `ReactMarkdown` (substituir `[n]` por `[[n]](url)`) — já é assim que a Perplexity exibe.
+- Lista de fontes numeradas abaixo do texto (já existe no `AiCard`, apenas confirmar ordem 1..N e exibir domínio + URL).
 
 ## Fora do escopo
+- Não altera Gemini, previsão quantitativa, provisionados oficiais nem histórico.
+- Não altera schema de input do server function (mantém compatibilidade).
 
-- Não vamos rodar Perplexity em massa nos 994 tickers (custo e rate limit — Perplexity é paga por chamada após os créditos gratuitos).
-- Não vamos persistir análises em banco (cache em memória já basta).
-- Não vamos substituir o botão Gemini — ficam os dois.
+## Detalhes técnicos
+- A API Perplexity retorna `citations: string[]` na mesma ordem dos marcadores `[n]` do texto → substituição regex `/\[(\d+)\]/g` por `[[$1]](citations[n-1])` no cliente antes do render.
+- Se o modelo não emitir marcadores, o texto aparece cru e a lista de fontes segue exibida abaixo (comportamento atual preservado).
