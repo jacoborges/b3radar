@@ -216,40 +216,9 @@ export const analyzeDividendsWithPerplexity = createServerFn({ method: "POST" })
       };
     }
 
-    const eventosTxt =
-      data.ultimosEventos && data.ultimosEventos.length
-        ? data.ultimosEventos
-            .map(
-              (e) =>
-                `- ${e.dataCom ?? "s/ data"} · ${e.tipo} · R$ ${e.valor.toFixed(4)}`,
-            )
-            .join("\n")
-        : "(sem histórico enviado)";
+    const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
+    const userPrompt = `"${nomeCurto}" (${data.ticker}) RI dividendos fatos relevantes`;
 
-    const userPrompt = `Ativo: ${data.ticker}${data.nome ? ` (${data.nome})` : ""}
-Setor: ${data.setor ?? "não informado"}
-
-Últimos pagamentos já conhecidos (Data COM · Tipo · Valor por ação):
-${eventosTxt}
-
-Pesquise **agora** nas fontes oficiais (site de Relações com Investidores da empresa, portal da CVM em cvm.gov.br, site da B3 em b3.com.br, fatos relevantes e comunicados ao mercado) e responda em português brasileiro, em markdown, com EXATAMENTE três seções nesta ordem:
-
-## Política de dividendos oficial
-2 a 4 frases citando o que consta no site de RI da empresa: frequência declarada, payout mínimo estatutário ou alvo, periodicidade histórica. Se não localizar publicamente, escreva "não localizado nas fontes consultadas".
-
-## Eventos aprovados e pendentes
-Liste dividendos ou JCP **já aprovados pela companhia e ainda não pagos** que você encontrar em fato relevante, comunicado ao mercado ou aviso na B3. Formato:
-- **Tipo** · Data COM · Data EX · Valor por ação · Data de pagamento · (fonte curta)
-
-Se não houver eventos pendentes localizados, escreva: "Sem eventos pendentes localizados nas fontes oficiais consultadas."
-
-## Observações
-Uma linha curta sobre a última atualização relevante encontrada (data do último fato relevante sobre proventos).
-
-Regras estritas:
-- Não invente datas, valores ou fatos relevantes. Se não achar, diga que não achou.
-- Priorize fontes oficiais sobre agregadores.
-- Máximo 220 palavras no total.`;
 
     try {
       const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -264,21 +233,18 @@ Regras estritas:
             {
               role: "system",
               content:
-                "Você é um analista de renda variável brasileira. Consulta apenas fontes oficiais (RI da empresa, CVM, B3) e nunca inventa datas ou valores. Responde em português brasileiro, conciso.",
+                "Você é um analista de renda variável brasileira. Pesquise nas fontes oficiais (site de RI da empresa, CVM, B3) sobre política de dividendos, dividendos/JCP aprovados e fatos relevantes recentes. Responda em português brasileiro, em markdown, de forma clara e organizada. Cite as fontes usando marcadores numéricos [1], [2], [3] etc. no texto, na mesma ordem em que aparecem em citations. Nunca invente datas ou valores.",
             },
             { role: "user", content: userPrompt },
           ],
           temperature: 0.2,
-          max_tokens: 700,
-          search_recency_filter: "month",
+          max_tokens: 900,
           search_domain_filter: [
-            "cvm.gov.br",
-            "b3.com.br",
-            "rad.cvm.gov.br",
-            "sistemaswebb3-listados.b3.com.br",
             "-reddit.com",
             "-twitter.com",
             "-x.com",
+            "-facebook.com",
+            "-instagram.com",
           ],
         }),
       });

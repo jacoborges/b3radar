@@ -267,7 +267,7 @@ export function DividendIntelligencePanel({ stock }: Props) {
       {/* Busca ao vivo (Perplexity) — RI, CVM e B3 */}
       <AiCard
         title="Busca no RI / CVM / B3 (Perplexity)"
-        description="Pesquisa em tempo real nas fontes oficiais: site de RI da empresa, portal da CVM e site da B3, para localizar dividendos e JCP aprovados e ainda não pagos."
+        description={`Busca ao vivo com a query "${stock.nome.split(" ").slice(0,3).join(" ")}" (${stock.ticker}) RI dividendos fatos relevantes. O resultado vem com citações [1][2] clicáveis e a lista de fontes.`}
         ctaLabel="Buscar no RI/CVM/B3"
         loading={pplxLoading}
         result={pplx}
@@ -506,6 +506,15 @@ function BreakdownItem({ label, v }: { label: string; v: number }) {
     </div>
   );
 }
+function linkifyCitations(text: string, citations?: string[]): string {
+  if (!citations || citations.length === 0) return text;
+  return text.replace(/\[(\d+)\]/g, (m, n) => {
+    const idx = parseInt(n, 10) - 1;
+    const url = citations[idx];
+    return url ? `[[${n}]](${url})` : m;
+  });
+}
+
 
 function AiCard({
   title,
@@ -572,8 +581,18 @@ function AiCard({
 
       {result?.content && (
         <>
-          <div className="prose prose-sm prose-invert max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-headings:text-sm prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-            <ReactMarkdown>{result.content}</ReactMarkdown>
+          <div className="prose prose-sm prose-invert max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-headings:text-sm prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-a:text-primary">
+            <ReactMarkdown
+              components={{
+                a: ({ href, children }) => (
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                    {children}
+                  </a>
+                ),
+              }}
+            >
+              {linkifyCitations(result.content, result.citations)}
+            </ReactMarkdown>
           </div>
           {result.citations && result.citations.length > 0 && (
             <div className="mt-3 border-t border-border/40 pt-2">
