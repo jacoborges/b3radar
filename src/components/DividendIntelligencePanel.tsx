@@ -506,6 +506,15 @@ function BreakdownItem({ label, v }: { label: string; v: number }) {
     </div>
   );
 }
+function linkifyCitations(text: string, citations?: string[]): string {
+  if (!citations || citations.length === 0) return text;
+  return text.replace(/\[(\d+)\]/g, (m, n) => {
+    const idx = parseInt(n, 10) - 1;
+    const url = citations[idx];
+    return url ? `[[${n}]](${url})` : m;
+  });
+}
+
 
 function AiCard({
   title,
