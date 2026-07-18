@@ -572,8 +572,18 @@ function AiCard({
 
       {result?.content && (
         <>
-          <div className="prose prose-sm prose-invert max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-headings:text-sm prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-            <ReactMarkdown>{result.content}</ReactMarkdown>
+          <div className="prose prose-sm prose-invert max-w-none prose-headings:mt-3 prose-headings:mb-1 prose-headings:text-sm prose-headings:font-semibold prose-p:my-1 prose-ul:my-1 prose-li:my-0 prose-a:text-primary">
+            <ReactMarkdown
+              components={{
+                a: ({ href, children }) => (
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+                    {children}
+                  </a>
+                ),
+              }}
+            >
+              {linkifyCitations(result.content, result.citations)}
+            </ReactMarkdown>
           </div>
           {result.citations && result.citations.length > 0 && (
             <div className="mt-3 border-t border-border/40 pt-2">
