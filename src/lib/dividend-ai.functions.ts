@@ -30,9 +30,7 @@ export interface DividendAiResult {
   citations?: string[];
 }
 
-
-
-
+const TTL_MS = 24 * 60 * 60 * 1000;
 
 // =============================================================
 // Perplexity — busca real em RI da empresa, CVM e B3
