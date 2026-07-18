@@ -267,7 +267,7 @@ export function DividendIntelligencePanel({ stock }: Props) {
       {/* Busca ao vivo (Perplexity) — RI, CVM e B3 */}
       <AiCard
         title="Busca no RI / CVM / B3 (Perplexity)"
-        description="Pesquisa em tempo real nas fontes oficiais: site de RI da empresa, portal da CVM e site da B3, para localizar dividendos e JCP aprovados e ainda não pagos."
+        description={`Busca ao vivo com a query "${stock.nome.split(" ").slice(0,3).join(" ")}" (${stock.ticker}) RI dividendos fatos relevantes. O resultado vem com citações [1][2] clicáveis e a lista de fontes.`}
         ctaLabel="Buscar no RI/CVM/B3"
         loading={pplxLoading}
         result={pplx}
