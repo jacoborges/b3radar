@@ -250,13 +250,11 @@ export const analyzeDividendsWithPerplexity = createServerFn({ method: "POST" })
           temperature: 0.2,
           max_tokens: 900,
           search_domain_filter: [
-            "cvm.gov.br",
-            "b3.com.br",
-            "rad.cvm.gov.br",
-            "sistemaswebb3-listados.b3.com.br",
             "-reddit.com",
             "-twitter.com",
             "-x.com",
+            "-facebook.com",
+            "-instagram.com",
           ],
         }),
       });
