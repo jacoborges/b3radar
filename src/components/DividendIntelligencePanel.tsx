@@ -22,10 +22,10 @@ import {
   type EventoTipo,
 } from "@/lib/dividend-intelligence";
 import {
-  analyzeDividendsWithGemini,
   analyzeDividendsWithPerplexity,
   type DividendAiResult,
 } from "@/lib/dividend-ai.functions";
+
 
 
 interface Props {
@@ -59,12 +59,10 @@ export function DividendIntelligencePanel({ stock }: Props) {
   const { proventos, isLoading, isFetching } = useTickerData(stock.ticker);
   const [filtro, setFiltro] = useState<"ALL" | EventoTipo>("ALL");
   const [showAll, setShowAll] = useState(false);
-  const callAi = useServerFn(analyzeDividendsWithGemini);
   const callPplx = useServerFn(analyzeDividendsWithPerplexity);
-  const [ai, setAi] = useState<DividendAiResult | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
   const [pplx, setPplx] = useState<DividendAiResult | null>(null);
   const [pplxLoading, setPplxLoading] = useState(false);
+
 
 
   const historico = proventos?.historicoCompleto ?? [];
@@ -225,44 +223,7 @@ export function DividendIntelligencePanel({ stock }: Props) {
         )}
       </div>
 
-      {/* Análise por IA (Gemini) */}
-      <AiCard
-        title="Análise por IA (Gemini)"
-        description="Resumo da política de dividendos deste ativo baseado no conhecimento do modelo, usando sua chave gratuita do Gemini."
-        ctaLabel="Analisar com IA"
-        loading={aiLoading}
-        result={ai}
-        onRun={async () => {
-          setAiLoading(true);
-          try {
-            const r = await callAi({
-              data: {
-                ticker: stock.ticker,
-                nome: stock.nome,
-                setor: stock.setor,
-                ultimosEventos: historico
-                  .filter((e) => e.valor > 0 && (e.tipo === "Dividendo" || e.tipo === "JCP"))
-                  .slice(0, 10)
-                  .map((e) => ({ tipo: e.tipo, valor: e.valor, dataCom: e.dataCom })),
-                proximaDataComEstimada: intel?.next.proximaDataComEstimada ?? null,
-                frequencia: intel?.next.frequencia,
-                score: intel?.score,
-                classificacao: intel?.classification,
-              },
-            });
-            setAi(r);
-          } catch {
-            setAi({
-              content: null,
-              cached: false,
-              updatedAt: new Date().toISOString(),
-              error: "Falha ao contatar o servidor.",
-            });
-          } finally {
-            setAiLoading(false);
-          }
-        }}
-      />
+
 
       {/* Busca ao vivo (Perplexity) — RI, CVM e B3 */}
       <AiCard
@@ -531,8 +492,8 @@ function AiCard({
   result: DividendAiResult | null;
   onRun: () => void;
 }) {
-  const needsKey =
-    result?.error?.toLowerCase().includes("chave do gemini não configurada") ?? false;
+  const needsKey = false;
+
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-4">
