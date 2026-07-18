@@ -216,19 +216,9 @@ export const analyzeDividendsWithPerplexity = createServerFn({ method: "POST" })
       };
     }
 
-    const eventosTxt =
-      data.ultimosEventos && data.ultimosEventos.length
-        ? data.ultimosEventos
-            .map(
-              (e) =>
-                `- ${e.dataCom ?? "s/ data"} · ${e.tipo} · R$ ${e.valor.toFixed(4)}`,
-            )
-            .join("\n")
-        : "(sem histórico enviado)";
-
-    void eventosTxt;
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
     const userPrompt = `"${nomeCurto}" (${data.ticker}) RI dividendos fatos relevantes`;
+
 
     try {
       const res = await fetch("https://api.perplexity.ai/chat/completions", {
