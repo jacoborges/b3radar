@@ -492,8 +492,8 @@ function AiCard({
   result: DividendAiResult | null;
   onRun: () => void;
 }) {
-  const needsKey =
-    result?.error?.toLowerCase().includes("chave do gemini não configurada") ?? false;
+  const needsKey = false;
+
 
   return (
     <div className="rounded-lg border border-border/60 bg-card p-4">
