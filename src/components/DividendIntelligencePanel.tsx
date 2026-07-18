@@ -223,44 +223,7 @@ export function DividendIntelligencePanel({ stock }: Props) {
         )}
       </div>
 
-      {/* Análise por IA (Gemini) */}
-      <AiCard
-        title="Análise por IA (Gemini)"
-        description="Resumo da política de dividendos deste ativo baseado no conhecimento do modelo, usando sua chave gratuita do Gemini."
-        ctaLabel="Analisar com IA"
-        loading={aiLoading}
-        result={ai}
-        onRun={async () => {
-          setAiLoading(true);
-          try {
-            const r = await callAi({
-              data: {
-                ticker: stock.ticker,
-                nome: stock.nome,
-                setor: stock.setor,
-                ultimosEventos: historico
-                  .filter((e) => e.valor > 0 && (e.tipo === "Dividendo" || e.tipo === "JCP"))
-                  .slice(0, 10)
-                  .map((e) => ({ tipo: e.tipo, valor: e.valor, dataCom: e.dataCom })),
-                proximaDataComEstimada: intel?.next.proximaDataComEstimada ?? null,
-                frequencia: intel?.next.frequencia,
-                score: intel?.score,
-                classificacao: intel?.classification,
-              },
-            });
-            setAi(r);
-          } catch {
-            setAi({
-              content: null,
-              cached: false,
-              updatedAt: new Date().toISOString(),
-              error: "Falha ao contatar o servidor.",
-            });
-          } finally {
-            setAiLoading(false);
-          }
-        }}
-      />
+
 
       {/* Busca ao vivo (Perplexity) — RI, CVM e B3 */}
       <AiCard
