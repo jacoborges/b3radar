@@ -160,12 +160,12 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   variant="outline"
                   className="ml-auto border-border/60 text-xs font-normal text-muted-foreground"
                   title={
-                    isFetching
+                    isFetching || fundFetching
                       ? "Atualizando dados oficiais…"
                       : "Dados oficiais consultados sob demanda"
                   }
                 >
-                  {isFetching && !isLoading ? "↻ " : ""}
+                  {(isFetching && !isLoading) || (fundFetching && !fundLoading) ? "↻ " : ""}
                   {sourceLabel}
                 </Badge>
               </DialogTitle>
