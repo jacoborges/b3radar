@@ -1,23 +1,22 @@
-# Sliders separados para mínimo e máximo nos filtros
+# Voltar mín. e máx. para uma única régua
 
-Hoje cada parâmetro fundamentalista do `FilterSheet` usa um único slider de intervalo (dois "thumbs" arrastáveis na mesma barra). Você quer trocar isso por **dois controles deslizantes distintos** — um só para o valor mínimo e outro só para o valor máximo — em cada parâmetro.
+Trocar os dois sliders empilhados por **um único slider de intervalo** com dois thumbs (mín. e máx.) na mesma barra — mantendo a exibição numérica de cada extremo ao lado.
 
-## O que muda
+## Mudança
 
-Arquivo: `src/routes/index.tsx` (componente `FilterSheet`, bloco `FUNDAMENTAL_KEYS.map(...)`).
+Arquivo: `src/routes/index.tsx` — apenas o bloco `FUNDAMENTAL_KEYS.map(...)` do `FilterSheet`.
 
-Para cada indicador (Preço, P/L, DY, ROE, Dív/PL, CAGR, Free Float, Var. Dia/D-7/D-30, etc.), o layout passa a ter:
+Layout novo por indicador:
 
 ```text
-Indicador (?)                                      12,3 — 45,6
-  Mín.  ●────────────────────                       12,3
-  Máx.  ────────────●───────                        45,6
+Indicador (?)                                     12,3 — 45,6
+Mín 12,3   ●─────────────●   45,6 Máx
 ```
 
-- Dois `<Slider>` (do shadcn) com **um thumb cada**, um por baixo do outro.
-- Label lateral pequeno "Mín." / "Máx." e o valor numérico atual à direita de cada linha.
-- O cabeçalho do bloco continua mostrando o intervalo consolidado (`min — max`).
-- Regra de consistência: se o usuário arrastar o mín. acima do máx. atual (ou vice-versa), o outro é empurrado para acompanhar, de modo que `min ≤ max` sempre.
-- Comportamento de filtragem, chave `filters[k] = { min, max }` e o botão "Limpar" permanecem iguais — só a UI de entrada muda.
+- Um único `<Slider>` do shadcn com `value={[lo, hi]}` (dois thumbs arrastáveis independentemente na mesma régua).
+- Rótulos numéricos "Mín" à esquerda e "Máx" à direita do slider mostrando o valor atual de cada thumb.
+- Cabeçalho continua com o intervalo consolidado no canto direito.
+- Ordem `min ≤ max` já é garantida pelo Radix Slider quando os dois thumbs estão na mesma trilha, então a lógica de "empurrar" é removida.
+- Chave `filters[k] = { min, max }`, filtragem e botão "Limpar" continuam iguais.
 
-Escopo restrito: apenas o `FilterSheet` de `/` é alterado. Filtros qualitativos (Semáforo, Recorrência, Dividendo>Selic, Preço>Selic) ficam como estão.
+Escopo restrito ao `FilterSheet` de `/`. Filtros qualitativos e os sliders "Dividendo>Selic" / "Preço>Selic" (que já são single-thumb 0–5) não mudam.
