@@ -156,7 +156,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               )}
             </div>
 
-            <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
 
               <PriceCard label="Preço" value={`R$ ${stock.preco.toFixed(2)}`} />
               <PriceCard
@@ -193,7 +193,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
             </div>
 
 
-            <div className="mt-4 space-y-4">
+            <div className="mt-6 space-y-4">
               <div className="rounded-lg border border-border/60 bg-card p-4">
                 <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Indicadores Fundamentais
