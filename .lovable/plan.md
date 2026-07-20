@@ -1,39 +1,17 @@
 ## Objetivo
+Refinar a busca do Perplexity AI no painel de Inteligência de Proventos para focar no ticker e restringir os resultados à janela **ano corrente + próximos 12 meses**.
 
-Quando o usuário expande um ativo, buscar automaticamente os dados fundamentalistas mais recentes daquele ticker específico (em vez de depender apenas do snapshot global do Fundamentus, que roda com cache de 1h) e mesclá-los no modal — sem alterar a lista principal.
+## Alterações
 
-## Fonte
+### 1. `src/lib/dividend-ai.functions.ts`
+- **Query (user prompt)**: montar como `"<TICKER>" "<Nome da Empresa>" RI dividendos JCP <ano corrente>`, com aspas literais ao redor do ticker e do nome para melhorar o match nas fontes.
+- **Prompt de sistema**: instruir o modelo a listar apenas proventos cuja Data COM, Data EX ou Data de Pagamento caia entre `01/01/<ano corrente>` e `31/12/<ano corrente + 1>` (ano corrente + próximos 12 meses). Descartar explicitamente eventos anteriores; deixar claro que provisionamentos/anúncios futuros dentro dessa janela devem ser incluídos.
+- **Filtro nativo Perplexity**: enviar `search_after_date_filter: "01/01/<ano corrente>"` no body da chamada para reforçar a recência.
+- **Cache**: incluir o ano corrente na chave do cache de 24 h para não servir resposta de anos anteriores após virada de ano.
 
-Usar a página de detalhe do próprio Fundamentus: `https://www.fundamentus.com.br/detalhes.php?papel=<TICKER>`. Ela devolve, por ticker, os mesmos campos que já usamos (cotação, P/L, P/VP, DY, ROE, ROIC, margens, Dív.Bruta/Patrim., Liq.Corrente, CAGR lucros 5a, valor de mercado, liquidez média diária, patrimônio líquido). Mantém a política já acordada de "sempre Fundamentus".
-
-Fallback: se o parse falhar ou a rede cair, mantemos o `baseStock` (snapshot) como está hoje — nada quebra.
-
-## Mudanças
-
-1. **Nova server function** `getTickerFundamentus` em `src/lib/stocks.functions.ts` (mesmo arquivo do scraper da lista, para reaproveitar helpers `parseBr` / `fetch` com timeout + `iso-8859-1`).
-   - Input: `{ ticker: string }` validado com Zod.
-   - Faz `fetch` de `detalhes.php?papel=<TICKER>`, extrai as células das tabelas de "Oscilações / Indicadores fundamentalistas / Balanço patrimonial / Dados demonstrativos".
-   - Retorna um `Partial<RawStockRow>` só com os campos numéricos atualizáveis + `updatedAt` + `error`.
-   - `cache-control: public, s-maxage=900, stale-while-revalidate=3600` (15 min fresco, 1h SWR) — mais agressivo que a lista global, já que é 1 request por ticker sob demanda.
-
-2. **Novo hook** `useTickerFundamentals(ticker)` em `src/hooks/use-ticker-fundamentals.ts`.
-   - `useQuery` com `queryKey: ["fundamentus-ticker", ticker]`, `enabled: !!ticker`, `staleTime: 15 min`, `gcTime: 1h`, `refetchOnWindowFocus: false`.
-   - Chama a server function via `useServerFn`.
-
-3. **`src/components/StockDetailModal.tsx`**
-   - Chamar `useTickerFundamentals(ticker)` junto com o `useTickerData` atual.
-   - No `useMemo` do `mergedStock`, quando `data.row` chegar, sobrescrever apenas os campos numéricos vindos do Fundamentus (`preco`, `pl`, `pvp`, `dy`, `roe`, `roic`, `margemLiquida`, `margemEbit`, `divBrutaPatrimonio`, `liquidezCorrente`, `cagrLucros5a`, `valorMercado`, `liquidezDiaria`). Ticker/nome/setor/tipo continuam do snapshot.
-   - Atualizar o `sourceLabel` (e o `title` do badge) para refletir o novo estado:
-     - carregando → "Atualizando fundamentos…"
-     - ok → "Fundamentos: Fundamentus (ao vivo, HH:MM) · Proventos: B3"
-     - erro/fallback → texto atual de "offline".
-   - Manter o `↻` já existente também para `isFetching` desse hook novo.
+### 2. `src/components/DividendIntelligencePanel.tsx`
+- Atualizar rótulo do botão e o texto contextual acima do resultado para indicar a janela usada (ex.: "Buscar proventos de 2026 e próximos 12 meses no RI/CVM/B3").
+- Sem mudanças de layout, renderização das citações (`linkifyCitations`) ou fluxo de erro.
 
 ## Fora de escopo
-
-- Não altera a listagem principal nem os filtros — eles continuam usando o snapshot global (para não disparar ~1000 requests). Só o modal é "ao vivo por ticker".
-- Não mexe em proventos, TradingView, consenso, IA, layout.
-
-## Comportamento esperado
-
-- Abrir um ticker dispara 1 request extra para o Fundamentus daquele papel; o modal já pinta com o snapshot e, em ~1s, atualiza silenciosamente os cards de Preço / Valor de Mercado / Liq. Diária e a grade de Indicadores Fundamentais com os números mais recentes. Reabrir o mesmo ticker dentro de 15 min usa cache.
+- Modelo Perplexity (`sonar`), demais fontes (Fundamentus, brapi, TradingView), rota `/dividendos` e scoring de Inteligência de Proventos permanecem inalterados.
