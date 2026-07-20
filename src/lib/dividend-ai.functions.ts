@@ -101,7 +101,7 @@ Responda em português brasileiro, em markdown, de forma clara e organizada. Cit
           ],
           temperature: 0.2,
           max_tokens: 900,
-          search_after_date_filter: `01/01/${anoAtual}`,
+          search_after_date_filter: `01/01/${anoAnterior}`,
           search_domain_filter: [
             "-reddit.com",
             "-twitter.com",
