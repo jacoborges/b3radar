@@ -1,25 +1,24 @@
-# Sliders direcionais: mín. (LTR) e máx. (RTL)
+# Mín. e máx. na mesma régua, com direções opostas
 
-Voltar a ter **dois sliders separados** por indicador, mas com direções opostas:
+Uma única barra por indicador, contendo **dois thumbs no mesmo trilho**:
 
-- **Mín.** — slider da esquerda → direita. Thumb parte da esquerda; arrastar para a direita aumenta o mínimo.
-- **Máx.** — slider da direita → esquerda (`dir="rtl"`). Thumb parte da direita; arrastar para a esquerda reduz o máximo.
+- Thumb da esquerda = **mín.** — só desliza da esquerda para a direita (limitado pelo thumb do máx.).
+- Thumb da direita = **máx.** — só desliza da direita para a esquerda (limitado pelo thumb do mín.).
 
 ## Mudança
 
-Arquivo: `src/routes/index.tsx`, apenas no bloco `FUNDAMENTAL_KEYS.map(...)` do `FilterSheet`.
+Arquivo: `src/routes/index.tsx`, apenas o bloco `FUNDAMENTAL_KEYS.map(...)` do `FilterSheet`.
 
 Layout por indicador:
 
 ```text
 Indicador (?)                                    12,3 — 45,6
-Mín  ●───────────────────           12,3
-                       45,6  ───────────●  Máx
+Mín 12,3  ●═════════════●  45,6 Máx
 ```
 
-- Dois `<Slider>` empilhados, cada um com um único thumb (`value={[lo]}` e `value={[hi]}`).
-- O slider de máximo recebe `dir="rtl"` para que o thumb ocupe a direita e a barra "cresça" da direita para a esquerda; o valor numérico fica à direita.
-- Regra `min ≤ max` mantida empurrando o outro extremo quando necessário.
-- Cabeçalho, filtragem, `filters[k] = { min, max }` e botão "Limpar" continuam iguais.
+- Um único `<Slider>` do shadcn com `value={[lo, hi]}`; o Radix já garante que o thumb da esquerda nunca ultrapassa o da direita e vice-versa, produzindo exatamente o comportamento pedido (mín. → direita, máx. → esquerda).
+- À esquerda: rótulo `Mín` + valor `lo`. À direita: valor `hi` + rótulo `Máx`.
+- Cabeçalho continua mostrando o intervalo consolidado.
+- `filters[k] = { min, max }`, filtragem e "Limpar" inalterados.
 
-Escopo restrito ao `FilterSheet` de `/`. Filtros qualitativos e sliders 0–5 (Dividendo>Selic, Preço>Selic) permanecem inalterados.
+Escopo restrito ao `FilterSheet` de `/`. Filtros qualitativos e sliders 0–5 permanecem inalterados.
