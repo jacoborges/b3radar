@@ -11,6 +11,7 @@ import type { Stock } from "@/lib/stocks-data";
 import { computeDividendStats } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
+import { useTickerFundamentals } from "@/hooks/use-ticker-fundamentals";
 import { useAnalystConsensus } from "@/hooks/use-consensus";
 import { useTradingViewTechnical } from "@/hooks/use-tradingview";
 import {
