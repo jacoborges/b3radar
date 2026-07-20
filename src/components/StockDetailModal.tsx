@@ -137,64 +137,76 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="relative mt-4 aspect-[4/3] w-full overflow-hidden rounded-xl border border-border/60 bg-background sm:aspect-[16/10] sm:max-h-[70vh]">
-              {!chartLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
-                  Carregando gráfico…
-                </div>
-              )}
-              {chartUrl && (
-                <iframe
-                  key={chartUrl}
-                  title={`Gráfico TradingView ${ticker}`}
-                  src={chartUrl}
-                  className="h-full w-full border-0"
-                  allow="clipboard-write; fullscreen"
-                  referrerPolicy="origin-when-cross-origin"
-                  onLoad={() => setChartLoaded(true)}
+            <section className="mt-4 rounded-xl border border-border/60 bg-card p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Gráfico — TradingView
+                </h2>
+                <span className="text-xs text-muted-foreground">
+                  BMFBOVESPA:{ticker}
+                </span>
+              </div>
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-border/40 bg-background sm:aspect-[16/10] sm:max-h-[55vh]">
+                {!chartLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
+                    Carregando gráfico…
+                  </div>
+                )}
+                {chartUrl && (
+                  <iframe
+                    key={chartUrl}
+                    title={`Gráfico TradingView ${ticker}`}
+                    src={chartUrl}
+                    className="h-full w-full border-0"
+                    allow="clipboard-write; fullscreen"
+                    referrerPolicy="origin-when-cross-origin"
+                    onLoad={() => setChartLoaded(true)}
+                  />
+                )}
+              </div>
+            </section>
+
+            <section className="mt-8 rounded-xl border border-border/60 bg-card p-4">
+              <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                Dados e Indicadores Fundamentalistas
+              </h2>
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <PriceCard label="Preço" value={`R$ ${stock.preco.toFixed(2)}`} />
+                <PriceCard
+                  label="Variação Dia"
+                  value={`${stock.variacaoDia >= 0 ? "+" : ""}${stock.variacaoDia.toFixed(2)}%`}
+                  positive={stock.variacaoDia >= 0}
                 />
-              )}
-            </div>
+                <PriceCard
+                  label="Valor de Mercado"
+                  value={`R$ ${stock.valorMercado.toFixed(1)} bi`}
+                />
+                <PriceCard
+                  label="Liq. Diária"
+                  value={`R$ ${stock.liquidezDiaria.toFixed(0)} mi`}
+                />
+              </div>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <HistoryCard
+                  label="Fech. D-1 (ontem)"
+                  preco={stock.precoD1}
+                  variacao={stock.varD1}
+                />
+                <HistoryCard
+                  label="D-7 (semana)"
+                  preco={stock.precoD7}
+                  variacao={stock.varD7}
+                />
+                <HistoryCard
+                  label="D-30 (mês)"
+                  preco={stock.precoD30}
+                  variacao={stock.varD30}
+                />
+              </div>
 
-              <PriceCard label="Preço" value={`R$ ${stock.preco.toFixed(2)}`} />
-              <PriceCard
-                label="Variação Dia"
-                value={`${stock.variacaoDia >= 0 ? "+" : ""}${stock.variacaoDia.toFixed(2)}%`}
-                positive={stock.variacaoDia >= 0}
-              />
-              <PriceCard
-                label="Valor de Mercado"
-                value={`R$ ${stock.valorMercado.toFixed(1)} bi`}
-              />
-              <PriceCard
-                label="Liq. Diária"
-                value={`R$ ${stock.liquidezDiaria.toFixed(0)} mi`}
-              />
-            </div>
-
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <HistoryCard
-                label="Fech. D-1 (ontem)"
-                preco={stock.precoD1}
-                variacao={stock.varD1}
-              />
-              <HistoryCard
-                label="D-7 (semana)"
-                preco={stock.precoD7}
-                variacao={stock.varD7}
-              />
-              <HistoryCard
-                label="D-30 (mês)"
-                preco={stock.precoD30}
-                variacao={stock.varD30}
-              />
-            </div>
-
-
-            <div className="mt-6 space-y-4">
-              <div className="rounded-lg border border-border/60 bg-card p-4">
+              <div className="mt-6 rounded-lg border border-border/60 bg-background p-4">
                 <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Indicadores Fundamentais
                 </h3>
@@ -205,7 +217,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                     return (
                       <div
                         key={k}
-                        className="rounded-md border border-border/40 bg-background/40 p-3"
+                        className="rounded-md border border-border/40 bg-card p-3"
                       >
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           {ind.label}
@@ -226,7 +238,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
               <DebtSemaphore divPL={stock.divBrutaPatrimonio} />
 
-              <div className="rounded-lg border border-border/60 bg-card p-4">
+              <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Dividendos + JCP — últimos 5 anos
@@ -240,7 +252,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 <DividendStackedChart data={stock.dividendos} />
               </div>
 
-              <div className="rounded-lg border border-border/60 bg-card p-4">
+              <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Yield da ação vs. Selic média ponderada
@@ -254,7 +266,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 <DividendVsSelicChart data={stock.dividendos} />
               </div>
 
-              <div className="rounded-lg border border-border/60 bg-card p-4">
+              <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                     Valorização anual do ativo vs. Selic ponderada
@@ -275,10 +287,14 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 <PriceVsSelicChart data={stock.precosAnuais} />
               </div>
 
-              <DividendIntelligencePanel stock={stock} />
+              <div className="mt-4">
+                <DividendIntelligencePanel stock={stock} />
+              </div>
 
-              <MarketConsensusPanel ticker={stock.ticker} />
-            </div>
+              <div className="mt-4">
+                <MarketConsensusPanel ticker={stock.ticker} />
+              </div>
+            </section>
 
 
           </>
