@@ -61,6 +61,7 @@ export const analyzeDividendsWithPerplexity = createServerFn({ method: "POST" })
     }
 
     const anoAtual = new Date().getFullYear();
+    const anoAnterior = anoAtual - 1;
     const anoProximo = anoAtual + 1;
     const cacheKey = `${data.ticker}:${anoAtual}`;
 
@@ -76,13 +77,14 @@ export const analyzeDividendsWithPerplexity = createServerFn({ method: "POST" })
     }
 
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
-    const userPrompt = `"${data.ticker}" "${nomeCurto}" RI dividendos JCP ${anoAtual}`;
+    const userPrompt = `"${data.ticker}" "${nomeCurto}" RI dividendos JCP ${anoAnterior} ${anoAtual}`;
 
     const systemPrompt = `Você é um analista de renda variável brasileira. Pesquise nas fontes oficiais (site de RI da empresa, CVM, B3) sobre política de dividendos, proventos aprovados (dividendos e JCP) e fatos relevantes recentes do ticker informado.
 
-REGRA TEMPORAL OBRIGATÓRIA: liste APENAS proventos cuja Data COM, Data EX ou Data de Pagamento esteja entre 01/01/${anoAtual} e 31/12/${anoProximo} (ano corrente + próximos 12 meses). Inclua proventos já anunciados/provisionados para pagamento futuro nessa janela. Descarte completamente qualquer provento com datas anteriores a 01/01/${anoAtual} — não os cite, nem em resumo, nem em tabela.
+REGRA TEMPORAL OBRIGATÓRIA: liste APENAS proventos cuja Data COM, Data EX ou Data de Pagamento esteja entre 01/01/${anoAnterior} e 31/12/${anoProximo} (ano anterior + ano corrente + próximos 12 meses). Inclua proventos já anunciados/provisionados para pagamento futuro nessa janela. Descarte completamente qualquer provento com datas anteriores a 01/01/${anoAnterior} — não os cite, nem em resumo, nem em tabela.
 
 Responda em português brasileiro, em markdown, de forma clara e organizada. Cite as fontes usando marcadores numéricos [1], [2], [3] etc. no texto, na mesma ordem em que aparecem em citations. Nunca invente datas ou valores.`;
+
 
     try {
       const res = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -99,7 +101,7 @@ Responda em português brasileiro, em markdown, de forma clara e organizada. Cit
           ],
           temperature: 0.2,
           max_tokens: 900,
-          search_after_date_filter: `01/01/${anoAtual}`,
+          search_after_date_filter: `01/01/${anoAnterior}`,
           search_domain_filter: [
             "-reddit.com",
             "-twitter.com",
