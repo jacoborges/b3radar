@@ -272,18 +272,17 @@ export const getTickerFundamentus = createServerFn({ method: "POST" })
         margemLiquida: numOrNull(kv.get("Marg. Líquida")),
         margemEbit: numOrNull(kv.get("Marg. EBIT")),
         divBrutaPatrimonio:
+          numOrNull(kv.get("Dív Líq / Patrim")) ??
+          numOrNull(kv.get("Dív Líq/Patrim")) ??
           numOrNull(kv.get("Div Br/ Patrim.")) ??
-          numOrNull(kv.get("Div Br/Patrim.")) ??
-          numOrNull(kv.get("Div Br/ Patrim")),
+          numOrNull(kv.get("Div Br/Patrim.")),
         liquidezCorrente: numOrNull(kv.get("Liquidez Corr")),
         cagrLucros5a: numOrNull(kv.get("Cres. Rec (5a)")),
         valorMercado:
           valorMercadoRaw == null
             ? null
             : Number((valorMercadoRaw / 1_000_000_000).toFixed(2)),
-        liquidezDiaria:
-          numOrNull(kv.get("Vol $ méd (2m)")) ??
-          numOrNull(kv.get("Vol $ méd (2m)")),
+        liquidezDiaria: numOrNull(kv.get("Vol $ méd (2m)")),
       };
 
       return {
