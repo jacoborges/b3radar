@@ -823,28 +823,54 @@ function FilterSheet({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="w-16 text-left font-mono text-[11px] text-muted-foreground">
-                    <span className="mr-1 uppercase tracking-wide text-[9px]">Mín</span>
-                    {fmt(lo)}
+                  <span className="w-8 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Mín
                   </span>
                   <Slider
                     className="flex-1"
                     min={min}
                     max={max}
                     step={step}
-                    value={[lo, hi]}
-                    onValueChange={([newLo, newHi]) =>
+                    value={[lo]}
+                    onValueChange={([v]) => {
+                      const newMin = v;
+                      const newMax = Math.max(hi, newMin);
                       setFilters({
                         ...filters,
-                        [k]: { min: newLo, max: newHi },
-                      })
-                    }
+                        [k]: { min: newMin, max: newMax },
+                      });
+                    }}
                   />
-                  <span className="w-16 text-right font-mono text-[11px] text-muted-foreground">
-                    {fmt(hi)}
-                    <span className="ml-1 uppercase tracking-wide text-[9px]">Máx</span>
+                  <span className="w-14 text-right font-mono text-xs text-muted-foreground">
+                    {fmt(lo)}
                   </span>
                 </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="w-14 text-left font-mono text-xs text-muted-foreground">
+                    {fmt(hi)}
+                  </span>
+                  <Slider
+                    dir="rtl"
+                    className="flex-1"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={[hi]}
+                    onValueChange={([v]) => {
+                      const newMax = v;
+                      const newMin = Math.min(lo, newMax);
+                      setFilters({
+                        ...filters,
+                        [k]: { min: newMin, max: newMax },
+                      });
+                    }}
+                  />
+                  <span className="w-8 text-right text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Máx
+                  </span>
+                </div>
+
 
               </div>
             );

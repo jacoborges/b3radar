@@ -1,22 +1,25 @@
-# Voltar mín. e máx. para uma única régua
+# Sliders direcionais: mín. (LTR) e máx. (RTL)
 
-Trocar os dois sliders empilhados por **um único slider de intervalo** com dois thumbs (mín. e máx.) na mesma barra — mantendo a exibição numérica de cada extremo ao lado.
+Voltar a ter **dois sliders separados** por indicador, mas com direções opostas:
+
+- **Mín.** — slider da esquerda → direita. Thumb parte da esquerda; arrastar para a direita aumenta o mínimo.
+- **Máx.** — slider da direita → esquerda (`dir="rtl"`). Thumb parte da direita; arrastar para a esquerda reduz o máximo.
 
 ## Mudança
 
-Arquivo: `src/routes/index.tsx` — apenas o bloco `FUNDAMENTAL_KEYS.map(...)` do `FilterSheet`.
+Arquivo: `src/routes/index.tsx`, apenas no bloco `FUNDAMENTAL_KEYS.map(...)` do `FilterSheet`.
 
-Layout novo por indicador:
+Layout por indicador:
 
 ```text
-Indicador (?)                                     12,3 — 45,6
-Mín 12,3   ●─────────────●   45,6 Máx
+Indicador (?)                                    12,3 — 45,6
+Mín  ●───────────────────           12,3
+                       45,6  ───────────●  Máx
 ```
 
-- Um único `<Slider>` do shadcn com `value={[lo, hi]}` (dois thumbs arrastáveis independentemente na mesma régua).
-- Rótulos numéricos "Mín" à esquerda e "Máx" à direita do slider mostrando o valor atual de cada thumb.
-- Cabeçalho continua com o intervalo consolidado no canto direito.
-- Ordem `min ≤ max` já é garantida pelo Radix Slider quando os dois thumbs estão na mesma trilha, então a lógica de "empurrar" é removida.
-- Chave `filters[k] = { min, max }`, filtragem e botão "Limpar" continuam iguais.
+- Dois `<Slider>` empilhados, cada um com um único thumb (`value={[lo]}` e `value={[hi]}`).
+- O slider de máximo recebe `dir="rtl"` para que o thumb ocupe a direita e a barra "cresça" da direita para a esquerda; o valor numérico fica à direita.
+- Regra `min ≤ max` mantida empurrando o outro extremo quando necessário.
+- Cabeçalho, filtragem, `filters[k] = { min, max }` e botão "Limpar" continuam iguais.
 
-Escopo restrito ao `FilterSheet` de `/`. Filtros qualitativos e os sliders "Dividendo>Selic" / "Preço>Selic" (que já são single-thumb 0–5) não mudam.
+Escopo restrito ao `FilterSheet` de `/`. Filtros qualitativos e sliders 0–5 (Dividendo>Selic, Preço>Selic) permanecem inalterados.
