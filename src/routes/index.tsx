@@ -799,11 +799,11 @@ function FilterSheet({
             const [min, max, step] = bounds[k];
             const cur = filters[k];
 
-            const v: [number, number] = [
-              cur.min ?? min,
-              cur.max ?? max,
-            ];
+            const lo = cur.min ?? min;
+            const hi = cur.max ?? max;
             const active = cur.min !== null || cur.max !== null;
+            const fmt = (n: number) =>
+              step < 1 ? n.toFixed(2) : n.toString();
             return (
               <div key={k} className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -817,25 +817,62 @@ function FilterSheet({
                   </Label>
                   <span className="font-mono text-xs text-muted-foreground">
                     {active
-                      ? `${v[0]} — ${v[1]}`
-                      : `${min} — ${max}`}
+                      ? `${fmt(lo)} — ${fmt(hi)}`
+                      : `${fmt(min)} — ${fmt(max)}`}
                   </span>
                 </div>
-                <Slider
-                  min={min}
-                  max={max}
-                  step={step}
-                  value={v}
-                  onValueChange={([lo, hi]) =>
-                    setFilters({
-                      ...filters,
-                      [k]: { min: lo, max: hi },
-                    })
-                  }
-                />
+
+                <div className="flex items-center gap-2">
+                  <span className="w-8 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Mín.
+                  </span>
+                  <Slider
+                    className="flex-1"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={[lo]}
+                    onValueChange={([v]) => {
+                      const newMin = v;
+                      const newMax = Math.max(hi, newMin);
+                      setFilters({
+                        ...filters,
+                        [k]: { min: newMin, max: newMax },
+                      });
+                    }}
+                  />
+                  <span className="w-14 text-right font-mono text-xs text-muted-foreground">
+                    {fmt(lo)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="w-8 text-[10px] uppercase tracking-wide text-muted-foreground">
+                    Máx.
+                  </span>
+                  <Slider
+                    className="flex-1"
+                    min={min}
+                    max={max}
+                    step={step}
+                    value={[hi]}
+                    onValueChange={([v]) => {
+                      const newMax = v;
+                      const newMin = Math.min(lo, newMax);
+                      setFilters({
+                        ...filters,
+                        [k]: { min: newMin, max: newMax },
+                      });
+                    }}
+                  />
+                  <span className="w-14 text-right font-mono text-xs text-muted-foreground">
+                    {fmt(hi)}
+                  </span>
+                </div>
               </div>
             );
           })}
+
           <Button
             variant="outline"
             className="w-full"
