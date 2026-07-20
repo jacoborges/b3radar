@@ -223,16 +223,23 @@ async function fetchFundamentusDetail(ticker: string): Promise<string> {
  */
 function parseFundamentusDetail(html: string): Map<string, string> {
   const map = new Map<string, string>();
+  // Label td tem `<span class="txt">LABEL</span>`; data td pode ter `<span class="txt">`,
+  // `<span class="oscil"><font>…%</font></span>` ou texto solto. Capturamos o interior
+  // bruto do data td e depois removemos as tags.
   const re =
-    /<td[^>]*class="label[^"]*"[^>]*>[\s\S]*?<span class="txt">([^<]+)<\/span>[\s\S]*?<\/td>\s*<td[^>]*class="data[^"]*"[^>]*>[\s\S]*?<span class="txt">([^<]*)<\/span>[\s\S]*?<\/td>/gi;
+    /<td[^>]*class="label[^"]*"[^>]*>[\s\S]*?<span class="txt">([^<]+)<\/span>[\s\S]*?<\/td>\s*<td[^>]*class="data[^"]*"[^>]*>([\s\S]*?)<\/td>/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     const label = m[1].replace(/&nbsp;/g, " ").trim();
-    const value = m[2].replace(/&nbsp;/g, " ").trim();
+    const value = m[2]
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
     if (label && !map.has(label)) map.set(label, value);
   }
   return map;
 }
+
 
 function numOrNull(s: string | undefined): number | null {
   if (s == null || s === "" || s === "-") return null;
