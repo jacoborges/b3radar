@@ -227,9 +227,9 @@ export function DividendIntelligencePanel({ stock }: Props) {
 
       {/* Busca ao vivo (Perplexity) — RI, CVM e B3 */}
       <AiCard
-        title={`Busca no RI / CVM / B3 (Perplexity) — ${new Date().getFullYear()} + próximos 12 meses`}
-        description={`Query enviada: "${stock.ticker}" "${stock.nome.split(" ").slice(0,3).join(" ")}" RI dividendos JCP ${new Date().getFullYear()}. Retorna apenas proventos com Data COM/EX/Pagamento entre 01/01/${new Date().getFullYear()} e 31/12/${new Date().getFullYear() + 1}, com citações [1][2] clicáveis.`}
-        ctaLabel={`Buscar proventos ${new Date().getFullYear()} + 12 meses`}
+        title={`Busca no RI / CVM / B3 (Perplexity) — ${new Date().getFullYear() - 1}, ${new Date().getFullYear()} + próximos 12 meses`}
+        description={`Query enviada: "${stock.ticker}" "${stock.nome.split(" ").slice(0,3).join(" ")}" RI dividendos JCP ${new Date().getFullYear() - 1} ${new Date().getFullYear()}. Retorna apenas proventos com Data COM/EX/Pagamento entre 01/01/${new Date().getFullYear() - 1} e 31/12/${new Date().getFullYear() + 1}, com citações [1][2] clicáveis.`}
+        ctaLabel={`Buscar proventos ${new Date().getFullYear() - 1}–${new Date().getFullYear() + 1}`}
         loading={pplxLoading}
         result={pplx}
         onRun={async () => {
