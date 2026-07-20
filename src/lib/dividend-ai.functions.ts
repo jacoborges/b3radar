@@ -161,7 +161,7 @@ Responda em português brasileiro, em markdown, de forma clara e organizada. Cit
         };
       }
 
-      PPLX_CACHE.set(data.ticker, { content: text, ts: Date.now(), citations });
+      PPLX_CACHE.set(cacheKey, { content: text, ts: Date.now(), citations });
       return {
         content: text,
         cached: false,
