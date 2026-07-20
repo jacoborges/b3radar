@@ -1,17 +1,23 @@
-## Objetivo
-Ampliar a janela temporal da pesquisa Perplexity na Inteligência de Proventos para cobrir **ano anterior + ano corrente + próximos 12 meses**.
+# Sliders separados para mínimo e máximo nos filtros
 
-## Alterações
+Hoje cada parâmetro fundamentalista do `FilterSheet` usa um único slider de intervalo (dois "thumbs" arrastáveis na mesma barra). Você quer trocar isso por **dois controles deslizantes distintos** — um só para o valor mínimo e outro só para o valor máximo — em cada parâmetro.
 
-### `src/lib/dividend-ai.functions.ts`
-- Calcular `anoAnterior = anoAtual - 1` além de `anoAtual` e `anoProximo`.
-- **User prompt**: incluir os três anos, ex.: `"<TICKER>" "<Nome>" RI dividendos JCP <anoAnterior> <anoAtual>`.
-- **System prompt**: atualizar a regra temporal obrigatória para aceitar proventos com Data COM, EX ou Pagamento entre `01/01/<anoAnterior>` e `31/12/<anoProximo>`. Descartar apenas eventos anteriores a `01/01/<anoAnterior>`.
-- **Filtro nativo**: alterar `search_after_date_filter` para `01/01/<anoAnterior>`.
-- **Cache**: manter a chave por ano corrente (`${ticker}:${anoAtual}`) — a janela desliza junto quando o ano vira.
+## O que muda
 
-### `src/components/DividendIntelligencePanel.tsx`
-- Ajustar o rótulo/contexto do botão para refletir a nova janela (ex.: "Buscar proventos de <anoAnterior>, <anoAtual> e próximos 12 meses no RI/CVM/B3").
+Arquivo: `src/routes/index.tsx` (componente `FilterSheet`, bloco `FUNDAMENTAL_KEYS.map(...)`).
 
-## Fora de escopo
-Modelo Perplexity, demais fontes de dados, layout, citações e scoring permanecem inalterados.
+Para cada indicador (Preço, P/L, DY, ROE, Dív/PL, CAGR, Free Float, Var. Dia/D-7/D-30, etc.), o layout passa a ter:
+
+```text
+Indicador (?)                                      12,3 — 45,6
+  Mín.  ●────────────────────                       12,3
+  Máx.  ────────────●───────                        45,6
+```
+
+- Dois `<Slider>` (do shadcn) com **um thumb cada**, um por baixo do outro.
+- Label lateral pequeno "Mín." / "Máx." e o valor numérico atual à direita de cada linha.
+- O cabeçalho do bloco continua mostrando o intervalo consolidado (`min — max`).
+- Regra de consistência: se o usuário arrastar o mín. acima do máx. atual (ou vice-versa), o outro é empurrado para acompanhar, de modo que `min ≤ max` sempre.
+- Comportamento de filtragem, chave `filters[k] = { min, max }` e o botão "Limpar" permanecem iguais — só a UI de entrada muda.
+
+Escopo restrito: apenas o `FilterSheet` de `/` é alterado. Filtros qualitativos (Semáforo, Recorrência, Dividendo>Selic, Preço>Selic) ficam como estão.
