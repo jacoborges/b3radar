@@ -11,6 +11,7 @@ import type { Stock } from "@/lib/stocks-data";
 import { computeDividendStats } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
+import { useTickerFundamentals } from "@/hooks/use-ticker-fundamentals";
 import { useAnalystConsensus } from "@/hooks/use-consensus";
 import { useTradingViewTechnical } from "@/hooks/use-tradingview";
 import {
@@ -42,6 +43,11 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const ticker = baseStock?.ticker ?? null;
   const [chartLoaded, setChartLoaded] = useState(false);
   const { proventos, isLoading, isFetching } = useTickerData(ticker);
+  const {
+    data: liveFund,
+    isLoading: fundLoading,
+    isFetching: fundFetching,
+  } = useTickerFundamentals(ticker);
 
   useEffect(() => {
     setChartLoaded(false);
@@ -58,6 +64,25 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     // brapi não sobrescreve mais nenhum campo fundamentalista nem preço/valor de mercado/liquidez.
     const merged: Stock = { ...stock };
 
+    // Sobrescreve campos numéricos com os dados ao vivo do detalhes.php quando disponíveis.
+    const f = liveFund?.fields;
+    if (f) {
+      if (f.preco != null) merged.preco = f.preco;
+      if (f.pl != null) merged.pl = f.pl;
+      if (f.pvp != null) merged.pvp = f.pvp;
+      if (f.dy != null) merged.dy = f.dy;
+      if (f.roe != null) merged.roe = f.roe;
+      if (f.roic != null) merged.roic = f.roic;
+      if (f.margemLiquida != null) merged.margemLiquida = f.margemLiquida;
+      if (f.margemEbit != null) merged.margemEbit = f.margemEbit;
+      if (f.divBrutaPatrimonio != null)
+        merged.divBrutaPatrimonio = f.divBrutaPatrimonio;
+      if (f.liquidezCorrente != null) merged.liquidezCorrente = f.liquidezCorrente;
+      if (f.cagrLucros5a != null) merged.cagrLucros5a = f.cagrLucros5a;
+      if (f.valorMercado != null) merged.valorMercado = f.valorMercado;
+      if (f.liquidezDiaria != null) merged.liquidezDiaria = f.liquidezDiaria;
+    }
+
     if (historico && historico.length > 0) {
       const stats = computeDividendStats(historico, merged.preco);
       merged.dividendos = stats.dividendos;
@@ -69,15 +94,27 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       merged.proventosProvisionados = provisionados;
     }
     return merged;
-  }, [baseStock, proventos]);
+  }, [baseStock, proventos, liveFund]);
   const stock = mergedStock;
 
   const proventosOk = !!proventos?.historico;
-  const sourceLabel = isLoading
-    ? "Carregando dados reais…"
-    : proventosOk
-      ? "Fundamentos + Preço: Fundamentus · Proventos: B3"
-      : "Fundamentos + Preço: Fundamentus (offline)";
+  const liveOk = !!liveFund?.fields;
+  const liveTime = liveFund?.updatedAt
+    ? new Date(liveFund.updatedAt).toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : null;
+  const sourceLabel = fundLoading
+    ? "Atualizando fundamentos…"
+    : liveOk
+      ? `Fundamentos: Fundamentus (ao vivo${liveTime ? ` · ${liveTime}` : ""}) · Proventos: ${proventosOk ? "B3" : "—"}`
+      : isLoading
+        ? "Carregando dados reais…"
+        : proventosOk
+          ? "Fundamentos + Preço: Fundamentus · Proventos: B3"
+          : "Fundamentos + Preço: Fundamentus (offline)";
+
 
 
   const chartUrl = useMemo(() => {
@@ -123,12 +160,12 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   variant="outline"
                   className="ml-auto border-border/60 text-xs font-normal text-muted-foreground"
                   title={
-                    isFetching
+                    isFetching || fundFetching
                       ? "Atualizando dados oficiais…"
                       : "Dados oficiais consultados sob demanda"
                   }
                 >
-                  {isFetching && !isLoading ? "↻ " : ""}
+                  {(isFetching && !isLoading) || (fundFetching && !fundLoading) ? "↻ " : ""}
                   {sourceLabel}
                 </Badge>
               </DialogTitle>

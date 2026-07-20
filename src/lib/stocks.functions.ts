@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
+import { z } from "zod";
 import snapshot from "./stocks-fundamentus.json";
 
 /**
@@ -157,3 +158,150 @@ export const getAllStocks = createServerFn({ method: "GET" }).handler(
     }
   },
 );
+
+// ---------------------------------------------------------------------------
+// Per-ticker: puxa detalhes.php do Fundamentus e devolve os campos numéricos
+// atualizáveis. Usado quando o usuário expande um ativo no modal.
+// ---------------------------------------------------------------------------
+
+export interface TickerFundamentusFields {
+  preco: number | null;
+  pl: number | null;
+  pvp: number | null;
+  dy: number | null;
+  roe: number | null;
+  roic: number | null;
+  margemLiquida: number | null;
+  margemEbit: number | null;
+  divBrutaPatrimonio: number | null;
+  liquidezCorrente: number | null;
+  cagrLucros5a: number | null;
+  valorMercado: number | null; // em bilhões
+  liquidezDiaria: number | null; // mesma unidade do snapshot (R$)
+}
+
+export interface TickerFundamentusPayload {
+  ticker: string;
+  fields: TickerFundamentusFields | null;
+  fonte: "fundamentus" | null;
+  updatedAt: string;
+  error: string | null;
+}
+
+const tickerSchema = z.object({
+  ticker: z.string().trim().min(4).max(7).toUpperCase(),
+});
+
+async function fetchFundamentusDetail(ticker: string): Promise<string> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const res = await fetch(
+      `https://www.fundamentus.com.br/detalhes.php?papel=${encodeURIComponent(ticker)}`,
+      {
+        headers: {
+          "user-agent":
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+          accept: "text/html,application/xhtml+xml",
+          "accept-language": "pt-BR,pt;q=0.9",
+        },
+        signal: controller.signal,
+      },
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const buf = await res.arrayBuffer();
+    return new TextDecoder("iso-8859-1").decode(buf);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Extrai pares "label → value" de todas as células da página de detalhe.
+ * Cada campo é um `<td class="label..."><span ...>?</span><span class="txt">LABEL</span></td>`
+ * imediatamente seguido de `<td class="data..."><span class="txt">VALUE</span></td>`.
+ */
+function parseFundamentusDetail(html: string): Map<string, string> {
+  const map = new Map<string, string>();
+  // Label td tem `<span class="txt">LABEL</span>`; data td pode ter `<span class="txt">`,
+  // `<span class="oscil"><font>…%</font></span>` ou texto solto. Capturamos o interior
+  // bruto do data td e depois removemos as tags.
+  const re =
+    /<td[^>]*class="label[^"]*"[^>]*>[\s\S]*?<span class="txt">([^<]+)<\/span>[\s\S]*?<\/td>\s*<td[^>]*class="data[^"]*"[^>]*>([\s\S]*?)<\/td>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
+    const label = m[1].replace(/&nbsp;/g, " ").trim();
+    const value = m[2]
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+    if (label && !map.has(label)) map.set(label, value);
+  }
+  return map;
+}
+
+
+function numOrNull(s: string | undefined): number | null {
+  if (s == null || s === "" || s === "-") return null;
+  const n = parseBr(s);
+  return n === 0 && !/^-?0[.,]?0*%?$/.test(s.trim()) ? null : n;
+}
+
+export const getTickerFundamentus = createServerFn({ method: "POST" })
+  .inputValidator((data) => tickerSchema.parse(data))
+  .handler(async ({ data }): Promise<TickerFundamentusPayload> => {
+    const ticker = data.ticker;
+    setResponseHeader(
+      "cache-control",
+      "public, s-maxage=900, stale-while-revalidate=3600",
+    );
+
+    try {
+      const html = await fetchFundamentusDetail(ticker);
+      const kv = parseFundamentusDetail(html);
+      if (kv.size < 10) throw new Error("parse suspeito: poucos campos");
+
+      const valorMercadoRaw = numOrNull(kv.get("Valor de mercado"));
+      const fields: TickerFundamentusFields = {
+        preco: numOrNull(kv.get("Cotação")),
+        pl: numOrNull(kv.get("P/L")),
+        pvp: numOrNull(kv.get("P/VP")),
+        dy: numOrNull(kv.get("Div. Yield")),
+        roe: numOrNull(kv.get("ROE")),
+        roic: numOrNull(kv.get("ROIC")),
+        margemLiquida: numOrNull(kv.get("Marg. Líquida")),
+        margemEbit: numOrNull(kv.get("Marg. EBIT")),
+        divBrutaPatrimonio:
+          numOrNull(kv.get("Dív Líq / Patrim")) ??
+          numOrNull(kv.get("Dív Líq/Patrim")) ??
+          numOrNull(kv.get("Div Br/ Patrim.")) ??
+          numOrNull(kv.get("Div Br/Patrim.")),
+        liquidezCorrente: numOrNull(kv.get("Liquidez Corr")),
+        cagrLucros5a: numOrNull(kv.get("Cres. Rec (5a)")),
+        valorMercado:
+          valorMercadoRaw == null
+            ? null
+            : Number((valorMercadoRaw / 1_000_000_000).toFixed(2)),
+        liquidezDiaria: numOrNull(kv.get("Vol $ méd (2m)")),
+      };
+
+      return {
+        ticker,
+        fields,
+        fonte: "fundamentus",
+        updatedAt: new Date().toISOString(),
+        error: null,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[getTickerFundamentus] falhou:", ticker, msg);
+      return {
+        ticker,
+        fields: null,
+        fonte: null,
+        updatedAt: new Date().toISOString(),
+        error: msg,
+      };
+    }
+  });
+
