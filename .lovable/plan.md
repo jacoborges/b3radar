@@ -1,24 +1,17 @@
-# Mín. e máx. na mesma régua, com direções opostas
+## Objetivo
+Fazer com que o texto/campo **"Valorização do ativo"** no gráfico de preço vs. Selic use a mesma cor de fonte do campo **"Yield da ação"** no gráfico de dividendos vs. Selic.
 
-Uma única barra por indicador, contendo **dois thumbs no mesmo trilho**:
+## Diagnóstico
+- No `DividendVsSelicChart`, a série `dyAcao` (legenda "Yield da ação") possui `fill="var(--color-dividend)"` diretamente na `<Bar>`, o que faz a legenda herdar essa cor.
+- No `PriceVsSelicChart`, a série `valorizacao` (legenda "Valorização do ativo") não possui `fill` na `<Bar>`; as cores são aplicadas individualmente em `<Cell>` (`success`/`danger`). Por isso a legenda não herda a cor do dividend.
 
-- Thumb da esquerda = **mín.** — só desliza da esquerda para a direita (limitado pelo thumb do máx.).
-- Thumb da direita = **máx.** — só desliza da direita para a esquerda (limitado pelo thumb do mín.).
+## Plano de implementação
+1. Em `src/components/DividendChart.tsx`, na função `PriceVsSelicChart`, adicionar `fill="var(--color-dividend)"` na `<Bar dataKey="valorizacao">`.
+   - As `<Cell>` continuam sobrescrevendo a cor de cada barra conforme `bateuSelic`.
+   - A legenda passa a usar `var(--color-dividend)`, alinhando-se visualmente com "Yield da ação".
 
-## Mudança
+## Arquivos alterados
+- `src/components/DividendChart.tsx`
 
-Arquivo: `src/routes/index.tsx`, apenas o bloco `FUNDAMENTAL_KEYS.map(...)` do `FilterSheet`.
-
-Layout por indicador:
-
-```text
-Indicador (?)                                    12,3 — 45,6
-Mín 12,3  ●═════════════●  45,6 Máx
-```
-
-- Um único `<Slider>` do shadcn com `value={[lo, hi]}`; o Radix já garante que o thumb da esquerda nunca ultrapassa o da direita e vice-versa, produzindo exatamente o comportamento pedido (mín. → direita, máx. → esquerda).
-- À esquerda: rótulo `Mín` + valor `lo`. À direita: valor `hi` + rótulo `Máx`.
-- Cabeçalho continua mostrando o intervalo consolidado.
-- `filters[k] = { min, max }`, filtragem e "Limpar" inalterados.
-
-Escopo restrito ao `FilterSheet` de `/`. Filtros qualitativos e sliders 0–5 permanecem inalterados.
+## Validação
+- Abrir o modal de qualquer ativo e verificar que a legenda "Valorização do ativo" no gráfico de preço vs. Selic aparece na mesma cor (tom de verde/azulado) da legenda "Yield da ação" no gráfico anterior.
