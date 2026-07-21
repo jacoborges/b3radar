@@ -198,7 +198,7 @@ export function PriceVsSelicChart({ data }: { data: PrecoAnual[] }) {
             wrapperStyle={{ fontSize: 12 }}
             formatter={(v) => (v === "valorizacao" ? "Valorização do ativo" : "Selic ponderada")}
           />
-          <Bar dataKey="valorizacao" radius={[6, 6, 0, 0]}>
+          <Bar dataKey="valorizacao" fill="var(--color-dividend)" radius={[6, 6, 0, 0]}>
             {chartData.map((d, i) => (
               <Cell
                 key={i}
