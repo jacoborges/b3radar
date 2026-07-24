@@ -329,8 +329,17 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </div>
 
               <div className="mt-4">
+                <MacroSensitivityPanel
+                  ticker={stock.ticker}
+                  nome={stock.nome}
+                  setor={stock.setor}
+                />
+              </div>
+
+              <div className="mt-4">
                 <MarketConsensusPanel ticker={stock.ticker} />
               </div>
+
             </section>
 
 
