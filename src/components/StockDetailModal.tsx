@@ -32,6 +32,7 @@ import {
   PriceVsSelicChart,
 } from "./DividendChart";
 import { DividendIntelligencePanel } from "./DividendIntelligencePanel";
+import { MacroSensitivityPanel } from "./MacroSensitivityPanel";
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 interface Props {
