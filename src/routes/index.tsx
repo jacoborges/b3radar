@@ -687,35 +687,66 @@ function FilterSheet({
           {/* Filtros qualitativos */}
           <div className="space-y-4 rounded-lg border border-border/60 bg-background/40 p-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5 text-sm">
-                Semáforo de endividamento
-                <InfoTip
-                  title="Semáforo de Endividamento"
-                  fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: 0,5x–1,2x. Vermelho: > 1,2x."
-                  tecnica="Ativos mais alavancados costumam ter beta e volatilidade maiores."
-                />
-              </Label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  Semáforo de endividamento
+                  <InfoTip
+                    title="Semáforo de Endividamento"
+                    fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: 0,5x–1,2x. Vermelho: > 1,2x."
+                    tecnica="Ativos mais alavancados costumam ter beta e volatilidade maiores."
+                  />
+                </Label>
+                {debtColors.length > 0 && (
+                  <button
+                    onClick={() => setDebtColors([])}
+                    className="text-[10px] text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
                 {([
-                  ["ALL", "Todos", "var(--color-muted-foreground)"],
                   ["success", "Baixo", "var(--color-success)"],
                   ["warning", "Moderado", "var(--color-warning)"],
                   ["danger", "Elevado", "var(--color-danger)"],
-                ] as const).map(([val, label, color]) => (
-                  <button
-                    key={val}
-                    onClick={() => setDebtFilter(val as DebtOpt)}
-                    className="rounded-md border px-2 py-1.5 text-xs transition-colors"
-                    style={{
-                      borderColor: debtFilter === val ? color : "var(--color-border)",
-                      color: debtFilter === val ? color : "var(--color-muted-foreground)",
-                      backgroundColor: debtFilter === val ? `color-mix(in oklab, ${color} 12%, transparent)` : "transparent",
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
+                ] as const).map(([val, label, color]) => {
+                  const active = debtColors.includes(val);
+                  return (
+                    <button
+                      key={val}
+                      onClick={() =>
+                        setDebtColors(
+                          active
+                            ? debtColors.filter((c) => c !== val)
+                            : [...debtColors, val],
+                        )
+                      }
+                      className="flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors"
+                      style={{
+                        borderColor: active ? color : "var(--color-border)",
+                        color: active ? color : "var(--color-muted-foreground)",
+                        backgroundColor: active
+                          ? `color-mix(in oklab, ${color} 12%, transparent)`
+                          : "transparent",
+                      }}
+                    >
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{
+                          backgroundColor: color,
+                          boxShadow: active ? `0 0 6px ${color}` : "none",
+                          opacity: active ? 1 : 0.5,
+                        }}
+                      />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
+              <p className="text-[10px] text-muted-foreground">
+                Nenhum selecionado mostra todos.
+              </p>
             </div>
 
             <div className="space-y-2">
