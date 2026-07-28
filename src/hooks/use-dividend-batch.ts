@@ -26,7 +26,7 @@ export interface UseDividendBatchResult {
 
 export function useDividendBatch(
   stocks: Stock[],
-  limit: number = 120,
+  limit: number = 350,
 ): UseDividendBatchResult {
   const call = useServerFn(getProventosBatch);
 
@@ -44,8 +44,10 @@ export function useDividendBatch(
     queryKey: ["proventos-batch", key],
     queryFn: () => call({ data: { tickers } }),
     enabled: tickers.length > 0,
-    staleTime: ONE_HOUR,
+    // Sempre revalida ao abrir o app; o servidor tem cache de 6h por ticker.
+    staleTime: 0,
     gcTime: ONE_HOUR * 2,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     placeholderData: keepPreviousData,
   });
