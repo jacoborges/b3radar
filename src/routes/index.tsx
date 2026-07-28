@@ -82,7 +82,7 @@ export const Route = createFileRoute("/")({
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
-type DebtOpt = "ALL" | "success" | "warning" | "danger";
+type DebtColor = "success" | "warning" | "danger";
 type RecOpt = "ALL" | "YES" | "NO";
 
 interface FilterRange {
@@ -101,7 +101,7 @@ function HomePage() {
   const [sortKey, setSortKey] = useState<SortKey>("ticker");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filters, setFilters] = useState<Record<string, FilterRange>>(initialFilters);
-  const [debtFilter, setDebtFilter] = useState<DebtOpt>("ALL");
+  const [debtColors, setDebtColors] = useState<DebtColor[]>([]);
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
@@ -119,7 +119,7 @@ function HomePage() {
   );
 
   const extraActiveCount =
-    (debtFilter !== "ALL" ? 1 : 0) +
+    (debtColors.length > 0 && debtColors.length < 3 ? 1 : 0) +
     (recFilter !== "ALL" ? 1 : 0) +
     (minAnosAcimaSelic > 0 ? 1 : 0) +
     (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
@@ -135,7 +135,7 @@ function HomePage() {
         if (r.min !== null && val < r.min) return false;
         if (r.max !== null && val > r.max) return false;
       }
-      if (debtFilter !== "ALL" && debtLevel(s.divBrutaPatrimonio).color !== debtFilter)
+      if (debtColors.length > 0 && !debtColors.includes(debtLevel(s.divBrutaPatrimonio).color as DebtColor))
         return false;
       if (recFilter === "YES" && !s.dividendosRecorrentes) return false;
       if (recFilter === "NO" && s.dividendosRecorrentes) return false;
@@ -143,7 +143,7 @@ function HomePage() {
       if (s.anosPrecoAcimaSelic < minAnosPrecoAcimaSelic) return false;
       return true;
     });
-  }, [STOCKS, search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
+  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
@@ -263,8 +263,8 @@ function HomePage() {
                 filters={filters}
                 setFilters={setFilters}
                 activeCount={activeFilters.length + extraActiveCount}
-                debtFilter={debtFilter}
-                setDebtFilter={setDebtFilter}
+                debtColors={debtColors}
+                setDebtColors={setDebtColors}
                 recFilter={recFilter}
                 setRecFilter={setRecFilter}
                 minAnosAcimaSelic={minAnosAcimaSelic}
@@ -623,8 +623,8 @@ function FilterSheet({
   filters,
   setFilters,
   activeCount,
-  debtFilter,
-  setDebtFilter,
+  debtColors,
+  setDebtColors,
   recFilter,
   setRecFilter,
   minAnosAcimaSelic,
@@ -635,8 +635,8 @@ function FilterSheet({
   filters: Record<string, FilterRange>;
   setFilters: (f: Record<string, FilterRange>) => void;
   activeCount: number;
-  debtFilter: DebtOpt;
-  setDebtFilter: (v: DebtOpt) => void;
+  debtColors: DebtColor[];
+  setDebtColors: (v: DebtColor[]) => void;
   recFilter: RecOpt;
   setRecFilter: (v: RecOpt) => void;
   minAnosAcimaSelic: number;
@@ -687,35 +687,66 @@ function FilterSheet({
           {/* Filtros qualitativos */}
           <div className="space-y-4 rounded-lg border border-border/60 bg-background/40 p-4">
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5 text-sm">
-                Semáforo de endividamento
-                <InfoTip
-                  title="Semáforo de Endividamento"
-                  fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: 0,5x–1,2x. Vermelho: > 1,2x."
-                  tecnica="Ativos mais alavancados costumam ter beta e volatilidade maiores."
-                />
-              </Label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-1.5 text-sm">
+                  Semáforo de endividamento
+                  <InfoTip
+                    title="Semáforo de Endividamento"
+                    fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: 0,5x–1,2x. Vermelho: > 1,2x."
+                    tecnica="Ativos mais alavancados costumam ter beta e volatilidade maiores."
+                  />
+                </Label>
+                {debtColors.length > 0 && (
+                  <button
+                    onClick={() => setDebtColors([])}
+                    className="text-[10px] text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+                  >
+                    Limpar
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-1.5">
                 {([
-                  ["ALL", "Todos", "var(--color-muted-foreground)"],
                   ["success", "Baixo", "var(--color-success)"],
                   ["warning", "Moderado", "var(--color-warning)"],
                   ["danger", "Elevado", "var(--color-danger)"],
-                ] as const).map(([val, label, color]) => (
-                  <button
-                    key={val}
-                    onClick={() => setDebtFilter(val as DebtOpt)}
-                    className="rounded-md border px-2 py-1.5 text-xs transition-colors"
-                    style={{
-                      borderColor: debtFilter === val ? color : "var(--color-border)",
-                      color: debtFilter === val ? color : "var(--color-muted-foreground)",
-                      backgroundColor: debtFilter === val ? `color-mix(in oklab, ${color} 12%, transparent)` : "transparent",
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
+                ] as const).map(([val, label, color]) => {
+                  const active = debtColors.includes(val);
+                  return (
+                    <button
+                      key={val}
+                      onClick={() =>
+                        setDebtColors(
+                          active
+                            ? debtColors.filter((c) => c !== val)
+                            : [...debtColors, val],
+                        )
+                      }
+                      className="flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs transition-colors"
+                      style={{
+                        borderColor: active ? color : "var(--color-border)",
+                        color: active ? color : "var(--color-muted-foreground)",
+                        backgroundColor: active
+                          ? `color-mix(in oklab, ${color} 12%, transparent)`
+                          : "transparent",
+                      }}
+                    >
+                      <span
+                        className="h-2 w-2 rounded-full"
+                        style={{
+                          backgroundColor: color,
+                          boxShadow: active ? `0 0 6px ${color}` : "none",
+                          opacity: active ? 1 : 0.5,
+                        }}
+                      />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
+              <p className="text-[10px] text-muted-foreground">
+                Nenhum selecionado mostra todos.
+              </p>
             </div>
 
             <div className="space-y-2">
@@ -857,7 +888,7 @@ function FilterSheet({
             className="w-full"
             onClick={() => {
               setFilters(initialFilters);
-              setDebtFilter("ALL");
+              setDebtColors([]);
               setRecFilter("ALL");
               setMinAnosAcimaSelic(0);
               setMinAnosPrecoAcimaSelic(0);
