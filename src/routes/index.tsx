@@ -119,7 +119,7 @@ function HomePage() {
   );
 
   const extraActiveCount =
-    (debtFilter !== "ALL" ? 1 : 0) +
+    (debtColors.length > 0 && debtColors.length < 3 ? 1 : 0) +
     (recFilter !== "ALL" ? 1 : 0) +
     (minAnosAcimaSelic > 0 ? 1 : 0) +
     (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
@@ -135,7 +135,7 @@ function HomePage() {
         if (r.min !== null && val < r.min) return false;
         if (r.max !== null && val > r.max) return false;
       }
-      if (debtFilter !== "ALL" && debtLevel(s.divBrutaPatrimonio).color !== debtFilter)
+      if (debtColors.length > 0 && !debtColors.includes(debtLevel(s.divBrutaPatrimonio).color as DebtColor))
         return false;
       if (recFilter === "YES" && !s.dividendosRecorrentes) return false;
       if (recFilter === "NO" && s.dividendosRecorrentes) return false;
@@ -143,7 +143,7 @@ function HomePage() {
       if (s.anosPrecoAcimaSelic < minAnosPrecoAcimaSelic) return false;
       return true;
     });
-  }, [STOCKS, search, tipo, activeFilters, debtFilter, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
+  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
