@@ -80,6 +80,11 @@ function DividendosPage() {
   const [cls, setCls] = useState<"ALL" | DividendClass>("ALL");
   const [selected, setSelected] = useState<Stock | null>(null);
 
+  const semRetorno = useMemo(
+    () => rows.filter((r) => r.raw && r.raw.fonte === null).length,
+    [rows],
+  );
+
   const ranked = useMemo(() => {
     const filtered = rows.filter((r) => {
       if (cls !== "ALL" && r.intel?.classification !== cls) return false;
@@ -151,8 +156,11 @@ function DividendosPage() {
           <div className="ml-auto text-xs text-muted-foreground">
             {isLoading
               ? "Carregando eventos oficiais…"
-              : `${ranked.length} ativos · top 120 por liquidez`}
+              : `${ranked.length} ativos · top 120 por liquidez${
+                  semRetorno > 0 ? ` · ${semRetorno} sem retorno da B3` : ""
+                }`}
           </div>
+
         </div>
 
         {/* Distribuição por classe */}
