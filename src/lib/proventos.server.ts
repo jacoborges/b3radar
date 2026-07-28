@@ -45,7 +45,14 @@ export function addDaysISO(iso: string, days: number): string {
 
 function normalizeTipoCash(raw: string | undefined): ProventoTipo | null {
   const s = (raw ?? "").toUpperCase();
-  if (s.includes("JCP") || s.includes("JUROS")) return "JCP";
+  if (
+    s.includes("JCP") ||
+    s.includes("JUROS") ||
+    s.includes("JRS") ||
+    s.includes("CAP PROPRIO") ||
+    s.includes("CAPITAL PRÓPRIO")
+  )
+    return "JCP";
   if (s.includes("DIVIDENDO") || s.includes("RENDIMENTO")) return "Dividendo";
   if (!s) return "Dividendo";
   // Subscrição, restituição de capital etc. não são proventos em dinheiro.
