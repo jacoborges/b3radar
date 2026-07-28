@@ -857,7 +857,7 @@ function FilterSheet({
             className="w-full"
             onClick={() => {
               setFilters(initialFilters);
-              setDebtFilter("ALL");
+              setDebtColors([]);
               setRecFilter("ALL");
               setMinAnosAcimaSelic(0);
               setMinAnosPrecoAcimaSelic(0);
