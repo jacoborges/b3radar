@@ -623,8 +623,8 @@ function FilterSheet({
   filters,
   setFilters,
   activeCount,
-  debtFilter,
-  setDebtFilter,
+  debtColors,
+  setDebtColors,
   recFilter,
   setRecFilter,
   minAnosAcimaSelic,
@@ -635,8 +635,8 @@ function FilterSheet({
   filters: Record<string, FilterRange>;
   setFilters: (f: Record<string, FilterRange>) => void;
   activeCount: number;
-  debtFilter: DebtOpt;
-  setDebtFilter: (v: DebtOpt) => void;
+  debtColors: DebtColor[];
+  setDebtColors: (v: DebtColor[]) => void;
   recFilter: RecOpt;
   setRecFilter: (v: RecOpt) => void;
   minAnosAcimaSelic: number;
