@@ -82,7 +82,7 @@ export const Route = createFileRoute("/")({
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
-type DebtOpt = "ALL" | "success" | "warning" | "danger";
+type DebtColor = "success" | "warning" | "danger";
 type RecOpt = "ALL" | "YES" | "NO";
 
 interface FilterRange {
