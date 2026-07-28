@@ -75,7 +75,7 @@ function fmtDate(iso: string | null) {
 
 function DividendosPage() {
   const { stocks } = useAllStocks();
-  const { rows, updatedAt, isLoading, isFetching } = useDividendBatch(stocks, 120);
+  const { rows, updatedAt, isLoading, isFetching } = useDividendBatch(stocks, 350);
   const [q, setQ] = useState("");
   const [cls, setCls] = useState<"ALL" | DividendClass>("ALL");
   const [selected, setSelected] = useState<Stock | null>(null);
@@ -156,7 +156,7 @@ function DividendosPage() {
           <div className="ml-auto text-xs text-muted-foreground">
             {isLoading
               ? "Carregando eventos oficiais…"
-              : `${ranked.length} ativos · top 120 por liquidez${
+              : `${ranked.length} ativos · top 350 por liquidez${
                   semRetorno > 0 ? ` · ${semRetorno} sem retorno da B3` : ""
                 }`}
           </div>

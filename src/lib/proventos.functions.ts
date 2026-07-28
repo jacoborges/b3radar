@@ -12,7 +12,7 @@ const inputSchema = z.object({
 });
 
 const batchInputSchema = z.object({
-  tickers: z.array(z.string().trim().min(4).max(7).toUpperCase()).min(1).max(120),
+  tickers: z.array(z.string().trim().min(4).max(7).toUpperCase()).min(1).max(350),
 });
 
 export interface BatchProventosItem {
@@ -49,7 +49,7 @@ export const getProventosBatch = createServerFn({ method: "POST" })
     const { buildProventosForTicker, mapLimit } = await import(
       "./proventos.server"
     );
-    const items = await mapLimit(data.tickers, 6, async (ticker) => {
+    const items = await mapLimit(data.tickers, 10, async (ticker) => {
       const r = await buildProventosForTicker(ticker);
       return {
         ticker,
