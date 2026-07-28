@@ -80,6 +80,11 @@ function DividendosPage() {
   const [cls, setCls] = useState<"ALL" | DividendClass>("ALL");
   const [selected, setSelected] = useState<Stock | null>(null);
 
+  const semRetorno = useMemo(
+    () => rows.filter((r) => r.raw && r.raw.fonte === null).length,
+    [rows],
+  );
+
   const ranked = useMemo(() => {
     const filtered = rows.filter((r) => {
       if (cls !== "ALL" && r.intel?.classification !== cls) return false;
