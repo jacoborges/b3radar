@@ -1,13 +1,39 @@
-## Objetivo
-Permitir selecionar múltiplas luzes do semáforo de endividamento (verde, amarelo, vermelho) no filtro — em vez de uma única opção exclusiva.
+## Diagnóstico (verificado agora, chamando a B3)
 
-## Mudanças em `src/routes/index.tsx`
+A página `/dividendos` fica vazia porque **as duas chamadas à B3 estão retornando nada útil**:
 
-1. **Estado**: trocar `debtFilter: DebtOpt` (single) por `debtColors: Set<"success"|"warning"|"danger">` (multi). Vazio = todos.
-2. **Lógica do filtro** (linha ~138): `if (debtColors.size > 0 && !debtColors.has(debtLevel(s.divBrutaPatrimonio).color)) return false;`
-3. **Contador de filtros ativos** (linha ~122): `(debtColors.size > 0 && debtColors.size < 3 ? 1 : 0)`.
-4. **UI** (linhas ~698–718): substituir os 4 botões (Todos/Baixo/Moderado/Elevado) por 3 chips clicáveis (Baixo/Moderado/Elevado) que alternam seleção. Cada chip mostra a bolinha colorida do semáforo + label; visual "selecionado" mantém o `color-mix` já usado. Adicionar link "Limpar" quando houver seleção. Nenhum selecionado = mostra todos.
-5. Manter o `InfoTip` e o layout do card qualitativo intactos.
+1. `GetListedCashDividends` é chamado com `{issuingCompany:"BBSE"}` → a B3 responde `totalRecords: 0`. Testado agora: só funciona com `{tradingName:"BBSEGURIDADE", pageNumber, pageSize}` (aí retorna 48 registros).
+2. `GetListedSupplementCompany` funciona com `issuingCompany`, mas a resposta vem como **string JSON dentro de JSON** e é um **array**. O código faz `res.json()` e lê `.stockDividends` direto — sempre `undefined`.
 
-## Fora de escopo
-Sem alterações em `DebtSemaphore`, dados ou outras seções do filtro.
+Resultado: `rawCash` e `rawStock` vazios → `"Sem retorno da B3"` → `intel = null` → tabela toda com "—".
+
+Além disso, os nomes de campo mudaram: hoje `GetListedCashDividends` devolve `valueCash`, `corporateAction`, `lastDatePriorEx`, `dateApproval` (o código procura `rate`, `label`, `lastDatePrior`, e não existe mais `paymentDate` nesse endpoint).
+
+## Correção proposta
+
+### 1. Usar o Supplement como fonte principal
+Testado: `GetListedSupplementCompany` com `{issuingCompany, language, year}` já devolve, por ano, `cashDividends` completos com `rate`, `label` (DIVIDENDO/JCP), `lastDatePrior`, `paymentDate`, `approvedOn`, `relatedTo` — exatamente os campos que o app espera — mais `stockDividends` (bonificação/desdobramento/grupamento).
+
+Ajustes em `src/lib/proventos.functions.ts`:
+- Parsear corretamente: `const parsed = typeof json === "string" ? JSON.parse(json) : json` e pegar `parsed[0]`.
+- Coletar `cashDividends` **e** `stockDividends` dos últimos 5–6 anos (uma chamada por ano, em paralelo).
+- Deduplicar por `label + lastDatePrior + rate`.
+
+### 2. Complemento por `tradingName` (histórico longo)
+- Resolver `ticker → tradingName` via `GetInitialCompanies` (`{company:"BBSE"}` retorna `tradingName: "BBSEGURIDADE"`), com cache em memória.
+- Chamar `GetListedCashDividends` paginado com `tradingName`, mapeando os campos atuais (`valueCash`, `corporateAction`, `lastDatePriorEx`, `dateApproval`).
+- Fundir com o supplement (o supplement fornece a data de pagamento, que falta nesse endpoint).
+
+### 3. Robustez do lote
+- Limitar concorrência (~6 tickers simultâneos) e aplicar cache de 6 h por ticker no servidor, para o lote de 120 não estourar tempo/limite da B3.
+- Quando um ticker realmente não tiver eventos, marcar `fonte: null` e mostrar "Sem cobertura" em vez de linha vazia.
+
+### 4. Feedback na UI
+- Em `src/routes/dividendos.tsx`, mostrar erro/parcialidade explícita (ex.: "X de 120 ativos sem retorno da B3") em vez de silenciosamente exibir "—".
+
+## Impacto
+Também corrige o painel **Inteligência de Proventos** dentro do modal de cada ação e o histórico de dividendos, que usam a mesma função.
+
+## Detalhes técnicos
+- Arquivos: `src/lib/proventos.functions.ts` (principal), `src/hooks/use-dividend-batch.ts` (concorrência/erro), `src/routes/dividendos.tsx` (estado vazio/erro).
+- Sem mudança de schema, sem novas dependências.
