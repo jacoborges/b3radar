@@ -101,7 +101,7 @@ function HomePage() {
   const [sortKey, setSortKey] = useState<SortKey>("ticker");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [filters, setFilters] = useState<Record<string, FilterRange>>(initialFilters);
-  const [debtFilter, setDebtFilter] = useState<DebtOpt>("ALL");
+  const [debtColors, setDebtColors] = useState<DebtColor[]>([]);
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
