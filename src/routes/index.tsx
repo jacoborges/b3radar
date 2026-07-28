@@ -263,8 +263,8 @@ function HomePage() {
                 filters={filters}
                 setFilters={setFilters}
                 activeCount={activeFilters.length + extraActiveCount}
-                debtFilter={debtFilter}
-                setDebtFilter={setDebtFilter}
+                debtColors={debtColors}
+                setDebtColors={setDebtColors}
                 recFilter={recFilter}
                 setRecFilter={setRecFilter}
                 minAnosAcimaSelic={minAnosAcimaSelic}
