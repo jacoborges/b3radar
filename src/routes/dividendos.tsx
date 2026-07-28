@@ -151,8 +151,11 @@ function DividendosPage() {
           <div className="ml-auto text-xs text-muted-foreground">
             {isLoading
               ? "Carregando eventos oficiais…"
-              : `${ranked.length} ativos · top 120 por liquidez`}
+              : `${ranked.length} ativos · top 120 por liquidez${
+                  semRetorno > 0 ? ` · ${semRetorno} sem retorno da B3` : ""
+                }`}
           </div>
+
         </div>
 
         {/* Distribuição por classe */}
