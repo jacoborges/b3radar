@@ -75,7 +75,8 @@ function fmtDate(iso: string | null) {
 
 function DividendosPage() {
   const { stocks } = useAllStocks();
-  const { rows, updatedAt, isLoading, isFetching } = useDividendBatch(stocks, 350);
+  const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
+    useDividendBatch(stocks);
   const [q, setQ] = useState("");
   const [cls, setCls] = useState<"ALL" | DividendClass>("ALL");
   const [selected, setSelected] = useState<Stock | null>(null);
