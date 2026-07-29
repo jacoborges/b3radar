@@ -27,15 +27,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
+import { StockFilterSheet } from "@/components/StockFilterSheet";
+import {
+  initialFilters,
+  type DebtColor,
+  type FilterRange,
+  type RecOpt,
+} from "@/lib/stock-filters";
 import { type Stock } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
