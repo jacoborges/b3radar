@@ -14,7 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      dividend_cache: {
+        Row: {
+          error: string | null
+          eventos_cash: Json
+          fetched_at: string
+          fonte: string | null
+          historico: Json
+          historico_completo: Json
+          provisionados: Json
+          ticker: string
+          trading_name: string | null
+        }
+        Insert: {
+          error?: string | null
+          eventos_cash?: Json
+          fetched_at?: string
+          fonte?: string | null
+          historico?: Json
+          historico_completo?: Json
+          provisionados?: Json
+          ticker: string
+          trading_name?: string | null
+        }
+        Update: {
+          error?: string | null
+          eventos_cash?: Json
+          fetched_at?: string
+          fonte?: string | null
+          historico?: Json
+          historico_completo?: Json
+          provisionados?: Json
+          ticker?: string
+          trading_name?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
