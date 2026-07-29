@@ -4,9 +4,25 @@ import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { InfoTip } from "@/components/InfoTip";
+import { StockFilterSheet } from "@/components/StockFilterSheet";
+import {
+  activeRanges,
+  initialFilters,
+  matchesStockFilters,
+  type DebtColor,
+  type FilterRange,
+  type RecOpt,
+} from "@/lib/stock-filters";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useDividendBatch } from "@/hooks/use-dividend-batch";
-import { classMeta, type DividendClass } from "@/lib/dividend-intelligence";
+import {
+  classMeta,
+  type DividendClass,
+  type Frequencia,
+} from "@/lib/dividend-intelligence";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import type { Stock } from "@/lib/stocks-data";
 
