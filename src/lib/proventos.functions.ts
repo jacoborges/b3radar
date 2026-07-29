@@ -15,6 +15,10 @@ const batchInputSchema = z.object({
   tickers: z.array(z.string().trim().min(4).max(7).toUpperCase()).min(1).max(350),
 });
 
+const refreshInputSchema = z.object({
+  tickers: z.array(z.string().trim().min(4).max(7).toUpperCase()).min(1).max(40),
+});
+
 export interface BatchProventosItem {
   ticker: string;
   historicoCompleto: EventoSocietario[];
@@ -28,6 +32,21 @@ export interface BatchProventosResult {
   updatedAt: string;
 }
 
+export interface CachedDividendItem {
+  ticker: string;
+  historicoCompleto: EventoSocietario[];
+  fonte: "B3" | null;
+  error: string | null;
+  fetchedAt: string;
+}
+
+export interface CachedDividendsResult {
+  items: CachedDividendItem[];
+  updatedAt: string;
+}
+
+const SIX_HOURS = 6 * 60 * 60 * 1000;
+
 export const getTickerProventos = createServerFn({ method: "POST" })
   .inputValidator((data) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<TickerProventosResult> => {
@@ -35,8 +54,44 @@ export const getTickerProventos = createServerFn({ method: "POST" })
       "cache-control",
       "public, s-maxage=3600, stale-while-revalidate=86400",
     );
-    const { buildProventosForTicker } = await import("./proventos.server");
-    return buildProventosForTicker(data.ticker);
+    const { readCachedTicker, refreshOneTicker } = await import(
+      "./proventos-cache.server"
+    );
+    const cached = await readCachedTicker(data.ticker, SIX_HOURS);
+    if (cached) return cached;
+    return refreshOneTicker(data.ticker);
+  });
+
+/** Lê o cache persistente (todos os ativos já coletados) — não chama a B3. */
+export const getProventosCached = createServerFn({ method: "GET" }).handler(
+  async (): Promise<CachedDividendsResult> => {
+    setResponseHeader(
+      "cache-control",
+      "public, s-maxage=300, stale-while-revalidate=86400",
+    );
+    const { listCachedProventos, fromCompact } = await import(
+      "./proventos-cache.server"
+    );
+    const rows = await listCachedProventos();
+    return {
+      items: rows.map((r) => ({
+        ticker: r.ticker,
+        historicoCompleto: fromCompact(r.eventosCash),
+        fonte: r.fonte,
+        error: r.error,
+        fetchedAt: r.fetchedAt,
+      })),
+      updatedAt: new Date().toISOString(),
+    };
+  },
+);
+
+/** Coleta um lote pequeno na B3 e grava no banco (usado em segundo plano). */
+export const refreshProventosChunk = createServerFn({ method: "POST" })
+  .inputValidator((data) => refreshInputSchema.parse(data))
+  .handler(async ({ data }): Promise<{ processed: number; comDados: number }> => {
+    const { refreshTickers } = await import("./proventos-cache.server");
+    return refreshTickers(data.tickers, 6);
   });
 
 export const getProventosBatch = createServerFn({ method: "POST" })
@@ -49,7 +104,7 @@ export const getProventosBatch = createServerFn({ method: "POST" })
     const { buildProventosForTicker, mapLimit } = await import(
       "./proventos.server"
     );
-    const items = await mapLimit(data.tickers, 10, async (ticker) => {
+    const items = await mapLimit(data.tickers, 6, async (ticker) => {
       const r = await buildProventosForTicker(ticker);
       return {
         ticker,
