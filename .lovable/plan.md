@@ -1,39 +1,39 @@
-## Diagnóstico (verificado agora, chamando a B3)
+## Objetivo
+Aplicar a Inteligência de Proventos a **todas** as ações listadas (~1.000 tickers), não apenas aos 350 mais líquidos.
 
-A página `/dividendos` fica vazia porque **as duas chamadas à B3 estão retornando nada útil**:
+## Por que hoje está limitado
+Cada ticker exige ~8 chamadas à B3 (1 para resolver o nome de negociação, 6 anos do *supplement*, 1 do histórico de caixa). Para 1.000 ativos isso são ~8.000 requisições, hoje feitas ao vivo com cache apenas em memória do servidor — que se perde a cada reinício. Por isso o limite de 350.
 
-1. `GetListedCashDividends` é chamado com `{issuingCompany:"BBSE"}` → a B3 responde `totalRecords: 0`. Testado agora: só funciona com `{tradingName:"BBSEGURIDADE", pageNumber, pageSize}` (aí retorna 48 registros).
-2. `GetListedSupplementCompany` funciona com `issuingCompany`, mas a resposta vem como **string JSON dentro de JSON** e é um **array**. O código faz `res.json()` e lê `.stockDividends` direto — sempre `undefined`.
+## Solução: cache persistente no Lovable Cloud
 
-Resultado: `rawCash` e `rawStock` vazios → `"Sem retorno da B3"` → `intel = null` → tabela toda com "—".
+### 1. Ativar o Lovable Cloud e criar a tabela de proventos
+Uma tabela `dividend_events_cache` com uma linha por ticker, guardando:
+- `ticker`, `trading_name`, `historico` (JSON dos eventos), `provisionados` (JSON), `fonte`, `error`, `fetched_at`.
+- Leitura pública (somente SELECT para visitantes), escrita apenas pelo servidor.
 
-Além disso, os nomes de campo mudaram: hoje `GetListedCashDividends` devolve `valueCash`, `corporateAction`, `lastDatePriorEx`, `dateApproval` (o código procura `rate`, `label`, `lastDatePrior`, e não existe mais `paymentDate` nesse endpoint).
+### 2. Servir a página a partir do banco
+`/dividendos` passa a ler a tabela inteira em uma única consulta — abre instantaneamente, com **todos** os ativos, sem depender da B3 no momento da abertura.
+- A tela mostra, por ativo, a data da última atualização e "Aguardando coleta" para quem ainda não foi buscado.
+- Cabeçalho com "X de Y ativos com dados da B3".
 
-## Correção proposta
+### 3. Coletor incremental em segundo plano
+Uma rota de servidor (`/api/public/refresh-proventos`) que, a cada chamada, pega os N tickers mais desatualizados (ou nunca coletados), busca na B3 com concorrência controlada e grava no banco.
+- Protegida por um segredo, para não virar endpoint aberto.
+- Chamada automaticamente pelo próprio app quando a página abre (em background, sem travar a tela) e pode ser agendada para rodar sozinha diariamente.
+- Prioriza os ativos por liquidez: os mais negociados são preenchidos primeiro, depois a cauda longa.
 
-### 1. Usar o Supplement como fonte principal
-Testado: `GetListedSupplementCompany` com `{issuingCompany, language, year}` já devolve, por ano, `cashDividends` completos com `rate`, `label` (DIVIDENDO/JCP), `lastDatePrior`, `paymentDate`, `approvedOn`, `relatedTo` — exatamente os campos que o app espera — mais `stockDividends` (bonificação/desdobramento/grupamento).
+### 4. Deduplicação por empresa
+Vários tickers pertencem à mesma empresa (ex.: PETR3/PETR4). A coleta passa a agrupar por empresa emissora, reduzindo as chamadas à B3 em cerca de 30–40%.
 
-Ajustes em `src/lib/proventos.functions.ts`:
-- Parsear corretamente: `const parsed = typeof json === "string" ? JSON.parse(json) : json` e pegar `parsed[0]`.
-- Coletar `cashDividends` **e** `stockDividends` dos últimos 5–6 anos (uma chamada por ano, em paralelo).
-- Deduplicar por `label + lastDatePrior + rate`.
-
-### 2. Complemento por `tradingName` (histórico longo)
-- Resolver `ticker → tradingName` via `GetInitialCompanies` (`{company:"BBSE"}` retorna `tradingName: "BBSEGURIDADE"`), com cache em memória.
-- Chamar `GetListedCashDividends` paginado com `tradingName`, mapeando os campos atuais (`valueCash`, `corporateAction`, `lastDatePriorEx`, `dateApproval`).
-- Fundir com o supplement (o supplement fornece a data de pagamento, que falta nesse endpoint).
-
-### 3. Robustez do lote
-- Limitar concorrência (~6 tickers simultâneos) e aplicar cache de 6 h por ticker no servidor, para o lote de 120 não estourar tempo/limite da B3.
-- Quando um ticker realmente não tiver eventos, marcar `fonte: null` e mostrar "Sem cobertura" em vez de linha vazia.
-
-### 4. Feedback na UI
-- Em `src/routes/dividendos.tsx`, mostrar erro/parcialidade explícita (ex.: "X de 120 ativos sem retorno da B3") em vez de silenciosamente exibir "—".
+### 5. Ajustes na UI
+- Remover o texto "top 350 por liquidez"; passar a "todos os ativos".
+- Filtro opcional para esconder ativos ainda sem cobertura.
+- Indicador de progresso da primeira carga ("coletando… 420/994").
 
 ## Impacto
-Também corrige o painel **Inteligência de Proventos** dentro do modal de cada ação e o histórico de dividendos, que usam a mesma função.
+O painel dentro do modal de cada ação continua funcionando: passa a ler primeiro do cache e só chama a B3 se o ativo ainda não tiver sido coletado.
 
 ## Detalhes técnicos
-- Arquivos: `src/lib/proventos.functions.ts` (principal), `src/hooks/use-dividend-batch.ts` (concorrência/erro), `src/routes/dividendos.tsx` (estado vazio/erro).
-- Sem mudança de schema, sem novas dependências.
+- Novos: migração da tabela + `src/routes/api/public/refresh-proventos.ts` + funções de leitura/escrita do cache.
+- Alterados: `src/lib/proventos.server.ts` (persistência e agrupamento por empresa), `src/lib/proventos.functions.ts`, `src/hooks/use-dividend-batch.ts`, `src/routes/dividendos.tsx`.
+- Sem novas dependências externas.
