@@ -82,17 +82,6 @@ export const Route = createFileRoute("/")({
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
-type DebtColor = "success" | "warning" | "danger";
-type RecOpt = "ALL" | "YES" | "NO";
-
-interface FilterRange {
-  min: number | null;
-  max: number | null;
-}
-
-const initialFilters: Record<string, FilterRange> = Object.fromEntries(
-  FUNDAMENTAL_KEYS.map((k) => [k, { min: null, max: null }]),
-);
 
 function HomePage() {
   const { stocks: STOCKS, sectors: SECTORS, fonte, updatedAt, error: dataError } = useAllStocks();
