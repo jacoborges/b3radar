@@ -89,6 +89,15 @@ function fmtDate(iso: string | null) {
   return `${d}/${m}/${y}`;
 }
 
+const FREQ_OPTS: Array<"ALL" | Frequencia> = [
+  "ALL",
+  "Mensal",
+  "Trimestral",
+  "Semestral",
+  "Anual",
+  "Irregular",
+];
+
 function DividendosPage() {
   const { stocks } = useAllStocks();
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
@@ -97,12 +106,58 @@ function DividendosPage() {
   const [cls, setCls] = useState<"ALL" | DividendClass>("ALL");
   const [selected, setSelected] = useState<Stock | null>(null);
 
+  // filtros fundamentalistas / qualitativos (mesmos da tela de ações)
+  const [filters, setFilters] =
+    useState<Record<string, FilterRange>>(initialFilters);
+  const [debtColors, setDebtColors] = useState<DebtColor[]>([]);
+  const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
+  const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState(0);
+  const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState(0);
+
+  // filtros da inteligência de proventos
+  const [minScore, setMinScore] = useState(0);
+  const [minDy12m, setMinDy12m] = useState(0);
+  const [minConsecutivos, setMinConsecutivos] = useState(0);
+  const [freq, setFreq] = useState<"ALL" | Frequencia>("ALL");
+  const [comEmDias, setComEmDias] = useState(0); // 0 = sem restrição
+  const [somenteComDados, setSomenteComDados] = useState(false);
+
+  const clearIntel = () => {
+    setMinScore(0);
+    setMinDy12m(0);
+    setMinConsecutivos(0);
+    setFreq("ALL");
+    setComEmDias(0);
+    setSomenteComDados(false);
+    setCls("ALL");
+  };
+
   const semRetorno = useMemo(
     () => rows.filter((r) => r.raw && r.raw.fonte === null).length,
     [rows],
   );
 
+  const ranges = useMemo(() => activeRanges(filters), [filters]);
+
+  const intelActiveCount =
+    (minScore > 0 ? 1 : 0) +
+    (minDy12m > 0 ? 1 : 0) +
+    (minConsecutivos > 0 ? 1 : 0) +
+    (freq !== "ALL" ? 1 : 0) +
+    (comEmDias > 0 ? 1 : 0) +
+    (somenteComDados ? 1 : 0) +
+    (cls !== "ALL" ? 1 : 0);
+
+  const activeCount =
+    ranges.length +
+    intelActiveCount +
+    (debtColors.length > 0 && debtColors.length < 3 ? 1 : 0) +
+    (recFilter !== "ALL" ? 1 : 0) +
+    (minAnosAcimaSelic > 0 ? 1 : 0) +
+    (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
+
   const ranked = useMemo(() => {
+    const hoje = new Date();
     const filtered = rows.filter((r) => {
       if (cls !== "ALL" && r.intel?.classification !== cls) return false;
       if (q) {
@@ -113,6 +168,35 @@ function DividendosPage() {
         )
           return false;
       }
+
+      if (
+        !matchesStockFilters(r.stock, ranges, {
+          debtColors,
+          recFilter,
+          minAnosAcimaSelic,
+          minAnosPrecoAcimaSelic,
+        })
+      )
+        return false;
+
+      if (somenteComDados && (!r.raw || r.raw.fonte === null)) return false;
+
+      const intel = r.intel;
+      if (minScore > 0 && (intel?.score ?? -1) < minScore) return false;
+      if (minDy12m > 0 && (intel?.dyUltimos12m ?? -1) < minDy12m) return false;
+      if (
+        minConsecutivos > 0 &&
+        (intel?.anosConsecutivosPagando ?? -1) < minConsecutivos
+      )
+        return false;
+      if (freq !== "ALL" && intel?.next.frequencia !== freq) return false;
+      if (comEmDias > 0) {
+        const iso = intel?.next.proximaDataComEstimada;
+        if (!iso) return false;
+        const diff =
+          (new Date(`${iso}T00:00:00`).getTime() - hoje.getTime()) / 86400000;
+        if (diff < -1 || diff > comEmDias) return false;
+      }
       return true;
     });
     return filtered.sort((a, b) => {
@@ -121,7 +205,166 @@ function DividendosPage() {
       if (sb !== sa) return sb - sa;
       return (b.intel?.dyUltimos12m ?? 0) - (a.intel?.dyUltimos12m ?? 0);
     });
-  }, [rows, q, cls]);
+  }, [
+    rows,
+    q,
+    cls,
+    ranges,
+    debtColors,
+    recFilter,
+    minAnosAcimaSelic,
+    minAnosPrecoAcimaSelic,
+    minScore,
+    minDy12m,
+    minConsecutivos,
+    freq,
+    comEmDias,
+    somenteComDados,
+  ]);
+
+  const intelSection = (
+    <div className="space-y-4 rounded-lg border border-border/60 bg-background/40 p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold">Inteligência de proventos</p>
+        {intelActiveCount > 0 && (
+          <button
+            onClick={clearIntel}
+            className="text-[10px] text-muted-foreground underline-offset-2 hover:text-primary hover:underline"
+          >
+            Limpar
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label className="flex items-center gap-1.5 text-sm">
+          Classe de provento
+          <InfoTip
+            title="Classificação de proventos"
+            fundamentalista="Elite, Consistente, Regular ou Irregular conforme regularidade, consecutividade e consistência dos pagamentos."
+            tecnica="Classes superiores costumam apresentar menor volatilidade em torno das datas com/ex."
+          />
+        </Label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {CLASS_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setCls(f.key)}
+              className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                cls === f.key
+                  ? "border-primary/70 bg-primary/10 text-primary"
+                  : "border-border/60 text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">Score mínimo</Label>
+          <span className="font-mono text-xs text-muted-foreground">
+            ≥ {minScore}
+          </span>
+        </div>
+        <Slider
+          min={0}
+          max={100}
+          step={5}
+          value={[minScore]}
+          onValueChange={([v]) => setMinScore(v)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">DY 12m mínimo</Label>
+          <span className="font-mono text-xs text-muted-foreground">
+            ≥ {minDy12m.toFixed(1)}%
+          </span>
+        </div>
+        <Slider
+          min={0}
+          max={20}
+          step={0.5}
+          value={[minDy12m]}
+          onValueChange={([v]) => setMinDy12m(v)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">Anos consecutivos pagando</Label>
+          <span className="font-mono text-xs text-muted-foreground">
+            ≥ {minConsecutivos}
+          </span>
+        </div>
+        <Slider
+          min={0}
+          max={10}
+          step={1}
+          value={[minConsecutivos]}
+          onValueChange={([v]) => setMinConsecutivos(v)}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-sm">Frequência de pagamento</Label>
+        <div className="grid grid-cols-3 gap-1.5">
+          {FREQ_OPTS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFreq(f)}
+              className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                freq === f
+                  ? "border-primary/70 bg-primary/10 text-primary"
+                  : "border-border/60 text-muted-foreground hover:border-primary/40"
+              }`}
+            >
+              {f === "ALL" ? "Todas" : f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="flex items-center gap-1.5 text-sm">
+            Próxima data COM em até
+            <InfoTip
+              title="Próxima data COM estimada"
+              fundamentalista="Estimativa estatística da próxima data com base no histórico oficial da B3. Não é anúncio da companhia."
+              tecnica="Útil para posicionar-se antes da data ex, quando o papel costuma ajustar o preço."
+            />
+          </Label>
+          <span className="font-mono text-xs text-muted-foreground">
+            {comEmDias === 0 ? "sem limite" : `${comEmDias} dias`}
+          </span>
+        </div>
+        <Slider
+          min={0}
+          max={180}
+          step={15}
+          value={[comEmDias]}
+          onValueChange={([v]) => setComEmDias(v)}
+        />
+      </div>
+
+      <button
+        onClick={() => setSomenteComDados(!somenteComDados)}
+        className={`w-full rounded-md border px-2 py-1.5 text-xs transition-colors ${
+          somenteComDados
+            ? "border-primary/70 bg-primary/10 text-primary"
+            : "border-border/60 text-muted-foreground hover:border-primary/40"
+        }`}
+      >
+        Somente ativos com dados da B3
+      </button>
+    </div>
+  );
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">
