@@ -139,10 +139,10 @@ async function writeTicker(ticker: string, value: TickerProventosResult) {
   const { error } = await supabase.from(TABLE).upsert(
     {
       ticker,
-      eventos_cash: toCompact(value.historicoCompleto),
-      historico_completo: value.historicoCompleto ?? [],
-      provisionados: value.provisionados ?? [],
-      historico: value.historico ?? [],
+      eventos_cash: toCompact(value.historicoCompleto) as unknown as never,
+      historico_completo: (value.historicoCompleto ?? []) as unknown as never,
+      provisionados: (value.provisionados ?? []) as unknown as never,
+      historico: (value.historico ?? []) as unknown as never,
       fonte: value.fonte,
       error: value.error,
       fetched_at: new Date().toISOString(),
