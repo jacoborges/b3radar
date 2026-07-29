@@ -248,7 +248,7 @@ function HomePage() {
                 </SelectContent>
               </Select>
 
-              <FilterSheet
+              <StockFilterSheet
                 filters={filters}
                 setFilters={setFilters}
                 activeCount={activeFilters.length + extraActiveCount}
