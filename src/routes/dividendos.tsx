@@ -398,6 +398,23 @@ function DividendosPage() {
             placeholder="Buscar ticker ou empresa…"
             className="max-w-xs border-border/60 bg-input/60"
           />
+          <StockFilterSheet
+            title="Filtros — proventos e fundamentos"
+            filters={filters}
+            setFilters={setFilters}
+            activeCount={activeCount}
+            debtColors={debtColors}
+            setDebtColors={setDebtColors}
+            recFilter={recFilter}
+            setRecFilter={setRecFilter}
+            minAnosAcimaSelic={minAnosAcimaSelic}
+            setMinAnosAcimaSelic={setMinAnosAcimaSelic}
+            minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
+            setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
+            extraSection={intelSection}
+            onClearExtra={clearIntel}
+          />
+
           <div className="flex flex-wrap gap-1">
             {CLASS_FILTERS.map((f) => (
               <button
