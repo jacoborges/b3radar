@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as DividendosRouteImport } from './routes/dividendos'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicRefreshProventosRouteImport } from './routes/api/public/refresh-proventos'
 
 const DividendosRoute = DividendosRouteImport.update({
   id: '/dividendos',
@@ -28,35 +29,54 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicRefreshProventosRoute =
+  ApiPublicRefreshProventosRouteImport.update({
+    id: '/api/public/refresh-proventos',
+    path: '/api/public/refresh-proventos',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dividendos': typeof DividendosRoute
+  '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dividendos': typeof DividendosRoute
+  '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/dividendos': typeof DividendosRoute
+  '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/configuracoes' | '/dividendos'
+  fullPaths:
+    | '/'
+    | '/configuracoes'
+    | '/dividendos'
+    | '/api/public/refresh-proventos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/configuracoes' | '/dividendos'
-  id: '__root__' | '/' | '/configuracoes' | '/dividendos'
+  to: '/' | '/configuracoes' | '/dividendos' | '/api/public/refresh-proventos'
+  id:
+    | '__root__'
+    | '/'
+    | '/configuracoes'
+    | '/dividendos'
+    | '/api/public/refresh-proventos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   DividendosRoute: typeof DividendosRoute
+  ApiPublicRefreshProventosRoute: typeof ApiPublicRefreshProventosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +102,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/refresh-proventos': {
+      id: '/api/public/refresh-proventos'
+      path: '/api/public/refresh-proventos'
+      fullPath: '/api/public/refresh-proventos'
+      preLoaderRoute: typeof ApiPublicRefreshProventosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +116,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   DividendosRoute: DividendosRoute,
+  ApiPublicRefreshProventosRoute: ApiPublicRefreshProventosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
