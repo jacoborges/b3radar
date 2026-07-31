@@ -189,7 +189,12 @@ function DividendosPage() {
         (intel?.anosConsecutivosPagando ?? -1) < minConsecutivos
       )
         return false;
-      if (freq !== "ALL" && intel?.next.frequencia !== freq) return false;
+      if (
+        freq.length > 0 &&
+        !(intel && freq.includes(intel.next.frequencia))
+      )
+        return false;
+
       if (comEmDias > 0) {
         const iso = intel?.next.proximaDataComEstimada;
         if (!iso) return false;
