@@ -143,10 +143,11 @@ function DividendosPage() {
     (minScore > 0 ? 1 : 0) +
     (minDy12m > 0 ? 1 : 0) +
     (minConsecutivos > 0 ? 1 : 0) +
-    (freq !== "ALL" ? 1 : 0) +
+    (freq.length > 0 ? 1 : 0) +
     (comEmDias > 0 ? 1 : 0) +
     (somenteComDados ? 1 : 0) +
-    (cls !== "ALL" ? 1 : 0);
+    (cls.length > 0 ? 1 : 0);
+
 
   const activeCount =
     ranges.length +
