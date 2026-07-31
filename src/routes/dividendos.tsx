@@ -161,9 +161,10 @@ function DividendosPage() {
     const filtered = rows.filter((r) => {
       if (
         cls.length > 0 &&
-        !(intel && cls.includes(intel.classification))
+        !(r.intel && cls.includes(r.intel.classification))
       )
         return false;
+
 
       if (q) {
         const s = q.trim().toUpperCase();
