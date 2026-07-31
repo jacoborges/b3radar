@@ -246,20 +246,28 @@ function DividendosPage() {
           />
         </Label>
         <div className="grid grid-cols-3 gap-1.5">
-          {CLASS_FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setCls(f.key)}
-              className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
-                cls === f.key
-                  ? "border-primary/70 bg-primary/10 text-primary"
-                  : "border-border/60 text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+          {CLASS_FILTERS.map((f) => {
+            const active =
+              f.key === "ALL" ? cls.length === 0 : cls.includes(f.key);
+            return (
+              <button
+                key={f.key}
+                onClick={() => (f.key === "ALL" ? setCls([]) : toggleCls(f.key))}
+                className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                  active
+                    ? "border-primary/70 bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
+        <p className="text-[10px] text-muted-foreground">
+          Selecione uma ou mais classes. Nenhuma selecionada mostra todas.
+        </p>
+
       </div>
 
       <div className="space-y-2">
