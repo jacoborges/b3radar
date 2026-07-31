@@ -498,7 +498,10 @@ function DividendosPage() {
             return (
               <button
                 key={c}
-                onClick={() => setCls(c === "Sem cobertura" ? "ALL" : c)}
+                onClick={() =>
+                  c === "Sem cobertura" ? setCls([]) : toggleCls(c)
+                }
+
                 className="rounded-lg border border-border/60 bg-card p-3 text-left transition-colors hover:border-primary/60"
               >
                 <div className="text-xs text-muted-foreground">{meta.label}</div>
