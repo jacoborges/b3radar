@@ -118,19 +118,29 @@ function DividendosPage() {
   const [minScore, setMinScore] = useState(0);
   const [minDy12m, setMinDy12m] = useState(0);
   const [minConsecutivos, setMinConsecutivos] = useState(0);
-  const [freq, setFreq] = useState<"ALL" | Frequencia>("ALL");
+  const [freq, setFreq] = useState<Frequencia[]>([]);
   const [comEmDias, setComEmDias] = useState(0); // 0 = sem restrição
   const [somenteComDados, setSomenteComDados] = useState(false);
+
+  const toggleCls = (v: DividendClass) =>
+    setCls((prev) =>
+      prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+    );
+  const toggleFreq = (v: Frequencia) =>
+    setFreq((prev) =>
+      prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+    );
 
   const clearIntel = () => {
     setMinScore(0);
     setMinDy12m(0);
     setMinConsecutivos(0);
-    setFreq("ALL");
+    setFreq([]);
     setComEmDias(0);
     setSomenteComDados(false);
-    setCls("ALL");
+    setCls([]);
   };
+
 
   const semRetorno = useMemo(
     () => rows.filter((r) => r.raw && r.raw.fonte === null).length,
