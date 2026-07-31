@@ -313,21 +313,28 @@ function DividendosPage() {
       <div className="space-y-2">
         <Label className="text-sm">Frequência de pagamento</Label>
         <div className="grid grid-cols-3 gap-1.5">
-          {FREQ_OPTS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFreq(f)}
-              className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
-                freq === f
-                  ? "border-primary/70 bg-primary/10 text-primary"
-                  : "border-border/60 text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f === "ALL" ? "Todas" : f}
-            </button>
-          ))}
+          {FREQ_OPTS.map((f) => {
+            const active = f === "ALL" ? freq.length === 0 : freq.includes(f);
+            return (
+              <button
+                key={f}
+                onClick={() => (f === "ALL" ? setFreq([]) : toggleFreq(f))}
+                className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                  active
+                    ? "border-primary/70 bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {f === "ALL" ? "Todas" : f}
+              </button>
+            );
+          })}
         </div>
+        <p className="text-[10px] text-muted-foreground">
+          Selecione uma ou mais frequências. Nenhuma selecionada mostra todas.
+        </p>
       </div>
+
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
