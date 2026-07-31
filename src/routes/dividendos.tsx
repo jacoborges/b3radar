@@ -416,20 +416,27 @@ function DividendosPage() {
           />
 
           <div className="flex flex-wrap gap-1">
-            {CLASS_FILTERS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setCls(f.key)}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  cls === f.key
-                    ? "border-primary text-primary"
-                    : "border-border/60 text-muted-foreground hover:border-primary/60"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+            {CLASS_FILTERS.map((f) => {
+              const active =
+                f.key === "ALL" ? cls.length === 0 : cls.includes(f.key);
+              return (
+                <button
+                  key={f.key}
+                  onClick={() =>
+                    f.key === "ALL" ? setCls([]) : toggleCls(f.key)
+                  }
+                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                    active
+                      ? "border-primary text-primary"
+                      : "border-border/60 text-muted-foreground hover:border-primary/60"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
+
           <div className="ml-auto text-xs text-muted-foreground">
             {isLoading
               ? "Carregando eventos oficiais…"
