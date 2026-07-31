@@ -159,7 +159,12 @@ function DividendosPage() {
   const ranked = useMemo(() => {
     const hoje = new Date();
     const filtered = rows.filter((r) => {
-      if (cls !== "ALL" && r.intel?.classification !== cls) return false;
+      if (
+        cls.length > 0 &&
+        !(intel && cls.includes(intel.classification))
+      )
+        return false;
+
       if (q) {
         const s = q.trim().toUpperCase();
         if (
