@@ -103,7 +103,7 @@ function DividendosPage() {
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
     useDividendBatch(stocks);
   const [q, setQ] = useState("");
-  const [cls, setCls] = useState<"ALL" | DividendClass>("ALL");
+  const [cls, setCls] = useState<DividendClass[]>([]);
   const [selected, setSelected] = useState<Stock | null>(null);
 
   // filtros fundamentalistas / qualitativos (mesmos da tela de ações)
