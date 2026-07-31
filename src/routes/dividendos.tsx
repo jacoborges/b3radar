@@ -103,7 +103,7 @@ function DividendosPage() {
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
     useDividendBatch(stocks);
   const [q, setQ] = useState("");
-  const [cls, setCls] = useState<"ALL" | DividendClass>("ALL");
+  const [cls, setCls] = useState<DividendClass[]>([]);
   const [selected, setSelected] = useState<Stock | null>(null);
 
   // filtros fundamentalistas / qualitativos (mesmos da tela de ações)
@@ -118,19 +118,29 @@ function DividendosPage() {
   const [minScore, setMinScore] = useState(0);
   const [minDy12m, setMinDy12m] = useState(0);
   const [minConsecutivos, setMinConsecutivos] = useState(0);
-  const [freq, setFreq] = useState<"ALL" | Frequencia>("ALL");
+  const [freq, setFreq] = useState<Frequencia[]>([]);
   const [comEmDias, setComEmDias] = useState(0); // 0 = sem restrição
   const [somenteComDados, setSomenteComDados] = useState(false);
+
+  const toggleCls = (v: DividendClass) =>
+    setCls((prev) =>
+      prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+    );
+  const toggleFreq = (v: Frequencia) =>
+    setFreq((prev) =>
+      prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v],
+    );
 
   const clearIntel = () => {
     setMinScore(0);
     setMinDy12m(0);
     setMinConsecutivos(0);
-    setFreq("ALL");
+    setFreq([]);
     setComEmDias(0);
     setSomenteComDados(false);
-    setCls("ALL");
+    setCls([]);
   };
+
 
   const semRetorno = useMemo(
     () => rows.filter((r) => r.raw && r.raw.fonte === null).length,
@@ -143,10 +153,11 @@ function DividendosPage() {
     (minScore > 0 ? 1 : 0) +
     (minDy12m > 0 ? 1 : 0) +
     (minConsecutivos > 0 ? 1 : 0) +
-    (freq !== "ALL" ? 1 : 0) +
+    (freq.length > 0 ? 1 : 0) +
     (comEmDias > 0 ? 1 : 0) +
     (somenteComDados ? 1 : 0) +
-    (cls !== "ALL" ? 1 : 0);
+    (cls.length > 0 ? 1 : 0);
+
 
   const activeCount =
     ranges.length +
@@ -159,7 +170,13 @@ function DividendosPage() {
   const ranked = useMemo(() => {
     const hoje = new Date();
     const filtered = rows.filter((r) => {
-      if (cls !== "ALL" && r.intel?.classification !== cls) return false;
+      if (
+        cls.length > 0 &&
+        !(r.intel && cls.includes(r.intel.classification))
+      )
+        return false;
+
+
       if (q) {
         const s = q.trim().toUpperCase();
         if (
@@ -189,7 +206,12 @@ function DividendosPage() {
         (intel?.anosConsecutivosPagando ?? -1) < minConsecutivos
       )
         return false;
-      if (freq !== "ALL" && intel?.next.frequencia !== freq) return false;
+      if (
+        freq.length > 0 &&
+        !(intel && freq.includes(intel.next.frequencia))
+      )
+        return false;
+
       if (comEmDias > 0) {
         const iso = intel?.next.proximaDataComEstimada;
         if (!iso) return false;
@@ -246,20 +268,28 @@ function DividendosPage() {
           />
         </Label>
         <div className="grid grid-cols-3 gap-1.5">
-          {CLASS_FILTERS.map((f) => (
-            <button
-              key={f.key}
-              onClick={() => setCls(f.key)}
-              className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
-                cls === f.key
-                  ? "border-primary/70 bg-primary/10 text-primary"
-                  : "border-border/60 text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
+          {CLASS_FILTERS.map((f) => {
+            const active =
+              f.key === "ALL" ? cls.length === 0 : cls.includes(f.key);
+            return (
+              <button
+                key={f.key}
+                onClick={() => (f.key === "ALL" ? setCls([]) : toggleCls(f.key))}
+                className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                  active
+                    ? "border-primary/70 bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {f.label}
+              </button>
+            );
+          })}
         </div>
+        <p className="text-[10px] text-muted-foreground">
+          Selecione uma ou mais classes. Nenhuma selecionada mostra todas.
+        </p>
+
       </div>
 
       <div className="space-y-2">
@@ -313,21 +343,28 @@ function DividendosPage() {
       <div className="space-y-2">
         <Label className="text-sm">Frequência de pagamento</Label>
         <div className="grid grid-cols-3 gap-1.5">
-          {FREQ_OPTS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setFreq(f)}
-              className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
-                freq === f
-                  ? "border-primary/70 bg-primary/10 text-primary"
-                  : "border-border/60 text-muted-foreground hover:border-primary/40"
-              }`}
-            >
-              {f === "ALL" ? "Todas" : f}
-            </button>
-          ))}
+          {FREQ_OPTS.map((f) => {
+            const active = f === "ALL" ? freq.length === 0 : freq.includes(f);
+            return (
+              <button
+                key={f}
+                onClick={() => (f === "ALL" ? setFreq([]) : toggleFreq(f))}
+                className={`rounded-md border px-2 py-1.5 text-xs transition-colors ${
+                  active
+                    ? "border-primary/70 bg-primary/10 text-primary"
+                    : "border-border/60 text-muted-foreground hover:border-primary/40"
+                }`}
+              >
+                {f === "ALL" ? "Todas" : f}
+              </button>
+            );
+          })}
         </div>
+        <p className="text-[10px] text-muted-foreground">
+          Selecione uma ou mais frequências. Nenhuma selecionada mostra todas.
+        </p>
       </div>
+
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -416,20 +453,27 @@ function DividendosPage() {
           />
 
           <div className="flex flex-wrap gap-1">
-            {CLASS_FILTERS.map((f) => (
-              <button
-                key={f.key}
-                onClick={() => setCls(f.key)}
-                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                  cls === f.key
-                    ? "border-primary text-primary"
-                    : "border-border/60 text-muted-foreground hover:border-primary/60"
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
+            {CLASS_FILTERS.map((f) => {
+              const active =
+                f.key === "ALL" ? cls.length === 0 : cls.includes(f.key);
+              return (
+                <button
+                  key={f.key}
+                  onClick={() =>
+                    f.key === "ALL" ? setCls([]) : toggleCls(f.key)
+                  }
+                  className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                    active
+                      ? "border-primary text-primary"
+                      : "border-border/60 text-muted-foreground hover:border-primary/60"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
           </div>
+
           <div className="ml-auto text-xs text-muted-foreground">
             {isLoading
               ? "Carregando eventos oficiais…"
@@ -454,7 +498,10 @@ function DividendosPage() {
             return (
               <button
                 key={c}
-                onClick={() => setCls(c === "Sem cobertura" ? "ALL" : c)}
+                onClick={() =>
+                  c === "Sem cobertura" ? setCls([]) : toggleCls(c)
+                }
+
                 className="rounded-lg border border-border/60 bg-card p-3 text-left transition-colors hover:border-primary/60"
               >
                 <div className="text-xs text-muted-foreground">{meta.label}</div>
