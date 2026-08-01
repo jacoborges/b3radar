@@ -1,39 +1,32 @@
 ## Objetivo
-Aplicar a Inteligência de Proventos a **todas** as ações listadas (~1.000 tickers), não apenas aos 350 mais líquidos.
+Fechar o B3 Radar atrás de um login. Não existe cadastro público: só o administrador cria contas (e-mail + senha) e atribui perfis.
 
-## Por que hoje está limitado
-Cada ticker exige ~8 chamadas à B3 (1 para resolver o nome de negociação, 6 anos do *supplement*, 1 do histórico de caixa). Para 1.000 ativos isso são ~8.000 requisições, hoje feitas ao vivo com cache apenas em memória do servidor — que se perde a cada reinício. Por isso o limite de 350.
+## Perfis
+- **ADMIN** — acesso total ao app + painel de usuários: criar, editar perfil, suspender/reativar e excluir. Pode criar outros ADMIN.
+- **GESTOR** — acesso total ao app + pode criar usuários comuns e suspender/reativar. Não exclui contas nem cria/edita ADMIN.
+- **USUÁRIO** — acesso ao app apenas.
 
-## Solução: cache persistente no Lovable Cloud
+**Suspenso** é um status separado do perfil: a conta continua cadastrada, mas ao entrar vê só a mensagem "Seu acesso está suspenso. Entre em contato com o administrador." e um botão Sair.
 
-### 1. Ativar o Lovable Cloud e criar a tabela de proventos
-Uma tabela `dividend_events_cache` com uma linha por ticker, guardando:
-- `ticker`, `trading_name`, `historico` (JSON dos eventos), `provisionados` (JSON), `fonte`, `error`, `fetched_at`.
-- Leitura pública (somente SELECT para visitantes), escrita apenas pelo servidor.
+## Tela de login
+Fundo escuro do app, centralizado: título **B3 Radar**, campo E-mail, campo Senha, botão Entrar. Sem "criar conta" e sem "esqueci a senha". Erro genérico em credenciais inválidas.
 
-### 2. Servir a página a partir do banco
-`/dividendos` passa a ler a tabela inteira em uma única consulta — abre instantaneamente, com **todos** os ativos, sem depender da B3 no momento da abertura.
-- A tela mostra, por ativo, a data da última atualização e "Aguardando coleta" para quem ainda não foi buscado.
-- Cabeçalho com "X de Y ativos com dados da B3".
+## Escopo do bloqueio
+Tudo protegido: `/`, `/dividendos`, `/configuracoes` passam para dentro da área autenticada. Visitante sem sessão é sempre levado ao login. A rota pública `/api/public/refresh-proventos` (coletor agendado) continua como está, protegida pelo segredo dela.
 
-### 3. Coletor incremental em segundo plano
-Uma rota de servidor (`/api/public/refresh-proventos`) que, a cada chamada, pega os N tickers mais desatualizados (ou nunca coletados), busca na B3 com concorrência controlada e grava no banco.
-- Protegida por um segredo, para não virar endpoint aberto.
-- Chamada automaticamente pelo próprio app quando a página abre (em background, sem travar a tela) e pode ser agendada para rodar sozinha diariamente.
-- Prioriza os ativos por liquidez: os mais negociados são preenchidos primeiro, depois a cauda longa.
+## Painel de administração
+Nova página **Usuários** (visível no cabeçalho apenas para ADMIN e GESTOR):
+- Lista com e-mail, perfil, status (ativo/suspenso) e data de criação.
+- Botão "Novo usuário": e-mail, senha e perfil — a conta já nasce ativa e pronta para uso (sem confirmação por e-mail).
+- Ações por linha: alterar perfil, suspender/reativar, redefinir senha e excluir (excluir só para ADMIN).
+- Um ADMIN não pode suspender, rebaixar nem excluir a própria conta (evita ficar sem administrador).
 
-### 4. Deduplicação por empresa
-Vários tickers pertencem à mesma empresa (ex.: PETR3/PETR4). A coleta passa a agrupar por empresa emissora, reduzindo as chamadas à B3 em cerca de 30–40%.
-
-### 5. Ajustes na UI
-- Remover o texto "top 350 por liquidez"; passar a "todos os ativos".
-- Filtro opcional para esconder ativos ainda sem cobertura.
-- Indicador de progresso da primeira carga ("coletando… 420/994").
-
-## Impacto
-O painel dentro do modal de cada ação continua funcionando: passa a ler primeiro do cache e só chama a B3 se o ativo ainda não tiver sido coletado.
+## Conta inicial
+`eventos.jacoborges@gmail.com` é criado como ADMIN. Você define a senha dele no momento em que eu implementar (vou pedir a senha por um campo seguro) e pode trocá-la depois pelo próprio painel.
 
 ## Detalhes técnicos
-- Novos: migração da tabela + `src/routes/api/public/refresh-proventos.ts` + funções de leitura/escrita do cache.
-- Alterados: `src/lib/proventos.server.ts` (persistência e agrupamento por empresa), `src/lib/proventos.functions.ts`, `src/hooks/use-dividend-batch.ts`, `src/routes/dividendos.tsx`.
-- Sem novas dependências externas.
+- Banco: tabelas `profiles` (id, email, status, created_at) e `user_roles` (user_id, role) com enum `app_role` = admin | gestor | usuario, RLS + GRANTs e função `has_role()` security definer. Perfil nunca fica na tabela de perfil do usuário para evitar escalação de privilégio.
+- Cadastro público desativado na configuração de auth; criação de contas só via server function privilegiada que valida o perfil de quem chamou.
+- Novas rotas: `/auth` (login público) e subárvore `_authenticated/` contendo home, dividendos, configurações e `/usuarios`. `src/routes/index.tsx` vira redirecionamento para o app autenticado.
+- Server functions em `src/lib/admin-users.functions.ts` (listar, criar, alterar perfil, suspender, redefinir senha, excluir) usando o cliente administrativo apenas após verificar o papel do chamador.
+- Verificação de suspensão feita no servidor, não só na interface.

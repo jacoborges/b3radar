@@ -42,11 +42,13 @@ import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
+import { AccountControls } from "@/components/AccountControls";
+
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "B3 Radar — Ações da Bovespa com fundamentos, dividendos e gráfico" },
@@ -289,10 +291,11 @@ function HomePage() {
                 </Link>
               </Button>
 
-
+              <AccountControls />
 
             </div>
           </div>
+
 
 
           {activeFilters.length > 0 && (
