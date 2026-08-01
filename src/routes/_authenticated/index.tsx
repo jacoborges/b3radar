@@ -42,6 +42,8 @@ import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
+import { AccountControls } from "@/components/AccountControls";
+
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 
