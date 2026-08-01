@@ -289,10 +289,11 @@ function HomePage() {
                 </Link>
               </Button>
 
-
+              <AccountControls />
 
             </div>
           </div>
+
 
 
           {activeFilters.length > 0 && (
