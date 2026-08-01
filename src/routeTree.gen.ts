@@ -9,26 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as DividendosRouteImport } from './routes/dividendos'
-import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedDividendosRouteImport } from './routes/_authenticated/dividendos'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as ApiPublicRefreshProventosRouteImport } from './routes/api/public/refresh-proventos'
 
-const DividendosRoute = DividendosRouteImport.update({
-  id: '/dividendos',
-  path: '/dividendos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/_authenticated/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedDividendosRoute = AuthenticatedDividendosRouteImport.update({
+  id: '/_authenticated/dividendos',
+  path: '/dividendos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/_authenticated/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicRefreshProventosRoute =
   ApiPublicRefreshProventosRouteImport.update({
     id: '/api/public/refresh-proventos',
@@ -37,69 +38,69 @@ const ApiPublicRefreshProventosRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/dividendos': typeof DividendosRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dividendos': typeof AuthenticatedDividendosRoute
+  '/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/dividendos': typeof DividendosRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/dividendos': typeof AuthenticatedDividendosRoute
+  '/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/configuracoes': typeof ConfiguracoesRoute
-  '/dividendos': typeof DividendosRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
+  '/_authenticated/dividendos': typeof AuthenticatedDividendosRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/configuracoes'
     | '/dividendos'
+    | '/'
     | '/api/public/refresh-proventos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/configuracoes' | '/dividendos' | '/api/public/refresh-proventos'
+  to: '/configuracoes' | '/dividendos' | '/' | '/api/public/refresh-proventos'
   id:
     | '__root__'
-    | '/'
-    | '/configuracoes'
-    | '/dividendos'
+    | '/_authenticated/configuracoes'
+    | '/_authenticated/dividendos'
+    | '/_authenticated/'
     | '/api/public/refresh-proventos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ConfiguracoesRoute: typeof ConfiguracoesRoute
-  DividendosRoute: typeof DividendosRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
+  AuthenticatedDividendosRoute: typeof AuthenticatedDividendosRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   ApiPublicRefreshProventosRoute: typeof ApiPublicRefreshProventosRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/dividendos': {
-      id: '/dividendos'
-      path: '/dividendos'
-      fullPath: '/dividendos'
-      preLoaderRoute: typeof DividendosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/configuracoes': {
-      id: '/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof ConfiguracoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dividendos': {
+      id: '/_authenticated/dividendos'
+      path: '/dividendos'
+      fullPath: '/dividendos'
+      preLoaderRoute: typeof AuthenticatedDividendosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/refresh-proventos': {
@@ -113,9 +114,9 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ConfiguracoesRoute: ConfiguracoesRoute,
-  DividendosRoute: DividendosRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
+  AuthenticatedDividendosRoute: AuthenticatedDividendosRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   ApiPublicRefreshProventosRoute: ApiPublicRefreshProventosRoute,
 }
 export const routeTree = rootRouteImport

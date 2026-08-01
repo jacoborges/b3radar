@@ -26,7 +26,7 @@ import {
 import { StockDetailModal } from "@/components/StockDetailModal";
 import type { Stock } from "@/lib/stocks-data";
 
-export const Route = createFileRoute("/dividendos")({
+export const Route = createFileRoute("/_authenticated/dividendos")({
   head: () => ({
     meta: [
       {
