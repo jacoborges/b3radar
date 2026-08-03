@@ -463,10 +463,27 @@ function MetricCard({
   );
 }
 
-function BreakdownItem({ label, v }: { label: string; v: number }) {
+function BreakdownItem({
+  label,
+  v,
+  info,
+}: {
+  label: string;
+  v: number;
+  info?: { peso: string; fundamentalista: string; tecnica: string };
+}) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span>{label}</span>
+      <span className="flex items-center gap-1">
+        {label}
+        {info && (
+          <InfoTip
+            title={`${label} (peso ${info.peso})`}
+            fundamentalista={info.fundamentalista}
+            tecnica={info.tecnica}
+          />
+        )}
+      </span>
       <span className="font-mono text-foreground">{v}</span>
     </div>
   );
