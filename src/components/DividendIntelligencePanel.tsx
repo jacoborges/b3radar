@@ -193,21 +193,24 @@ export function DividendIntelligencePanel({ stock }: Props) {
                 />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-5">
-                <BreakdownItem label="Regularidade" v={intel.breakdown.regularidade} />
-                <BreakdownItem label="Consecutivos" v={intel.breakdown.consecutividade} />
-                <BreakdownItem label="Consist. valor" v={intel.breakdown.consistenciaValor} />
-                <BreakdownItem label="Cobertura" v={intel.breakdown.cobertura} />
-                <BreakdownItem label="Sem cortes" v={intel.breakdown.ausenciaCortes} />
+                <BreakdownItem label="Regularidade" v={intel.breakdown.regularidade} info={BREAKDOWN_INFO.regularidade} />
+                <BreakdownItem label="Consecutivos" v={intel.breakdown.consecutividade} info={BREAKDOWN_INFO.consecutividade} />
+                <BreakdownItem label="Consist. valor" v={intel.breakdown.consistenciaValor} info={BREAKDOWN_INFO.consistenciaValor} />
+                <BreakdownItem label="Cobertura" v={intel.breakdown.cobertura} info={BREAKDOWN_INFO.cobertura} />
+                <BreakdownItem label="Sem cortes" v={intel.breakdown.ausenciaCortes} info={BREAKDOWN_INFO.ausenciaCortes} />
               </div>
             </div>
             <div className="flex flex-col items-start justify-center gap-1 lg:items-end">
-              <Badge
-                variant="outline"
-                className="border-border/60 text-sm"
-                style={{ color: classMetaData.color, borderColor: classMetaData.color }}
-              >
-                {classMetaData.label}
-              </Badge>
+              <div className="flex items-center gap-1">
+                <Badge
+                  variant="outline"
+                  className="border-border/60 text-sm"
+                  style={{ color: classMetaData.color, borderColor: classMetaData.color }}
+                >
+                  {classMetaData.label}
+                </Badge>
+                <ClassificationInfoTip current={intel.classification} />
+              </div>
               <div className="text-xs text-muted-foreground">
                 {intel.anosConsecutivosPagando} anos consecutivos
               </div>
