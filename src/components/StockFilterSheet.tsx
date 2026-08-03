@@ -226,31 +226,18 @@ export function StockFilterSheet({
             const fmt = (n: number) => (step < 1 ? n.toFixed(2) : n.toString());
             return (
               <div key={k} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="flex items-center gap-1.5 text-sm">
-                    {INDICATORS[k].label}
-                    <InfoTip
-                      title={INDICATORS[k].short}
-                      fundamentalista={INDICATORS[k].fundamentalista}
-                      tecnica={INDICATORS[k].tecnica}
-                    />
-                  </Label>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {active
-                      ? `${fmt(lo)} — ${fmt(hi)}`
-                      : `${fmt(min)} — ${fmt(max)}`}
-                  </span>
-                </div>
+                <Label className="flex items-center gap-1.5 text-sm">
+                  {INDICATORS[k].label}
+                  <InfoTip
+                    title={INDICATORS[k].short}
+                    fundamentalista={INDICATORS[k].fundamentalista}
+                    tecnica={INDICATORS[k].tecnica}
+                  />
+                </Label>
 
-                <div className="flex items-center gap-2">
-                  <span className="w-16 text-left font-mono text-[11px] text-muted-foreground">
-                    <span className="mr-1 uppercase tracking-wide text-[9px]">
-                      Mín
-                    </span>
-                    {fmt(lo)}
-                  </span>
+                <div className="px-0.5">
                   <Slider
-                    className="flex-1"
+                    className="w-full"
                     min={min}
                     max={max}
                     step={step}
@@ -262,15 +249,24 @@ export function StockFilterSheet({
                       })
                     }
                   />
-                  <span className="w-16 text-right font-mono text-[11px] text-muted-foreground">
-                    {fmt(hi)}
-                    <span className="ml-1 uppercase tracking-wide text-[9px]">
-                      Máx
+                  <div className="mt-1.5 flex items-center justify-between font-mono text-[11px] text-muted-foreground">
+                    <span>
+                      <span className="mr-1 text-[9px] uppercase tracking-wide">
+                        mín.
+                      </span>
+                      {fmt(lo)}
                     </span>
-                  </span>
+                    <span className={active ? "text-primary" : undefined}>
+                      {fmt(hi)}
+                      <span className="ml-1 text-[9px] uppercase tracking-wide">
+                        máx.
+                      </span>
+                    </span>
+                  </div>
                 </div>
               </div>
             );
+
           })}
 
           <Button
