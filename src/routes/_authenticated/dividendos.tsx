@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { InfoTip } from "@/components/InfoTip";
+import { InfoTip, ClassificationInfoTip } from "@/components/InfoTip";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import {
   activeRanges,
@@ -261,11 +261,7 @@ function DividendosPage() {
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5 text-sm">
           Classe de provento
-          <InfoTip
-            title="Classificação de proventos"
-            fundamentalista="Elite, Consistente, Regular ou Irregular conforme regularidade, consecutividade e consistência dos pagamentos."
-            tecnica="Classes superiores costumam apresentar menor volatilidade em torno das datas com/ex."
-          />
+          <ClassificationInfoTip />
         </Label>
         <div className="grid grid-cols-3 gap-1.5">
           {CLASS_FILTERS.map((f) => {
@@ -491,6 +487,10 @@ function DividendosPage() {
         </div>
 
         {/* Distribuição por classe */}
+        <div className="mb-4 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Distribuição por classe
+          <ClassificationInfoTip />
+        </div>
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {CLASS_ORDER.map((c) => {
             const meta = classMeta(c);

@@ -13,12 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { InfoTip } from "./InfoTip";
+import { InfoTip, ClassificationInfoTip } from "./InfoTip";
 import { useTickerData } from "@/hooks/use-ticker-data";
 import type { Stock } from "@/lib/stocks-data";
 import {
   computeDividendIntelligence,
   classMeta,
+  BREAKDOWN_INFO,
   type EventoTipo,
 } from "@/lib/dividend-intelligence";
 import {
@@ -192,21 +193,24 @@ export function DividendIntelligencePanel({ stock }: Props) {
                 />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground sm:grid-cols-5">
-                <BreakdownItem label="Regularidade" v={intel.breakdown.regularidade} />
-                <BreakdownItem label="Consecutivos" v={intel.breakdown.consecutividade} />
-                <BreakdownItem label="Consist. valor" v={intel.breakdown.consistenciaValor} />
-                <BreakdownItem label="Cobertura" v={intel.breakdown.cobertura} />
-                <BreakdownItem label="Sem cortes" v={intel.breakdown.ausenciaCortes} />
+                <BreakdownItem label="Regularidade" v={intel.breakdown.regularidade} info={BREAKDOWN_INFO.regularidade} />
+                <BreakdownItem label="Consecutivos" v={intel.breakdown.consecutividade} info={BREAKDOWN_INFO.consecutividade} />
+                <BreakdownItem label="Consist. valor" v={intel.breakdown.consistenciaValor} info={BREAKDOWN_INFO.consistenciaValor} />
+                <BreakdownItem label="Cobertura" v={intel.breakdown.cobertura} info={BREAKDOWN_INFO.cobertura} />
+                <BreakdownItem label="Sem cortes" v={intel.breakdown.ausenciaCortes} info={BREAKDOWN_INFO.ausenciaCortes} />
               </div>
             </div>
             <div className="flex flex-col items-start justify-center gap-1 lg:items-end">
-              <Badge
-                variant="outline"
-                className="border-border/60 text-sm"
-                style={{ color: classMetaData.color, borderColor: classMetaData.color }}
-              >
-                {classMetaData.label}
-              </Badge>
+              <div className="flex items-center gap-1">
+                <Badge
+                  variant="outline"
+                  className="border-border/60 text-sm"
+                  style={{ color: classMetaData.color, borderColor: classMetaData.color }}
+                >
+                  {classMetaData.label}
+                </Badge>
+                <ClassificationInfoTip current={intel.classification} />
+              </div>
               <div className="text-xs text-muted-foreground">
                 {intel.anosConsecutivosPagando} anos consecutivos
               </div>
@@ -459,10 +463,27 @@ function MetricCard({
   );
 }
 
-function BreakdownItem({ label, v }: { label: string; v: number }) {
+function BreakdownItem({
+  label,
+  v,
+  info,
+}: {
+  label: string;
+  v: number;
+  info?: { peso: string; fundamentalista: string; tecnica: string };
+}) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <span>{label}</span>
+      <span className="flex items-center gap-1">
+        {label}
+        {info && (
+          <InfoTip
+            title={`${label} (peso ${info.peso})`}
+            fundamentalista={info.fundamentalista}
+            tecnica={info.tecnica}
+          />
+        )}
+      </span>
       <span className="font-mono text-foreground">{v}</span>
     </div>
   );
