@@ -76,6 +76,111 @@ export function classMeta(c: DividendClass) {
   return CLASS_META[c];
 }
 
+/**
+ * Explicações didáticas para cada classe de provento.
+ * Usado pelos botões de interrogação (?) espalhados pelo app.
+ */
+export const CLASS_INFO: Record<
+  DividendClass,
+  {
+    label: string;
+    color: string;
+    criterio: string;
+    fundamentalista: string;
+    tecnica: string;
+  }
+> = {
+  Elite: {
+    label: "Elite",
+    color: "var(--color-success)",
+    criterio: "Score ≥ 80 e frequência mensal ou trimestral",
+    fundamentalista:
+      "Pagador de altíssima previsibilidade: intervalos regulares, muitos anos consecutivos, valor estável e boa margem. É o selo de qualidade máxima.",
+    tecnica:
+      "Ativos Elite costumam ter menor volatilidade em torno das datas COM/EX e atraem fluxo comprador recorrente de investidores em busca de renda.",
+  },
+  Consistente: {
+    label: "Consistente",
+    color: "hsl(160 70% 55%)",
+    criterio: "Score ≥ 65",
+    fundamentalista:
+      "Pagador regular com bom histórico, mas que não atinge simultaneamente score ≥ 80 e frequência mensal/trimestral.",
+    tecnica:
+      "Oferece previsibilidade razoável de renda; pequenas oscilações de valor ou intervalo mais espaçado (semestral) impedem a classificação Elite.",
+  },
+  Regular: {
+    label: "Regular",
+    color: "var(--color-warning)",
+    criterio: "Score ≥ 45",
+    fundamentalista:
+      "Paga dividendos, mas com falhas de regularidade nos intervalos ou consistência de valor abaixo do ideal.",
+    tecnica:
+      "Renda existente, porém menos previsível — convém confirmar o histórico recente antes de projetar fluxos de caixa.",
+  },
+  Irregular: {
+    label: "Irregular",
+    color: "hsl(20 85% 60%)",
+    criterio: "Score ≥ 20",
+    fundamentalista:
+      "Pagamentos esporádicos ou com cortes relevantes ao longo dos anos; baixa previsibilidade.",
+    tecnica:
+      "Sinal de atenção: proventos irregulares podem indicar deterioração de fundamentals ou lucro instável.",
+  },
+  "Sem cobertura": {
+    label: "Sem cobertura",
+    color: "var(--muted-foreground)",
+    criterio: "Score < 20 ou sem histórico de proventos em dinheiro",
+    fundamentalista:
+      "Não há histórico suficiente de dividendos/JCP em dinheiro para gerar previsão ou score confiável.",
+    tecnica:
+      "Ativo sem perfil de pagador de dividendos — pode ser growth, em fase inicial, ou nunca ter distribuído proventos.",
+  },
+};
+
+/**
+ * Explicações didáticas para os 5 fatores do score de confiabilidade.
+ */
+export const BREAKDOWN_INFO: Record<
+  keyof DividendIntelligence["breakdown"],
+  { peso: string; fundamentalista: string; tecnica: string }
+> = {
+  regularidade: {
+    peso: "35%",
+    fundamentalista:
+      "Mede a constância dos intervalos entre pagamentos (coeficiente de variação dos gaps). Quanto menor a oscilação entre uma data COM e a próxima, maior o score.",
+    tecnica:
+      "Regularidade alta significa que o ativo tende a pagar em períodos previsíveis — útil para posicionar antes da data COM.",
+  },
+  consecutividade: {
+    peso: "25%",
+    fundamentalista:
+      "Conta quantos anos seguidos a empresa distribuiu proventos (até 8 anos = 100%). Interrupções zeram ou reduzem a série.",
+    tecnica:
+      "Anos consecutivos longos sinalizam compromisso da gestão com a remuneração do acionista.",
+  },
+  consistenciaValor: {
+    peso: "20%",
+    fundamentalista:
+      "Avalia a estabilidade do valor pago por ação (1 − coeficiente de variação dos valores). Valores que oscilam muito reduzem o score.",
+    tecnica:
+      "Consistência de valor ajuda a projetar o rendimento futuro com menor incerteza.",
+  },
+  cobertura: {
+    peso: "10%",
+    fundamentalista:
+      "Usa a margem líquida como proxy da capacidade de pagar (≥ 20% = 100%). Sem lucro suficiente, o dividendo fica em risco.",
+    tecnica:
+      "Margem saudável indica que o pagamento não compromete as operações da empresa.",
+  },
+  ausenciaCortes: {
+    peso: "10%",
+    fundamentalista:
+      "Penaliza anos em que o total distribuído caiu mais de 50% versus o ano anterior. Cada corte reduz o score em 35%.",
+    tecnica:
+      "Cortes bruscos costumam preceder ou acompanhar desvalorização do ativo.",
+  },
+};
+
 function median(nums: number[]): number {
   if (nums.length === 0) return 0;
   const s = [...nums].sort((a, b) => a - b);
