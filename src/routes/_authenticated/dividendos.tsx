@@ -261,11 +261,7 @@ function DividendosPage() {
       <div className="space-y-2">
         <Label className="flex items-center gap-1.5 text-sm">
           Classe de provento
-          <InfoTip
-            title="Classificação de proventos"
-            fundamentalista="Elite, Consistente, Regular ou Irregular conforme regularidade, consecutividade e consistência dos pagamentos."
-            tecnica="Classes superiores costumam apresentar menor volatilidade em torno das datas com/ex."
-          />
+          <ClassificationInfoTip />
         </Label>
         <div className="grid grid-cols-3 gap-1.5">
           {CLASS_FILTERS.map((f) => {
