@@ -487,6 +487,10 @@ function DividendosPage() {
         </div>
 
         {/* Distribuição por classe */}
+        <div className="mb-4 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Distribuição por classe
+          <ClassificationInfoTip />
+        </div>
         <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {CLASS_ORDER.map((c) => {
             const meta = classMeta(c);
