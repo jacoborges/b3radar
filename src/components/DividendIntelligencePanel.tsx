@@ -13,12 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { InfoTip } from "./InfoTip";
+import { InfoTip, ClassificationInfoTip } from "./InfoTip";
 import { useTickerData } from "@/hooks/use-ticker-data";
 import type { Stock } from "@/lib/stocks-data";
 import {
   computeDividendIntelligence,
   classMeta,
+  BREAKDOWN_INFO,
   type EventoTipo,
 } from "@/lib/dividend-intelligence";
 import {
