@@ -7,6 +7,7 @@ import {
   TrendingUp,
   TrendingDown,
   Coins,
+  Wallet,
   X,
 } from "lucide-react";
 
