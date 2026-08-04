@@ -50,6 +50,71 @@ export type Database = {
         }
         Relationships: []
       }
+      portfolio_lots: {
+        Row: {
+          bought_at: string
+          created_at: string
+          id: string
+          portfolio_id: string
+          price: number
+          quantity: number
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          bought_at?: string
+          created_at?: string
+          id?: string
+          portfolio_id: string
+          price: number
+          quantity: number
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          bought_at?: string
+          created_at?: string
+          id?: string
+          portfolio_id?: string
+          price?: number
+          quantity?: number
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_lots_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      portfolios: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
