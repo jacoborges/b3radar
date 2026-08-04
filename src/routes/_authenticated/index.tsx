@@ -272,6 +272,18 @@ function HomePage() {
                 variant="outline"
                 size="icon"
                 className="shrink-0 border-border/60 bg-input/60"
+                title="Carteira"
+              >
+                <Link to="/carteira" aria-label="Carteira">
+                  <Wallet className="h-4 w-4" />
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-border/60 bg-input/60"
                 title="Proventos"
               >
                 <Link to="/dividendos" aria-label="Proventos">

@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedDividendosRouteImport } from './routes/_authenticated/dividendos'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
+import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 import { Route as ApiPublicRefreshProventosRouteImport } from './routes/api/public/refresh-proventos'
 
 const AuthRoute = AuthRouteImport.update({
@@ -47,6 +48,11 @@ const AuthenticatedConfiguracoesRoute =
     path: '/configuracoes',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCarteiraRoute = AuthenticatedCarteiraRouteImport.update({
+  id: '/carteira',
+  path: '/carteira',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const ApiPublicRefreshProventosRoute =
   ApiPublicRefreshProventosRouteImport.update({
     id: '/api/public/refresh-proventos',
@@ -57,6 +63,7 @@ const ApiPublicRefreshProventosRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
+  '/carteira': typeof AuthenticatedCarteiraRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
+  '/carteira': typeof AuthenticatedCarteiraRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
@@ -74,6 +82,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dividendos': typeof AuthenticatedDividendosRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/carteira'
     | '/configuracoes'
     | '/dividendos'
     | '/usuarios'
@@ -92,6 +102,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
+    | '/carteira'
     | '/configuracoes'
     | '/dividendos'
     | '/usuarios'
@@ -101,6 +112,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_authenticated'
     | '/auth'
+    | '/_authenticated/carteira'
     | '/_authenticated/configuracoes'
     | '/_authenticated/dividendos'
     | '/_authenticated/usuarios'
@@ -158,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/carteira': {
+      id: '/_authenticated/carteira'
+      path: '/carteira'
+      fullPath: '/carteira'
+      preLoaderRoute: typeof AuthenticatedCarteiraRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/refresh-proventos': {
       id: '/api/public/refresh-proventos'
       path: '/api/public/refresh-proventos'
@@ -169,6 +188,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDividendosRoute: typeof AuthenticatedDividendosRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
@@ -176,6 +196,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDividendosRoute: AuthenticatedDividendosRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
