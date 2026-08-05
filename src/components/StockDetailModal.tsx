@@ -26,6 +26,8 @@ import {
 } from "@/lib/tradingview-rating";
 import { InfoTip } from "./InfoTip";
 import { DebtSemaphore } from "./DebtSemaphore";
+import { PrecoTetoPanel } from "./PrecoTetoPanel";
+
 import {
   DividendStackedChart,
   DividendVsSelicChart,
