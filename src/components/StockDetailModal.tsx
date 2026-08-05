@@ -276,6 +276,13 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
               <DebtSemaphore divPL={stock.divBrutaPatrimonio} />
 
+              <PrecoTetoPanel
+                ticker={stock.ticker}
+                nome={stock.nome}
+                precoAtual={stock.preco}
+              />
+
+
               <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
