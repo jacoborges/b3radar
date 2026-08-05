@@ -26,6 +26,8 @@ import {
 } from "@/lib/tradingview-rating";
 import { InfoTip } from "./InfoTip";
 import { DebtSemaphore } from "./DebtSemaphore";
+import { PrecoTetoPanel } from "./PrecoTetoPanel";
+
 import {
   DividendStackedChart,
   DividendVsSelicChart,
@@ -275,6 +277,13 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </div>
 
               <DebtSemaphore divPL={stock.divBrutaPatrimonio} />
+
+              <PrecoTetoPanel
+                ticker={stock.ticker}
+                nome={stock.nome}
+                precoAtual={stock.preco}
+              />
+
 
               <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex items-center gap-2">
