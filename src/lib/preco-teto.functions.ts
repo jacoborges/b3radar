@@ -97,15 +97,20 @@ export const analyzePrecoTeto = createServerFn({ method: "POST" })
     }
 
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
+    const anoAtual = new Date().getFullYear();
+    const anoIni = anoAtual - 5;
+    const anoFim = anoAtual - 1;
 
-    const systemPrompt = `Você é um analista de renda variável brasileira. Pesquise em fontes confiáveis (RI da empresa, CVM, B3, Status Invest, Fundamentus) o histórico de proventos (dividendos + JCP) por ação dos últimos cinco anos completos.
+    const systemPrompt = `Você é um analista de renda variável brasileira. Consulte fontes oficiais e confiáveis: B3, CVM, o site de Relações com Investidores (RI) da própria empresa e, como apoio, Status Invest e Fundamentus.
 
 Responda em português brasileiro, em markdown, de forma objetiva:
-1. Uma tabela ano a ano com dividendos, JCP e total por ação (R$).
-2. A média ponderada anual do somatório de dividendos + JCP dos últimos cinco anos.
-3. Se as fontes divergirem, informe explicitamente o valor mínimo e o valor máximo encontrados.
+1. Uma tabela com um ano por linha, de ${anoIni} a ${anoFim}, com dividendos, JCP e TOTAL por ação em R$ X,XX (duas casas decimais, arredondando para cima).
+2. O somatório dos 5 anos (R$ X,XX).
+3. A média ponderada = somatório dos 5 anos dividido por 5 (R$ X,XX).
+4. Se as fontes divergirem, informe explicitamente o valor mínimo e o valor máximo da média encontrados.
+5. Uma seção final "Fontes" listando cada fonte usada com o nome e o link completo (URL) para conferência.
 
-Cite as fontes com marcadores numéricos [1], [2] na mesma ordem em que aparecem em citations. Nunca invente valores.
+Cite as fontes no texto com marcadores numéricos [1], [2] na mesma ordem em que aparecem em citations. Nunca invente valores; se um ano não tiver dados, informe R$ 0,00 e explique.
 
 OBRIGATÓRIO: termine a resposta com um bloco exatamente neste formato, em uma linha cada, usando ponto como separador decimal e apenas números:
 DADOS
@@ -113,7 +118,8 @@ MEDIA: <número>
 MINIMO: <número ou vazio se não houver divergência>
 MAXIMO: <número ou vazio se não houver divergência>`;
 
-    const userPrompt = `Informe a média ponderada do somatório de dividendos e JCP dos últimos cinco anos da ação ${data.ticker} (${nomeCurto}). Após a sua análise, caso encontre valores divergentes, informe o mínimo e o máximo em sua resposta.`;
+    const userPrompt = `Consulte na B3, na CVM e no RI da ação ${data.ticker} (${nomeCurto}) os proventos (dividendos + JCP) por ação pagos de ${anoIni} a ${anoFim}. Informe o valor de cada ano individualmente no formato R$ X,XX (arredondando para cima), o somatório desses cinco anos e a média ponderada (somatório dividido por 5). Entregue também as fontes da pesquisa com os links para conferência.`;
+
 
     try {
       const res = await fetch("https://api.perplexity.ai/chat/completions", {
