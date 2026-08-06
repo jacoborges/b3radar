@@ -135,7 +135,7 @@ MAXIMO: <número ou vazio se não houver divergência>`;
             { role: "user", content: userPrompt },
           ],
           temperature: 0.2,
-          max_tokens: 900,
+          max_tokens: 1200,
           search_domain_filter: [
             "-reddit.com",
             "-twitter.com",
