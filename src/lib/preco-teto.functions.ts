@@ -55,12 +55,20 @@ function extractValues(text: string): {
     const m = text.match(re);
     return parseNum(m?.[1]);
   };
+  const div5 = (n: number | null) => (n === null ? null : n / 5);
+
+  // A média ponderada é SEMPRE calculada aqui: somatório dos 5 anos ÷ 5.
+  const soma = grab("SOMA");
+  const somaMin = grab("SOMA_MINIMO");
+  const somaMax = grab("SOMA_MAXIMO");
+
   return {
-    media: grab("MEDIA"),
-    minimo: grab("MINIMO"),
-    maximo: grab("MAXIMO"),
+    media: div5(soma) ?? grab("MEDIA"),
+    minimo: div5(somaMin) ?? grab("MINIMO"),
+    maximo: div5(somaMax) ?? grab("MAXIMO"),
   };
 }
+
 
 export const analyzePrecoTeto = createServerFn({ method: "POST" })
   .inputValidator((data) => inputSchema.parse(data))
@@ -81,7 +89,7 @@ export const analyzePrecoTeto = createServerFn({ method: "POST" })
       };
     }
 
-    const cacheKey = data.ticker;
+    const cacheKey = `v2:${data.ticker}`;
     const cached = CACHE.get(cacheKey);
     if (cached && Date.now() - cached.ts < TTL_MS) {
       return {
@@ -112,11 +120,11 @@ Responda em português brasileiro, em markdown, de forma objetiva:
 
 Cite as fontes no texto com marcadores numéricos [1], [2] na mesma ordem em que aparecem em citations. Nunca invente valores; se um ano não tiver dados, informe R$ 0,00 e explique.
 
-OBRIGATÓRIO: termine a resposta com um bloco exatamente neste formato, em uma linha cada, usando ponto como separador decimal e apenas números:
+OBRIGATÓRIO: termine a resposta com um bloco exatamente neste formato, em uma linha cada, usando ponto como separador decimal e apenas números (informe SOMATÓRIOS, não médias):
 DADOS
-MEDIA: <número>
-MINIMO: <número ou vazio se não houver divergência>
-MAXIMO: <número ou vazio se não houver divergência>`;
+SOMA: <somatório dos ${anoIni}-${anoFim}>
+SOMA_MINIMO: <somatório mínimo em caso de divergência entre fontes, ou vazio>
+SOMA_MAXIMO: <somatório máximo em caso de divergência entre fontes, ou vazio>`;
 
     const userPrompt = `Consulte na B3, na CVM e no RI da ação ${data.ticker} (${nomeCurto}) os proventos (dividendos + JCP) por ação pagos de ${anoIni} a ${anoFim}. Informe o valor de cada ano individualmente no formato R$ X,XX (arredondando para cima), o somatório desses cinco anos e a média ponderada (somatório dividido por 5). Entregue também as fontes da pesquisa com os links para conferência.`;
 
