@@ -55,12 +55,20 @@ function extractValues(text: string): {
     const m = text.match(re);
     return parseNum(m?.[1]);
   };
+  const div5 = (n: number | null) => (n === null ? null : n / 5);
+
+  // A média ponderada é SEMPRE calculada aqui: somatório dos 5 anos ÷ 5.
+  const soma = grab("SOMA");
+  const somaMin = grab("SOMA_MINIMO");
+  const somaMax = grab("SOMA_MAXIMO");
+
   return {
-    media: grab("MEDIA"),
-    minimo: grab("MINIMO"),
-    maximo: grab("MAXIMO"),
+    media: div5(soma) ?? grab("MEDIA"),
+    minimo: div5(somaMin) ?? grab("MINIMO"),
+    maximo: div5(somaMax) ?? grab("MAXIMO"),
   };
 }
+
 
 export const analyzePrecoTeto = createServerFn({ method: "POST" })
   .inputValidator((data) => inputSchema.parse(data))
