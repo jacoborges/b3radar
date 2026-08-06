@@ -89,7 +89,7 @@ export const analyzePrecoTeto = createServerFn({ method: "POST" })
       };
     }
 
-    const cacheKey = data.ticker;
+    const cacheKey = `v2:${data.ticker}`;
     const cached = CACHE.get(cacheKey);
     if (cached && Date.now() - cached.ts < TTL_MS) {
       return {
