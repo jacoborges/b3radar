@@ -132,6 +132,10 @@ function SettingsPage() {
           </p>
         </section>
 
+        <BazinSection />
+
+
+
       </main>
     </div>
   );
