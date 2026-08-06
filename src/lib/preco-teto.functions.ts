@@ -120,11 +120,11 @@ Responda em português brasileiro, em markdown, de forma objetiva:
 
 Cite as fontes no texto com marcadores numéricos [1], [2] na mesma ordem em que aparecem em citations. Nunca invente valores; se um ano não tiver dados, informe R$ 0,00 e explique.
 
-OBRIGATÓRIO: termine a resposta com um bloco exatamente neste formato, em uma linha cada, usando ponto como separador decimal e apenas números:
+OBRIGATÓRIO: termine a resposta com um bloco exatamente neste formato, em uma linha cada, usando ponto como separador decimal e apenas números (informe SOMATÓRIOS, não médias):
 DADOS
-MEDIA: <número>
-MINIMO: <número ou vazio se não houver divergência>
-MAXIMO: <número ou vazio se não houver divergência>`;
+SOMA: <somatório dos ${anoIni}-${anoFim}>
+SOMA_MINIMO: <somatório mínimo em caso de divergência entre fontes, ou vazio>
+SOMA_MAXIMO: <somatório máximo em caso de divergência entre fontes, ou vazio>`;
 
     const userPrompt = `Consulte na B3, na CVM e no RI da ação ${data.ticker} (${nomeCurto}) os proventos (dividendos + JCP) por ação pagos de ${anoIni} a ${anoFim}. Informe o valor de cada ano individualmente no formato R$ X,XX (arredondando para cima), o somatório desses cinco anos e a média ponderada (somatório dividido por 5). Entregue também as fontes da pesquisa com os links para conferência.`;
 
