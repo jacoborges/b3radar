@@ -5,14 +5,13 @@ import { Loader2, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InfoTip } from "./InfoTip";
 import { analyzePrecoTeto, type PrecoTetoResult } from "@/lib/preco-teto.functions";
+import { useBazinDivisor, formatDivisor } from "@/hooks/use-bazin-divisor";
 
 interface Props {
   ticker: string;
   nome?: string;
   precoAtual?: number;
 }
-
-const YIELD_ALVO = 0.06;
 
 function linkifyCitations(text: string, citations?: string[]): string {
   if (!citations || citations.length === 0) return text;
@@ -28,6 +27,8 @@ const brl = (v: number) =>
 
 export function PrecoTetoPanel({ ticker, nome, precoAtual }: Props) {
   const call = useServerFn(analyzePrecoTeto);
+  const [divisor] = useBazinDivisor();
+  const divisorTxt = formatDivisor(divisor);
   const [result, setResult] = useState<PrecoTetoResult | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -56,8 +57,8 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual }: Props) {
   const media = result?.media ?? null;
   const hasFaixa = min !== null && max !== null && min !== max;
 
-  const tetoMin = hasFaixa ? min / YIELD_ALVO : media !== null ? media / YIELD_ALVO : null;
-  const tetoMax = hasFaixa ? max / YIELD_ALVO : tetoMin;
+  const tetoMin = hasFaixa ? min / divisor : media !== null ? media / divisor : null;
+  const tetoMax = hasFaixa ? max / divisor : tetoMin;
 
   const tetoRef = tetoMin !== null && tetoMax !== null ? (tetoMin + tetoMax) / 2 : null;
   const diff =
@@ -73,7 +74,7 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual }: Props) {
         </h3>
         <InfoTip
           title="Preço Teto (método Bazin)"
-          fundamentalista="Divide a média ponderada dos proventos (dividendos + JCP) dos últimos 5 anos por 6% (0,06), o yield mínimo desejado. O resultado é o preço máximo a pagar para ainda obter 6% ao ano em proventos."
+          fundamentalista={`Divide a média ponderada dos proventos (dividendos + JCP) dos cinco anos anteriores pelo divisor configurado (${divisorTxt}), o yield mínimo desejado. O resultado é o preço máximo a pagar para ainda obter esse retorno anual em proventos. Ajuste o divisor em Configurações.`}
           tecnica="Comprar abaixo do preço teto amplia a margem de segurança; acima dele, o retorno em proventos fica abaixo do alvo e o ativo tende a estar caro para estratégias de renda."
         />
         {tetoMin !== null && tetoMax !== null && (
@@ -87,7 +88,7 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual }: Props) {
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Target className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-semibold">
-            Proventos médios de 5 anos ÷ 0,06 — {ticker}
+            Proventos médios de 5 anos ÷ {divisorTxt} — {ticker}
           </h4>
           <div className="ml-auto flex items-center gap-2">
             {result?.cached && (
@@ -157,9 +158,9 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual }: Props) {
         {!result && !loading && (
           <p className="text-sm text-muted-foreground">
             Clique em "Calcular preço teto" para a IA pesquisar a média ponderada de dividendos e
-            JCP dos últimos cinco anos de {ticker}
+            JCP dos cinco anos anteriores de {ticker}
             {nome ? ` (${nome.split(" ").slice(0, 3).join(" ")})` : ""} e aplicar a fórmula de Bazin
-            (proventos ÷ 0,06).
+            (proventos ÷ {divisorTxt}).
           </p>
         )}
 

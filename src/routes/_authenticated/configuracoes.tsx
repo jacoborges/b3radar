@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, KeyRound, ExternalLink, Check, Trash2 } from "lucide-react";
+import { ArrowLeft, KeyRound, ExternalLink, Check, Trash2, Target } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useBrapiToken } from "@/hooks/use-live-quotes";
+import {
+  useBazinDivisor,
+  formatDivisor,
+  BAZIN_DIVISOR_DEFAULT,
+  BAZIN_DIVISOR_MIN,
+  BAZIN_DIVISOR_MAX,
+} from "@/hooks/use-bazin-divisor";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -132,7 +139,103 @@ function SettingsPage() {
           </p>
         </section>
 
+        <BazinSection />
+
+
+
       </main>
     </div>
+  );
+}
+
+function BazinSection() {
+  const [divisor, setDivisor] = useBazinDivisor();
+  const [input, setInput] = useState<string>("");
+  const [saved, setSaved] = useState(false);
+
+  const parsed = Number.parseFloat(input.replace(",", "."));
+  const valid =
+    Number.isFinite(parsed) && parsed >= BAZIN_DIVISOR_MIN && parsed <= BAZIN_DIVISOR_MAX;
+
+  const onSave = () => {
+    if (!valid) return;
+    setDivisor(parsed);
+    setInput("");
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1800);
+  };
+
+  return (
+    <section className="mt-6 rounded-xl border border-border/60 bg-card p-5 md:p-6">
+      <div className="flex items-center gap-2">
+        <Target className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-semibold">Bazin — divisor do preço teto</h2>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        O preço teto do método Bazin é calculado como{" "}
+        <strong className="text-foreground">
+          média ponderada dos proventos (5 anos) ÷ divisor
+        </strong>
+        . O divisor é o yield mínimo desejado — 0,06 equivale a 6% ao ano. Ajuste
+        conforme sua necessidade (entre {formatDivisor(BAZIN_DIVISOR_MIN)} e{" "}
+        {formatDivisor(BAZIN_DIVISOR_MAX)}). O valor fica salvo apenas no seu navegador e
+        recalcula o preço teto na hora, sem nova consulta à IA.
+      </p>
+
+      <div className="mt-5 space-y-2">
+        <Label
+          htmlFor="bazin-divisor"
+          className="text-xs uppercase tracking-wide text-muted-foreground"
+        >
+          Novo divisor
+        </Label>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Input
+            id="bazin-divisor"
+            type="text"
+            inputMode="decimal"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="0,06"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            maxLength={8}
+            className="bg-input/60 border-border/60 font-mono"
+          />
+          <Button onClick={onSave} disabled={!valid} className="gap-2">
+            {saved ? <Check className="h-4 w-4" /> : null}
+            {saved ? "Salvo" : "Salvar"}
+          </Button>
+        </div>
+        {input.trim() !== "" && !valid && (
+          <p className="text-xs text-destructive">
+            Informe um número entre {formatDivisor(BAZIN_DIVISOR_MIN)} e{" "}
+            {formatDivisor(BAZIN_DIVISOR_MAX)} (ex.: 0,06).
+          </p>
+        )}
+      </div>
+
+      <div className="mt-6 flex items-center justify-between rounded-lg border border-border/40 bg-background/40 p-3">
+        <div className="text-sm">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            Divisor atual
+          </div>
+          <div className="mt-1 font-mono">{formatDivisor(divisor)}</div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setDivisor(null);
+            setInput("");
+          }}
+          disabled={divisor === BAZIN_DIVISOR_DEFAULT}
+          className="gap-2 text-muted-foreground"
+        >
+          <Trash2 className="h-4 w-4" />
+          Restaurar padrão
+        </Button>
+      </div>
+    </section>
   );
 }
