@@ -288,7 +288,7 @@ async function buildUncached(ticker: string): Promise<TickerProventosResult> {
 
   try {
     const anoAtual = new Date().getUTCFullYear();
-    const years = [1, 0, -1, -2, -3, -4].map((i) => anoAtual - i);
+    const years = [1, 0, -1, -2, -3, -4, -5].map((i) => anoAtual - i);
 
     const supplement = await fetchSupplementYears(issuingCompany, years);
 
@@ -393,7 +393,14 @@ async function buildUncached(ticker: string): Promise<TickerProventosResult> {
     }
     provisionados.sort((a, b) => a.dataCom.localeCompare(b.dataCom));
 
-    const anos = [anoAtual - 4, anoAtual - 3, anoAtual - 2, anoAtual - 1, anoAtual];
+    const anos = [
+      anoAtual - 5,
+      anoAtual - 4,
+      anoAtual - 3,
+      anoAtual - 2,
+      anoAtual - 1,
+      anoAtual,
+    ];
     const historico: DividendYear[] = anos.map((y) => {
       let dividendo = 0;
       let jcp = 0;

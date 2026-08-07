@@ -84,9 +84,9 @@ export interface RawRow {
 
 
 export const SELIC: Record<number, number> = {
-  2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15, 2026: 14.75,
+  2021: 4.42, 2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15, 2026: 14.75,
 };
-const YEARS = [2022, 2023, 2024, 2025, 2026];
+const YEARS = [2021, 2022, 2023, 2024, 2025, 2026];
 
 // Deterministic pseudo-random from ticker string
 function seed(str: string): () => number {
