@@ -32,11 +32,11 @@ const CACHE = new Map<
   }
 >();
 
-interface PerplexityResponse {
+interface GatewayResponse {
   choices?: Array<{ message?: { content?: string } }>;
-  citations?: string[];
   error?: { message?: string };
 }
+
 
 function parseNum(raw: string | undefined): number | null {
   if (!raw) return null;
