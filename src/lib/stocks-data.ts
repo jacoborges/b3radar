@@ -137,9 +137,11 @@ export function buildStock(r: RawRow): Stock {
     };
   });
 
-  const anosComProventos = dividendos.filter((d) => d.dividendo + d.jcp > 0).length;
-  const dividendosRecorrentes = anosComProventos === YEARS.length;
-  const anosYieldAcimaSelic = dividendos.filter((d) => {
+  const anoCorrente = YEARS[YEARS.length - 1];
+  const anosFechados = dividendos.filter((d) => d.year < anoCorrente);
+  const anosComProventos = anosFechados.filter((d) => d.dividendo + d.jcp > 0).length;
+  const dividendosRecorrentes = anosComProventos === anosFechados.length;
+  const anosYieldAcimaSelic = anosFechados.filter((d) => {
     const yieldAno = ((d.dividendo + d.jcp) / d.precoMedio) * 100;
     return yieldAno > d.selicMediaPonderada;
   }).length;
@@ -269,8 +271,12 @@ export function computeDividendStats(
     ...d,
     precoMedio: d.precoMedio > 0 ? d.precoMedio : precoAtual,
   }));
-  const anosComProventos = preenchidos.filter((d) => d.dividendo + d.jcp > 0).length;
-  const anosYieldAcimaSelic = preenchidos.filter((d) => {
+  // Contadores consideram apenas os anos já fechados (exclui o ano corrente parcial).
+  const anoAtual = new Date().getUTCFullYear();
+  const fechados = preenchidos.filter((d) => d.year < anoAtual);
+  const base = fechados.length > 0 ? fechados : preenchidos;
+  const anosComProventos = base.filter((d) => d.dividendo + d.jcp > 0).length;
+  const anosYieldAcimaSelic = base.filter((d) => {
     if (!d.precoMedio) return false;
     const yieldAno = ((d.dividendo + d.jcp) / d.precoMedio) * 100;
     return yieldAno > d.selicMediaPonderada;
@@ -278,7 +284,7 @@ export function computeDividendStats(
   return {
     dividendos: preenchidos,
     anosComProventos,
-    dividendosRecorrentes: anosComProventos === preenchidos.length,
+    dividendosRecorrentes: anosComProventos === base.length,
     anosYieldAcimaSelic,
   };
 }
