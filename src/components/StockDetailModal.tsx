@@ -288,13 +288,16 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Dividendos + JCP — últimos 5 anos
+                    Dividendos + JCP — ano atual e últimos cinco anos
                   </h3>
                   <InfoTip
                     title="Dividendos e JCP"
                     fundamentalista="Dividendo é lucro distribuído após impostos (isento para o investidor PF). JCP é remunerado como despesa financeira e sofre IR de 15% na fonte. Ambos compõem o retorno em proventos."
                     tecnica="Séries consistentes e crescentes de proventos costumam sustentar tendências de alta de longo prazo — 'ações de renda'."
                   />
+                  <span className="ml-auto text-[11px] text-muted-foreground">
+                    ano corrente parcial
+                  </span>
                 </div>
                 <DividendStackedChart data={stock.dividendos} />
               </div>
