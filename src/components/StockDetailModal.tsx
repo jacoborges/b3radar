@@ -295,6 +295,9 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                     fundamentalista="Dividendo é lucro distribuído após impostos (isento para o investidor PF). JCP é remunerado como despesa financeira e sofre IR de 15% na fonte. Ambos compõem o retorno em proventos."
                     tecnica="Séries consistentes e crescentes de proventos costumam sustentar tendências de alta de longo prazo — 'ações de renda'."
                   />
+                  <span className="ml-auto text-[11px] text-muted-foreground">
+                    ano corrente parcial
+                  </span>
                 </div>
                 <DividendStackedChart data={stock.dividendos} />
               </div>

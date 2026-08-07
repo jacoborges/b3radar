@@ -194,7 +194,9 @@ export function buildStock(r: RawRow): Stock {
     });
     precoFimAno = precoInicio;
   }
-  const anosPrecoAcimaSelic = precosAnuais.filter((p) => p.bateuSelic).length;
+  const anosPrecoAcimaSelic = precosAnuais.filter(
+    (p) => p.year < anoCorrente && p.bateuSelic,
+  ).length;
 
 
 
