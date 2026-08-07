@@ -211,7 +211,7 @@ SOMA_MAXIMO: <somatório máximo em caso de divergência entre as três fontes, 
         maximo: null,
         cached: false,
         updatedAt: new Date().toISOString(),
-        error: "Não foi possível contatar a Perplexity agora.",
+        error: "Não foi possível contatar a IA agora.",
       };
     }
   });
