@@ -32,11 +32,11 @@ const CACHE = new Map<
   }
 >();
 
-interface PerplexityResponse {
+interface GatewayResponse {
   choices?: Array<{ message?: { content?: string } }>;
-  citations?: string[];
   error?: { message?: string };
 }
+
 
 function parseNum(raw: string | undefined): number | null {
   if (!raw) return null;
@@ -75,7 +75,7 @@ export const analyzePrecoTeto = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<PrecoTetoResult> => {
     setResponseHeader("cache-control", "no-store");
 
-    const apiKey = process.env.PERPLEXITY_API_KEY;
+    const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) {
       return {
         content: null,
@@ -84,12 +84,11 @@ export const analyzePrecoTeto = createServerFn({ method: "POST" })
         maximo: null,
         cached: false,
         updatedAt: new Date().toISOString(),
-        error:
-          "Conector Perplexity não está linkado ao projeto. Peça ao Lovable para conectar Perplexity.",
+        error: "IA indisponível no momento (chave de acesso não configurada).",
       };
     }
 
-    const cacheKey = `v2:${data.ticker}`;
+    const cacheKey = `v3:${data.ticker}`;
     const cached = CACHE.get(cacheKey);
     if (cached && Date.now() - cached.ts < TTL_MS) {
       return {
@@ -109,48 +108,42 @@ export const analyzePrecoTeto = createServerFn({ method: "POST" })
     const anoIni = anoAtual - 5;
     const anoFim = anoAtual - 1;
 
-    const systemPrompt = `Você é um analista de renda variável brasileira. Consulte fontes oficiais e confiáveis: B3, CVM, o site de Relações com Investidores (RI) da própria empresa e, como apoio, Status Invest e Fundamentus.
+    const systemPrompt = `Você é um analista de renda variável brasileira.
+
+REGRA ABSOLUTA DE FONTES: use exclusivamente TRÊS fontes — (1) o site de Relações com Investidores (RI) da própria empresa, (2) a B3 e (3) a CVM. É proibido usar ou citar qualquer outra fonte (Status Invest, Fundamentus, Investidor10, notícias, blogs, redes sociais). Se um ano não constar nessas três fontes, escreva "sem dado nas fontes oficiais" — nunca estime nem preencha com outra origem.
 
 Responda em português brasileiro, em markdown, de forma objetiva:
-1. Uma tabela com um ano por linha, de ${anoIni} a ${anoFim}, com dividendos, JCP e TOTAL por ação em R$ X,XX (duas casas decimais, arredondando para cima).
-2. O somatório dos 5 anos (R$ X,XX).
-3. A média ponderada = somatório dos 5 anos dividido por 5 (R$ X,XX).
-4. Se as fontes divergirem, informe explicitamente o valor mínimo e o valor máximo da média encontrados.
-5. Uma seção final "Fontes" listando cada fonte usada com o nome e o link completo (URL) para conferência.
+1. Uma tabela com um ano por linha, de ${anoIni} a ${anoFim}, com colunas: Ano | RI | B3 | CVM | Dividendos | JCP | TOTAL por ação (R$ X,XX, duas casas, arredondando para cima).
+2. Confronte as três fontes. Quando houver divergência no total anual, informe explicitamente o valor mínimo e o valor máximo daquele ano.
+3. O somatório dos 5 anos (R$ X,XX). Havendo divergência, informe também o somatório mínimo e o somatório máximo.
+4. A média ponderada = somatório dos 5 anos dividido por 5 (R$ X,XX).
+5. Uma seção final "Fontes" listando cada fonte usada (RI, B3, CVM) com o nome e o link completo (URL) para conferência.
 
-Cite as fontes no texto com marcadores numéricos [1], [2] na mesma ordem em que aparecem em citations. Nunca invente valores; se um ano não tiver dados, informe R$ 0,00 e explique.
+Nunca invente valores.
 
 OBRIGATÓRIO: termine a resposta com um bloco exatamente neste formato, em uma linha cada, usando ponto como separador decimal e apenas números (informe SOMATÓRIOS, não médias):
 DADOS
 SOMA: <somatório dos ${anoIni}-${anoFim}>
-SOMA_MINIMO: <somatório mínimo em caso de divergência entre fontes, ou vazio>
-SOMA_MAXIMO: <somatório máximo em caso de divergência entre fontes, ou vazio>`;
+SOMA_MINIMO: <somatório mínimo em caso de divergência entre as três fontes, ou vazio>
+SOMA_MAXIMO: <somatório máximo em caso de divergência entre as três fontes, ou vazio>`;
 
-    const userPrompt = `Consulte na B3, na CVM e no RI da ação ${data.ticker} (${nomeCurto}) os proventos (dividendos + JCP) por ação pagos de ${anoIni} a ${anoFim}. Informe o valor de cada ano individualmente no formato R$ X,XX (arredondando para cima), o somatório desses cinco anos e a média ponderada (somatório dividido por 5). Entregue também as fontes da pesquisa com os links para conferência.`;
-
+    const userPrompt = `Consulte APENAS o RI da empresa, a B3 e a CVM da ação ${data.ticker} (${nomeCurto}) e levante os proventos (dividendos + JCP) por ação pagos de ${anoIni} a ${anoFim}. Informe o valor de cada ano individualmente no formato R$ X,XX (arredondando para cima), confronte as três fontes e, em caso de divergência, apresente o mínimo e o máximo. Informe o somatório dos cinco anos e a média ponderada (somatório dividido por 5). Entregue as fontes com os links para conferência.`;
 
     try {
-      const res = await fetch("https://api.perplexity.ai/chat/completions", {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          "Lovable-API-Key": apiKey,
+          "X-Lovable-AIG-SDK": "fetch",
         },
         body: JSON.stringify({
-          model: "sonar",
+          model: "google/gemini-3.6-flash",
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
           temperature: 0.2,
-          max_tokens: 1200,
-          search_domain_filter: [
-            "-reddit.com",
-            "-twitter.com",
-            "-x.com",
-            "-facebook.com",
-            "-instagram.com",
-          ],
         }),
       });
 
@@ -165,33 +158,30 @@ SOMA_MAXIMO: <somatório máximo em caso de divergência entre fontes, ou vazio>
       });
 
       if (res.status === 429) {
-        return fail("Limite momentâneo da Perplexity atingido. Tente novamente em alguns segundos.");
+        return fail("Limite momentâneo da IA atingido. Tente novamente em alguns segundos.");
       }
-      if (res.status === 401) {
-        const body = await res.text();
-        if (body.includes("insufficient_quota")) {
-          return fail(
-            "Créditos da Perplexity esgotados. Adicione crédito em console.perplexity.ai (créditos de API são separados do Perplexity Pro).",
-          );
-        }
-        return fail("Chave da Perplexity inválida. Reconecte o conector.");
+      if (res.status === 402) {
+        return fail("Créditos de IA esgotados. Adicione créditos no workspace para continuar.");
       }
       if (!res.ok) {
         const body = await res.text();
         console.error("[preco-teto] http", res.status, body);
-        return fail(`Falha na API da Perplexity (HTTP ${res.status}).`);
+        return fail(`Falha na IA (HTTP ${res.status}).`);
       }
 
-      const json = (await res.json()) as PerplexityResponse;
+      const json = (await res.json()) as GatewayResponse;
       const text = json.choices?.[0]?.message?.content?.trim();
-      const citations = Array.isArray(json.citations) ? json.citations.slice(0, 10) : [];
 
       if (!text) {
-        return fail(json.error?.message ?? "Resposta vazia da Perplexity.");
+        return fail(json.error?.message ?? "Resposta vazia da IA.");
       }
 
       const { media, minimo, maximo } = extractValues(text);
       const visible = text.replace(/\n?DADOS[\s\S]*$/i, "").trim();
+      const citations = Array.from(
+        new Set((visible.match(/https?:\/\/[^\s)\]]+/g) ?? []).map((u) => u.replace(/[.,;]+$/, ""))),
+      ).slice(0, 10);
+
 
       CACHE.set(cacheKey, {
         content: visible,
@@ -221,7 +211,7 @@ SOMA_MAXIMO: <somatório máximo em caso de divergência entre fontes, ou vazio>
         maximo: null,
         cached: false,
         updatedAt: new Date().toISOString(),
-        error: "Não foi possível contatar a Perplexity agora.",
+        error: "Não foi possível contatar a IA agora.",
       };
     }
   });
