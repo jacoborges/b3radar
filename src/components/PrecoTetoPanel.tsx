@@ -157,12 +157,13 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual }: Props) {
 
         {!result && !loading && (
           <p className="text-sm text-muted-foreground">
-            Clique em "Calcular preço teto" para a IA pesquisar a média ponderada de dividendos e
-            JCP dos cinco anos anteriores de {ticker}
-            {nome ? ` (${nome.split(" ").slice(0, 3).join(" ")})` : ""} e aplicar a fórmula de Bazin
-            (proventos ÷ {divisorTxt}).
+            Clique em "Calcular preço teto" para a IA (Google Gemini) consultar apenas RI da
+            empresa, B3 e CVM os proventos (dividendos + JCP) dos cinco anos anteriores de {ticker}
+            {nome ? ` (${nome.split(" ").slice(0, 3).join(" ")})` : ""}, somar, dividir por 5 e
+            aplicar a fórmula de Bazin (média ÷ {divisorTxt}).
           </p>
         )}
+
 
         {result?.error && (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
