@@ -54,6 +54,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     isLoading: fundLoading,
     isFetching: fundFetching,
   } = useTickerFundamentals(ticker);
+  const { data: priceHistory } = usePriceHistory(ticker, !!ticker);
+
 
   useEffect(() => {
     setChartLoaded(false);
