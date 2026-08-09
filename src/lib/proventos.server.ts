@@ -393,14 +393,9 @@ async function buildUncached(ticker: string): Promise<TickerProventosResult> {
     }
     provisionados.sort((a, b) => a.dataCom.localeCompare(b.dataCom));
 
-    const anos = [
-      anoAtual - 5,
-      anoAtual - 4,
-      anoAtual - 3,
-      anoAtual - 2,
-      anoAtual - 1,
-      anoAtual,
-    ];
+    // Janela de 10 anos fechados + o ano corrente (parcial).
+    const anos = Array.from({ length: 11 }, (_, i) => anoAtual - 10 + i);
+
     const historico: DividendYear[] = anos.map((y) => {
       let dividendo = 0;
       let jcp = 0;
