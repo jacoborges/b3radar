@@ -282,7 +282,9 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 ticker={stock.ticker}
                 nome={stock.nome}
                 precoAtual={stock.preco}
+                historico={proventos?.historico ?? null}
               />
+
 
 
               <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
