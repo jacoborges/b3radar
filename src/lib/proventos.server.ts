@@ -230,7 +230,7 @@ async function fetchListedCash(tradingName: string): Promise<ListedCashRow[]> {
   });
   if (!first?.results?.length) return [];
   const rows = [...first.results];
-  const totalPages = Math.min(first.page?.totalPages ?? 1, 4);
+  const totalPages = Math.min(first.page?.totalPages ?? 1, 8);
   if (totalPages > 1) {
     const rest = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, i) =>
