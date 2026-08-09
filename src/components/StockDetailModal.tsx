@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Stock } from "@/lib/stocks-data";
-import { computeDividendStats } from "@/lib/stocks-data";
+import { computeDividendStats, SELIC } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
+import { usePriceHistory } from "@/hooks/use-price-history";
 import { useTickerFundamentals } from "@/hooks/use-ticker-fundamentals";
 import { useAnalystConsensus } from "@/hooks/use-consensus";
 import { useTradingViewTechnical } from "@/hooks/use-tradingview";
@@ -98,8 +99,28 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     if (provisionados) {
       merged.proventosProvisionados = provisionados;
     }
+
+    // Série real de preços (Yahoo Finance) substitui a série sintética.
+    const reais = priceHistory?.anos ?? [];
+    if (reais.length > 0) {
+      merged.precosAnuais = reais.map((p) => {
+        const selic = SELIC[p.year] ?? 12;
+        return {
+          year: p.year,
+          precoInicio: p.precoInicio,
+          precoFim: p.precoFim,
+          valorizacao: p.valorizacao,
+          selicMediaPonderada: selic,
+          bateuSelic: p.valorizacao > selic,
+        };
+      });
+      const anoAtual = new Date().getUTCFullYear();
+      merged.anosPrecoAcimaSelic = merged.precosAnuais.filter(
+        (p) => p.year < anoAtual && p.bateuSelic,
+      ).length;
+    }
     return merged;
-  }, [baseStock, proventos, liveFund]);
+  }, [baseStock, proventos, liveFund, priceHistory]);
   const stock = mergedStock;
 
   const proventosOk = !!proventos?.historico;
@@ -301,7 +322,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Dividendos + JCP — ano atual e últimos cinco anos
+                    Dividendos + JCP — ano atual e últimos dez anos
                   </h3>
                   <InfoTip
                     title="Dividendos e JCP"
