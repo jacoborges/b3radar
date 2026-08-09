@@ -31,7 +31,7 @@ export function DividendStackedChart({ data }: Props) {
       <ResponsiveContainer>
         <BarChart data={chartData} margin={{ top: 24, right: 16, bottom: 8, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-          <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={12} />
+          <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} interval={0} angle={-35} height={40} textAnchor="end" />
           <YAxis
             stroke="var(--color-muted-foreground)"
             fontSize={12}
@@ -101,7 +101,7 @@ export function DividendVsSelicChart({ data }: Props) {
       <ResponsiveContainer>
         <ComposedChart data={chartData} margin={{ top: 20, right: 16, bottom: 8, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-          <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={12} />
+          <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} interval={0} angle={-35} height={40} textAnchor="end" />
           <YAxis
             stroke="var(--color-muted-foreground)"
             fontSize={12}
@@ -169,7 +169,7 @@ export function PriceVsSelicChart({ data }: { data: PrecoAnual[] }) {
       <ResponsiveContainer>
         <ComposedChart data={chartData} margin={{ top: 24, right: 16, bottom: 8, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-          <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={12} />
+          <XAxis dataKey="year" stroke="var(--color-muted-foreground)" fontSize={11} interval={0} angle={-35} height={40} textAnchor="end" />
           <YAxis
             stroke="var(--color-muted-foreground)"
             fontSize={12}
