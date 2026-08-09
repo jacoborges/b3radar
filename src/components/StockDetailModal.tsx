@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Stock } from "@/lib/stocks-data";
-import { computeDividendStats } from "@/lib/stocks-data";
+import { computeDividendStats, SELIC } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
+import { usePriceHistory } from "@/hooks/use-price-history";
 import { useTickerFundamentals } from "@/hooks/use-ticker-fundamentals";
 import { useAnalystConsensus } from "@/hooks/use-consensus";
 import { useTradingViewTechnical } from "@/hooks/use-tradingview";
@@ -25,6 +26,7 @@ import {
   type TvTimeframe,
 } from "@/lib/tradingview-rating";
 import { InfoTip } from "./InfoTip";
+import { HistoryChartButton } from "./IndicatorHistoryDialog";
 import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
 
@@ -52,6 +54,8 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     isLoading: fundLoading,
     isFetching: fundFetching,
   } = useTickerFundamentals(ticker);
+  const { data: priceHistory } = usePriceHistory(ticker, !!ticker);
+
 
   useEffect(() => {
     setChartLoaded(false);
@@ -97,8 +101,28 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     if (provisionados) {
       merged.proventosProvisionados = provisionados;
     }
+
+    // Série real de preços (Yahoo Finance) substitui a série sintética.
+    const reais = priceHistory?.anos ?? [];
+    if (reais.length > 0) {
+      merged.precosAnuais = reais.map((p) => {
+        const selic = SELIC[p.year] ?? 12;
+        return {
+          year: p.year,
+          precoInicio: p.precoInicio,
+          precoFim: p.precoFim,
+          valorizacao: p.valorizacao,
+          selicMediaPonderada: selic,
+          bateuSelic: p.valorizacao > selic,
+        };
+      });
+      const anoAtual = new Date().getUTCFullYear();
+      merged.anosPrecoAcimaSelic = merged.precosAnuais.filter(
+        (p) => p.year < anoAtual && p.bateuSelic,
+      ).length;
+    }
     return merged;
-  }, [baseStock, proventos, liveFund]);
+  }, [baseStock, proventos, liveFund, priceHistory]);
   const stock = mergedStock;
 
   const proventosOk = !!proventos?.historico;
@@ -267,6 +291,14 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                             fundamentalista={ind.fundamentalista}
                             tecnica={ind.tecnica}
                           />
+                          {ind.history && (
+                            <HistoryChartButton
+                              ticker={stock.ticker}
+                              kind={ind.history}
+                              historico={proventos?.historico ?? null}
+                              label={ind.label}
+                            />
+                          )}
                         </div>
                         <div className="mt-1 font-mono text-base font-semibold">
                           {ind.format(val)}
@@ -292,12 +324,18 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               <div className="mt-4 rounded-lg border border-border/60 bg-background p-4">
                 <div className="mb-2 flex items-center gap-2">
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                    Dividendos + JCP — ano atual e últimos cinco anos
+                    Dividendos + JCP — ano atual e últimos dez anos
                   </h3>
                   <InfoTip
                     title="Dividendos e JCP"
                     fundamentalista="Dividendo é lucro distribuído após impostos (isento para o investidor PF). JCP é remunerado como despesa financeira e sofre IR de 15% na fonte. Ambos compõem o retorno em proventos."
                     tecnica="Séries consistentes e crescentes de proventos costumam sustentar tendências de alta de longo prazo — 'ações de renda'."
+                  />
+                  <HistoryChartButton
+                    ticker={stock.ticker}
+                    kind="proventos"
+                    historico={proventos?.historico ?? null}
+                    label="Dividendos + JCP"
                   />
                   <span className="ml-auto text-[11px] text-muted-foreground">
                     ano corrente parcial
@@ -316,6 +354,12 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                     fundamentalista="Compara o yield de proventos do ano (proventos ÷ preço médio) com a Selic média ponderada. Barras verdes: proventos superaram a Selic; vermelhas: ficaram abaixo."
                     tecnica="Yield persistentemente abaixo da Selic tende a pressionar o preço da ação — juro básico é o principal 'concorrente' da renda variável."
                   />
+                  <HistoryChartButton
+                    ticker={stock.ticker}
+                    kind="dy"
+                    historico={proventos?.historico ?? null}
+                    label="Yield vs. Selic"
+                  />
                 </div>
                 <DividendVsSelicChart data={stock.dividendos} />
               </div>
@@ -329,6 +373,12 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                     title="Preço 01/jan → 31/dez vs. Selic"
                     fundamentalista="Compara a variação percentual do preço da ação (01/jan → 31/dez) com a Selic média ponderada do mesmo ano. Barras verdes: o ativo bateu a Selic no ano; vermelhas: rendeu menos que o CDI/Selic."
                     tecnica="Mostra se, ano a ano, apenas a variação de preço (sem contar dividendos) foi suficiente para superar o custo de oportunidade da renda fixa atrelada à Selic."
+                  />
+                  <HistoryChartButton
+                    ticker={stock.ticker}
+                    kind="valorizacao"
+                    historico={proventos?.historico ?? null}
+                    label="Valorização vs. Selic"
                   />
                   <span className="ml-auto text-xs text-muted-foreground">
                     Bateu a Selic em{" "}

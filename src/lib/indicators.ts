@@ -1,3 +1,5 @@
+export type IndicatorHistory = "preco" | "valorizacao" | "dy" | "proventos" | "selic";
+
 export interface IndicatorInfo {
   key: string;
   label: string;
@@ -5,7 +7,13 @@ export interface IndicatorInfo {
   format: (v: number) => string;
   fundamentalista: string;
   tecnica: string;
+  /**
+   * Quando definido, o indicador tem série histórica real de 10 anos
+   * (cotações da Yahoo Finance e/ou proventos da B3) e ganha o ícone de gráfico.
+   */
+  history?: IndicatorHistory;
 }
+
 
 const pct = (v: number) => `${v.toFixed(2)}%`;
 const num = (v: number) => v.toFixed(2);
@@ -24,6 +32,7 @@ export const INDICATORS: Record<string, IndicatorInfo> = {
       "Preço de mercado da ação. Isoladamente diz pouco: compare sempre com Lucro, VPA e Dividendo por ação.",
     tecnica:
       "É o insumo básico dos gráficos. Suportes, resistências, médias móveis e volume derivam do preço.",
+    history: "preco",
   },
   pl: {
     key: "pl",
@@ -54,6 +63,7 @@ export const INDICATORS: Record<string, IndicatorInfo> = {
       "Percentual pago em proventos nos últimos 12 meses sobre o preço atual. Central para carteiras de renda.",
     tecnica:
       "DY muito alto após queda forte pode ser 'armadilha de yield'. Confirme com gráfico de tendência.",
+    history: "dy",
   },
   roe: {
     key: "roe",

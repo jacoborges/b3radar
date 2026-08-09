@@ -12,12 +12,19 @@ const UA =
   "Mozilla/5.0 (compatible; B3Radar/1.0; +https://b3radar.lovable.app)";
 
 const SELIC: Record<number, number> = {
+  2016: 14.08,
+  2017: 9.93,
+  2018: 6.44,
+  2019: 5.96,
+  2020: 2.77,
+  2021: 4.42,
   2022: 12.38,
   2023: 13.25,
   2024: 10.75,
   2025: 11.15,
   2026: 14.75,
 };
+
 
 /* ------------------------------- helpers ------------------------------- */
 
@@ -223,7 +230,7 @@ async function fetchListedCash(tradingName: string): Promise<ListedCashRow[]> {
   });
   if (!first?.results?.length) return [];
   const rows = [...first.results];
-  const totalPages = Math.min(first.page?.totalPages ?? 1, 4);
+  const totalPages = Math.min(first.page?.totalPages ?? 1, 8);
   if (totalPages > 1) {
     const rest = await Promise.all(
       Array.from({ length: totalPages - 1 }, (_, i) =>
@@ -393,14 +400,9 @@ async function buildUncached(ticker: string): Promise<TickerProventosResult> {
     }
     provisionados.sort((a, b) => a.dataCom.localeCompare(b.dataCom));
 
-    const anos = [
-      anoAtual - 5,
-      anoAtual - 4,
-      anoAtual - 3,
-      anoAtual - 2,
-      anoAtual - 1,
-      anoAtual,
-    ];
+    // Janela de 10 anos fechados + o ano corrente (parcial).
+    const anos = Array.from({ length: 11 }, (_, i) => anoAtual - 10 + i);
+
     const historico: DividendYear[] = anos.map((y) => {
       let dividendo = 0;
       let jcp = 0;

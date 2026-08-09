@@ -84,9 +84,11 @@ export interface RawRow {
 
 
 export const SELIC: Record<number, number> = {
+  2016: 14.08, 2017: 9.93, 2018: 6.44, 2019: 5.96, 2020: 2.77,
   2021: 4.42, 2022: 12.38, 2023: 13.25, 2024: 10.75, 2025: 11.15, 2026: 14.75,
 };
-const YEARS = [2021, 2022, 2023, 2024, 2025, 2026];
+const YEARS = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026];
+
 
 // Deterministic pseudo-random from ticker string
 function seed(str: string): () => number {
@@ -275,8 +277,11 @@ export function computeDividendStats(
   }));
   // Contadores consideram apenas os anos já fechados (exclui o ano corrente parcial).
   const anoAtual = new Date().getUTCFullYear();
-  const fechados = preenchidos.filter((d) => d.year < anoAtual);
+  const fechados = preenchidos.filter(
+    (d) => d.year < anoAtual && d.year >= anoAtual - 5,
+  );
   const base = fechados.length > 0 ? fechados : preenchidos;
+
   const anosComProventos = base.filter((d) => d.dividendo + d.jcp > 0).length;
   const anosYieldAcimaSelic = base.filter((d) => {
     if (!d.precoMedio) return false;
