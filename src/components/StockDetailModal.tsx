@@ -278,6 +278,13 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
               <DebtSemaphore divPL={stock.divBrutaPatrimonio} />
 
+              <PrecoJustoPanel
+                precoAtual={stock.preco}
+                pvp={stock.pvp}
+                roe={stock.roe}
+              />
+
+
               <PrecoTetoPanel
                 ticker={stock.ticker}
                 nome={stock.nome}
