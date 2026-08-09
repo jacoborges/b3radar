@@ -27,6 +27,7 @@ import {
 import { InfoTip } from "./InfoTip";
 import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
+import { PrecoJustoPanel } from "./PrecoJustoPanel";
 
 import {
   DividendStackedChart,
