@@ -1,3 +1,5 @@
+export type IndicatorHistory = "preco" | "valorizacao" | "dy" | "proventos" | "selic";
+
 export interface IndicatorInfo {
   key: string;
   label: string;
@@ -5,7 +7,13 @@ export interface IndicatorInfo {
   format: (v: number) => string;
   fundamentalista: string;
   tecnica: string;
+  /**
+   * Quando definido, o indicador tem série histórica real de 10 anos
+   * (cotações da Yahoo Finance e/ou proventos da B3) e ganha o ícone de gráfico.
+   */
+  history?: IndicatorHistory;
 }
+
 
 const pct = (v: number) => `${v.toFixed(2)}%`;
 const num = (v: number) => v.toFixed(2);
