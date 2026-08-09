@@ -277,8 +277,11 @@ export function computeDividendStats(
   }));
   // Contadores consideram apenas os anos já fechados (exclui o ano corrente parcial).
   const anoAtual = new Date().getUTCFullYear();
-  const fechados = preenchidos.filter((d) => d.year < anoAtual);
+  const fechados = preenchidos.filter(
+    (d) => d.year < anoAtual && d.year >= anoAtual - 5,
+  );
   const base = fechados.length > 0 ? fechados : preenchidos;
+
   const anosComProventos = base.filter((d) => d.dividendo + d.jcp > 0).length;
   const anosYieldAcimaSelic = base.filter((d) => {
     if (!d.precoMedio) return false;
