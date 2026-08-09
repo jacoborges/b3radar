@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { SELIC, type DividendYear } from "@/lib/stocks-data";
 import { usePriceHistory } from "@/hooks/use-price-history";
-import type { PriceYear } from "@/lib/price-history.functions";
+import type { PriceYear } from "@/lib/price-history.server";
 
 export type HistoryKind = "preco" | "valorizacao" | "dy" | "proventos" | "selic";
 
