@@ -27,7 +27,7 @@ import {
 import { InfoTip } from "./InfoTip";
 import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
-import { PrecoJustoPanel } from "./PrecoJustoPanel";
+
 
 import {
   DividendStackedChart,
@@ -279,19 +279,13 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
               <DebtSemaphore divPL={stock.divBrutaPatrimonio} />
 
-              <PrecoJustoPanel
-                precoAtual={stock.preco}
-                pvp={stock.pvp}
-                roe={stock.roe}
-              />
-
-
               <PrecoTetoPanel
                 ticker={stock.ticker}
                 nome={stock.nome}
                 precoAtual={stock.preco}
                 historico={proventos?.historico ?? null}
               />
+
 
 
 
