@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { InfoTip } from "./InfoTip";
 import { analyzePrecoTeto, type PrecoTetoResult } from "@/lib/preco-teto.functions";
 import { useBazinDivisor, formatDivisor } from "@/hooks/use-bazin-divisor";
+import { anosFechados, calcPrecoTetoFromYears } from "@/lib/preco-teto";
 import type { DividendYear } from "@/lib/stocks-data";
 
 interface Props {
