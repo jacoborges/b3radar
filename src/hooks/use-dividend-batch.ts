@@ -38,7 +38,11 @@ export interface UseDividendBatchResult {
  * Lê o cache persistente de proventos (todos os ativos) e, em segundo plano,
  * dispara a coleta na B3 dos ativos faltantes/desatualizados, em pequenos lotes.
  */
-export function useDividendBatch(stocks: Stock[]): UseDividendBatchResult {
+export function useDividendBatch(
+  stocks: Stock[],
+  options: { enabled?: boolean } = {},
+): UseDividendBatchResult {
+  const enabled = options.enabled ?? true;
   const loadCache = useServerFn(getProventosCached);
   const refresh = useServerFn(refreshProventosChunk);
   const queryClient = useQueryClient();
@@ -51,6 +55,7 @@ export function useDividendBatch(stocks: Stock[]): UseDividendBatchResult {
     staleTime: 60_000,
     gcTime: ONE_HOUR * 2,
     refetchOnWindowFocus: false,
+    enabled,
   });
 
   const byTicker = useMemo(() => {
