@@ -31,6 +31,9 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
+import { useBazinDivisor } from "@/hooks/use-bazin-divisor";
+import { useDividendBatch } from "@/hooks/use-dividend-batch";
+import { calcPrecoTetoFromEventos, descontoTetoPct } from "@/lib/preco-teto";
 import {
   initialFilters,
   type DebtColor,
