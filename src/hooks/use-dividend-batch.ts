@@ -84,7 +84,7 @@ export function useDividendBatch(
   const pendingKey = pendingTickers.length;
 
   useEffect(() => {
-    if (q.isLoading || running.current || pendingTickers.length === 0) return;
+    if (!enabled || q.isLoading || running.current || pendingTickers.length === 0) return;
     running.current = true;
     setColetando(true);
     let cancelled = false;
