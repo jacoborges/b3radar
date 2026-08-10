@@ -36,9 +36,7 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual, historico }: Props) {
 
   // ---- Cálculo local com os dados da B3 já carregados no app ----
   const calc = useMemo(() => {
-    const anoAtual = new Date().getFullYear();
-    const anos = Array.from({ length: 5 }, (_, i) => anoAtual - 5 + i); // ano-5 .. ano-1
-    const linhas = anos.map((year) => {
+    const linhas = anosFechados().map((year) => {
       const y = historico?.find((h) => h.year === year);
       return {
         year,
@@ -49,10 +47,15 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual, historico }: Props) {
     });
     const disponiveis = linhas.filter((l) => l.total !== null);
     const soma = disponiveis.reduce((acc, l) => acc + (l.total ?? 0), 0);
-    const temDados = disponiveis.length > 0;
-    const media = temDados ? soma / 5 : null;
-    const teto = media !== null && media > 0 ? media / divisor : null;
-    return { linhas, soma, media, teto, faltando: 5 - disponiveis.length, temDados };
+    const { teto, media, anosComDados } = calcPrecoTetoFromYears(historico, divisor);
+    return {
+      linhas,
+      soma,
+      media,
+      teto,
+      faltando: 5 - anosComDados,
+      temDados: anosComDados > 0,
+    };
   }, [historico, divisor]);
 
   const teto = calc.teto;
