@@ -222,7 +222,15 @@ function CarteiraPage() {
             <Wallet className="h-5 w-5 text-primary" />
             Carteira
           </h1>
+          <span className="ml-auto text-[11px] text-muted-foreground">
+            {quotes.isFetching
+              ? "Atualizando cotações…"
+              : quotes.updatedAt
+                ? `Cotações ${quotes.updatedAt.toLocaleTimeString("pt-BR")}`
+                : "Cotações do último fechamento"}
+          </span>
         </div>
+
       </header>
 
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[260px_1fr] md:px-8">
