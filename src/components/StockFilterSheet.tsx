@@ -334,6 +334,8 @@ export function StockFilterSheet({
               setRecFilter("ALL");
               setMinAnosAcimaSelic(0);
               setMinAnosPrecoAcimaSelic(0);
+              setPrecoTetoOnly?.(false);
+              setMinDescontoTeto?.(0);
               onClearExtra?.();
             }}
           >
