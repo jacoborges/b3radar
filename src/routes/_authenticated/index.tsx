@@ -295,6 +295,10 @@ function HomePage() {
                 setMinAnosAcimaSelic={setMinAnosAcimaSelic}
                 minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
                 setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
+                precoTetoOnly={precoTetoOnly}
+                setPrecoTetoOnly={setPrecoTetoOnly}
+                minDescontoTeto={minDescontoTeto}
+                setMinDescontoTeto={setMinDescontoTeto}
               />
 
 
