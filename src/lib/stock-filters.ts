@@ -39,6 +39,10 @@ export interface QualitativeFilters {
   recFilter: RecOpt;
   minAnosAcimaSelic: number;
   minAnosPrecoAcimaSelic: number;
+  /** mostrar apenas ativos abaixo do preço teto (Bazin) */
+  precoTetoOnly?: boolean;
+  /** desconto mínimo (%) em relação ao preço teto */
+  minDescontoTeto?: number;
 }
 
 export function activeRanges(filters: Record<string, FilterRange>) {
@@ -52,6 +56,8 @@ export function matchesStockFilters(
   s: Stock,
   ranges: Array<[string, FilterRange]>,
   q: QualitativeFilters,
+  /** desconto (%) em relação ao preço teto; null quando não calculável */
+  descontoTeto: number | null = null,
 ): boolean {
   for (const [k, r] of ranges) {
     const val = s[k as keyof Stock] as number;
@@ -67,5 +73,9 @@ export function matchesStockFilters(
   if (q.recFilter === "NO" && s.dividendosRecorrentes) return false;
   if (s.anosYieldAcimaSelic < q.minAnosAcimaSelic) return false;
   if (s.anosPrecoAcimaSelic < q.minAnosPrecoAcimaSelic) return false;
+  if (q.precoTetoOnly) {
+    if (descontoTeto === null) return false;
+    if (descontoTeto < Math.max(0, q.minDescontoTeto ?? 0)) return false;
+  }
   return true;
 }

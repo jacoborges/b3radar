@@ -32,6 +32,10 @@ export function StockFilterSheet({
   setMinAnosAcimaSelic,
   minAnosPrecoAcimaSelic,
   setMinAnosPrecoAcimaSelic,
+  precoTetoOnly = false,
+  setPrecoTetoOnly,
+  minDescontoTeto = 0,
+  setMinDescontoTeto,
   title = "Filtros por indicadores técnicos",
   extraSection,
   onClearExtra,
@@ -47,6 +51,10 @@ export function StockFilterSheet({
   setMinAnosAcimaSelic: (v: number) => void;
   minAnosPrecoAcimaSelic: number;
   setMinAnosPrecoAcimaSelic: (v: number) => void;
+  precoTetoOnly?: boolean;
+  setPrecoTetoOnly?: (v: boolean) => void;
+  minDescontoTeto?: number;
+  setMinDescontoTeto?: (v: number) => void;
   title?: string;
   /** bloco extra renderizado no topo do painel (ex.: inteligência de proventos) */
   extraSection?: ReactNode;
@@ -214,7 +222,55 @@ export function StockFilterSheet({
                 onValueChange={([v]) => setMinAnosPrecoAcimaSelic(v)}
               />
             </div>
+
+            {setPrecoTetoOnly && (
+              <div className="space-y-2 border-t border-border/50 pt-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="flex items-center gap-1.5 text-sm">
+                    Preço teto favorável
+                    <InfoTip
+                      title="Preço teto (método Bazin)"
+                      fundamentalista="Preço teto = média dos proventos (dividendos + JCP) dos cinco anos fechados na B3, dividida pelo divisor configurado em Ajustes. Quando o preço atual está abaixo do teto, a ação está descontada."
+                      tecnica="Comprar abaixo do teto amplia a margem de segurança; ativos sem histórico suficiente na B3 ficam de fora do filtro."
+                    />
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setPrecoTetoOnly(!precoTetoOnly)}
+                    className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                      precoTetoOnly
+                        ? "border-primary/70 bg-primary/10 text-primary"
+                        : "border-border/60 text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {precoTetoOnly ? "Somente descontadas" : "Todas"}
+                  </button>
+                </div>
+                {precoTetoOnly && setMinDescontoTeto && (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">Desconto mínimo</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        ≥ {minDescontoTeto}%
+                      </span>
+                    </div>
+                    <Slider
+                      min={0}
+                      max={80}
+                      step={5}
+                      value={[minDescontoTeto]}
+                      onValueChange={([v]) => setMinDescontoTeto(v)}
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Com este filtro ativo sozinho, a lista é ordenada da mais descontada para a
+                      menos descontada.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
+
 
           {FUNDAMENTAL_KEYS.map((k) => {
             const [min, max, step] = bounds[k];
@@ -278,6 +334,8 @@ export function StockFilterSheet({
               setRecFilter("ALL");
               setMinAnosAcimaSelic(0);
               setMinAnosPrecoAcimaSelic(0);
+              setPrecoTetoOnly?.(false);
+              setMinDescontoTeto?.(0);
               onClearExtra?.();
             }}
           >

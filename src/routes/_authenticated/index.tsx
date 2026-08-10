@@ -31,6 +31,9 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
+import { useBazinDivisor } from "@/hooks/use-bazin-divisor";
+import { useDividendBatch } from "@/hooks/use-dividend-batch";
+import { calcPrecoTetoFromEventos, descontoTetoPct } from "@/lib/preco-teto";
 import {
   initialFilters,
   type DebtColor,
@@ -97,10 +100,25 @@ function HomePage() {
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
   const [minAnosAcimaSelic, setMinAnosAcimaSelic] = useState<number>(0);
   const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
+  const [precoTetoOnly, setPrecoTetoOnly] = useState(false);
+  const [minDescontoTeto, setMinDescontoTeto] = useState(0);
   const [selected, setSelected] = useState<Stock | null>(null);
 
   const [openSectors, setOpenSectors] = useState<string[]>([]);
 
+  const [divisor] = useBazinDivisor();
+  const dividendos = useDividendBatch(STOCKS, { enabled: precoTetoOnly });
+
+  const descontoMap = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!precoTetoOnly) return m;
+    for (const row of dividendos.rows) {
+      const { teto } = calcPrecoTetoFromEventos(row.raw?.historicoCompleto, divisor);
+      const d = descontoTetoPct(teto, row.stock.preco);
+      if (d !== null) m.set(row.stock.ticker, d);
+    }
+    return m;
+  }, [precoTetoOnly, dividendos.rows, divisor]);
 
   const activeFilters = useMemo(
     () =>
@@ -114,7 +132,12 @@ function HomePage() {
     (debtColors.length > 0 && debtColors.length < 3 ? 1 : 0) +
     (recFilter !== "ALL" ? 1 : 0) +
     (minAnosAcimaSelic > 0 ? 1 : 0) +
-    (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
+    (minAnosPrecoAcimaSelic > 0 ? 1 : 0) +
+    (precoTetoOnly ? 1 : 0);
+
+  /** true quando o preço teto é o único filtro ativo → ranqueia por desconto */
+  const rankByDesconto =
+    precoTetoOnly && activeFilters.length === 0 && extraActiveCount === 1;
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
@@ -133,9 +156,13 @@ function HomePage() {
       if (recFilter === "NO" && s.dividendosRecorrentes) return false;
       if (s.anosYieldAcimaSelic < minAnosAcimaSelic) return false;
       if (s.anosPrecoAcimaSelic < minAnosPrecoAcimaSelic) return false;
+      if (precoTetoOnly) {
+        const d = descontoMap.get(s.ticker);
+        if (d === undefined || d < minDescontoTeto) return false;
+      }
       return true;
     });
-  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic]);
+  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap]);
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
@@ -161,6 +188,11 @@ function HomePage() {
     for (const s of filteredLive) map.get(s.setor)?.push(s);
     for (const [, arr] of map) {
       arr.sort((a, b) => {
+        if (rankByDesconto) {
+          const ad = descontoMap.get(a.ticker) ?? -Infinity;
+          const bd = descontoMap.get(b.ticker) ?? -Infinity;
+          if (ad !== bd) return bd - ad;
+        }
         const av = a[sortKey] as number | string;
         const bv = b[sortKey] as number | string;
         if (typeof av === "number" && typeof bv === "number")
@@ -171,7 +203,7 @@ function HomePage() {
       });
     }
     return map;
-  }, [SECTORS, filteredLive, sortKey, sortDir]);
+  }, [SECTORS, filteredLive, sortKey, sortDir, rankByDesconto, descontoMap]);
 
   const total = filtered.length;
 
@@ -263,6 +295,10 @@ function HomePage() {
                 setMinAnosAcimaSelic={setMinAnosAcimaSelic}
                 minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
                 setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
+                precoTetoOnly={precoTetoOnly}
+                setPrecoTetoOnly={setPrecoTetoOnly}
+                minDescontoTeto={minDescontoTeto}
+                setMinDescontoTeto={setMinDescontoTeto}
               />
 
 
