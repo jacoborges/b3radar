@@ -32,6 +32,10 @@ export function StockFilterSheet({
   setMinAnosAcimaSelic,
   minAnosPrecoAcimaSelic,
   setMinAnosPrecoAcimaSelic,
+  precoTetoOnly = false,
+  setPrecoTetoOnly,
+  minDescontoTeto = 0,
+  setMinDescontoTeto,
   title = "Filtros por indicadores técnicos",
   extraSection,
   onClearExtra,
@@ -47,6 +51,10 @@ export function StockFilterSheet({
   setMinAnosAcimaSelic: (v: number) => void;
   minAnosPrecoAcimaSelic: number;
   setMinAnosPrecoAcimaSelic: (v: number) => void;
+  precoTetoOnly?: boolean;
+  setPrecoTetoOnly?: (v: boolean) => void;
+  minDescontoTeto?: number;
+  setMinDescontoTeto?: (v: number) => void;
   title?: string;
   /** bloco extra renderizado no topo do painel (ex.: inteligência de proventos) */
   extraSection?: ReactNode;
