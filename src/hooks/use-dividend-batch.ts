@@ -110,7 +110,7 @@ export function useDividendBatch(
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q.isLoading, pendingKey > 0]);
+  }, [enabled, q.isLoading, pendingKey > 0]);
 
   const rows = useMemo<DividendBatchRow[]>(() => {
     return ordered.map((stock) => {
