@@ -318,6 +318,10 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 historico={proventos?.historico ?? null}
               />
 
+              <ValuationPanel ticker={stock.ticker} precoAtual={stock.preco} />
+
+
+
 
 
 
