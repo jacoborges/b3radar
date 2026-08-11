@@ -99,6 +99,105 @@ async function fetchSelic(): Promise<number | null> {
   }
 }
 
+interface BrapiRow {
+  [key: string]: number | string | null | undefined;
+}
+
+interface BrapiQuote {
+  regularMarketPrice?: number | null;
+  marketCap?: number | null;
+  incomeStatementHistory?: BrapiRow[] | { incomeStatementHistory?: BrapiRow[] };
+  cashflowHistory?: BrapiRow[] | { cashflowStatements?: BrapiRow[] };
+  defaultKeyStatistics?: BrapiRow;
+  financialData?: BrapiRow;
+}
+
+function bn(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+function firstRow(
+  v: BrapiRow[] | { [k: string]: BrapiRow[] | undefined } | undefined,
+  key: string,
+): BrapiRow {
+  if (Array.isArray(v)) return v[0] ?? {};
+  return (v?.[key] as BrapiRow[] | undefined)?.[0] ?? {};
+}
+
+/** Fonte alternativa quando o Yahoo está indisponível/limitado. */
+async function collectFromBrapi(
+  ticker: string,
+  selic: number,
+): Promise<ValuationInputs | null> {
+  try {
+    const url = new URL(`https://brapi.dev/api/quote/${ticker}`);
+    url.searchParams.set(
+      "modules",
+      "incomeStatementHistory,cashflowHistory,defaultKeyStatistics,financialData",
+    );
+    const token = process.env["BRAPI_TOKEN"];
+    if (token) url.searchParams.set("token", token);
+
+    const res = await fetch(url.toString(), { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { results?: BrapiQuote[] };
+    const q = json.results?.[0];
+    if (!q) return null;
+
+    const dre = firstRow(q.incomeStatementHistory as never, "incomeStatementHistory");
+    const dfc = firstRow(q.cashflowHistory as never, "cashflowStatements");
+    const ks = q.defaultKeyStatistics ?? {};
+    const fin = q.financialData ?? {};
+
+    const receita = bn(dre["totalRevenue"]) ?? bn(fin["totalRevenue"]);
+    const ebit = bn(dre["ebit"]) ?? bn(dre["operatingIncome"]);
+    const lucroLiquido = bn(dre["netIncome"]);
+    const despesaFinanceira = (() => {
+      const v = bn(dre["financialExpenses"]) ?? bn(dre["interestExpense"]);
+      return v == null ? null : Math.abs(v);
+    })();
+
+    // A brapi não publica D&A e CAPEX separadamente: aproximamos pelo fluxo de caixa.
+    const ocf = bn(dfc["operatingCashFlow"]);
+    const invest = bn(dfc["investmentCashFlow"]);
+    const depreciacao =
+      ocf != null && lucroLiquido != null ? Math.max(ocf - lucroLiquido, 0) : null;
+    const capex = invest == null ? null : Math.abs(invest);
+
+    const dividaTotal = bn(fin["totalDebt"]);
+    const caixa = bn(fin["totalCash"]);
+    const dividaLiquida =
+      dividaTotal != null || caixa != null ? (dividaTotal ?? 0) - (caixa ?? 0) : null;
+
+    if (ebit == null && receita == null) return null;
+
+    return {
+      ticker,
+      precoAtual: bn(q.regularMarketPrice),
+      marketCap: bn(q.marketCap),
+      acoes: bn(ks["sharesOutstanding"]),
+      dividaTotal,
+      caixa,
+      dividaLiquida,
+      beta: bn(ks["beta"]),
+      receita,
+      ebit,
+      lucroLiquido,
+      depreciacao,
+      capex,
+      despesaFinanceira,
+      selic,
+      fonte: "brapi (CVM/B3) + Banco Central",
+      atualizadoEm: new Date().toISOString(),
+      observacao:
+        "Depreciação/amortização e CAPEX estimados a partir do fluxo de caixa operacional e de investimento.",
+      error: null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function collectValuationInputs(ticker: string): Promise<ValuationInputs> {
   const symbol = ticker.endsWith(".SA") ? ticker : `${ticker}.SA`;
   const base: ValuationInputs = {
@@ -119,12 +218,20 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
     selic: null,
     fonte: null,
     atualizadoEm: new Date().toISOString(),
+    observacao: null,
     error: null,
   };
 
-  const [auth, selic] = await Promise.all([getYahooAuth(), fetchSelic()]);
-  base.selic = selic ?? 0.15;
-  if (!auth) return { ...base, error: "Fonte de dados indisponível no momento." };
+  const [auth, selicRaw] = await Promise.all([getYahooAuth(), fetchSelic()]);
+  const selic = selicRaw ?? 0.15;
+  base.selic = selic;
+
+  const fallback = async (): Promise<ValuationInputs> => {
+    const alt = await collectFromBrapi(ticker, selic);
+    return alt ?? { ...base, error: "Fonte de dados indisponível no momento." };
+  };
+
+  if (!auth) return fallback();
 
   const modules = [
     "price",
@@ -152,13 +259,13 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
     });
     if (res.status === 401 || res.status === 403) {
       cachedAuth = null;
-      return { ...base, error: "Sessão da fonte expirou — tente novamente." };
+      return fallback();
     }
-    if (!res.ok) return { ...base, error: `Fonte retornou HTTP ${res.status}` };
+    if (!res.ok) return fallback();
 
     const json = (await res.json()) as YahooSummary;
     const r = json.quoteSummary?.result?.[0];
-    if (!r) return { ...base, error: "Ativo não encontrado na fonte de dados." };
+    if (!r) return fallback();
 
     const dre = r.incomeStatementHistory?.incomeStatementHistory?.[0] ?? {};
     const dfc = r.cashflowStatementHistory?.cashflowStatements?.[0] ?? {};
@@ -171,6 +278,11 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
     const depreciacao = n(dfc["depreciation"] as YNum);
     const capexRaw = n(dfc["capitalExpenditures"] as YNum);
     const capex = capexRaw == null ? null : Math.abs(capexRaw);
+
+    if (ebit == null || depreciacao == null || capex == null) {
+      const alt = await collectFromBrapi(ticker, selic);
+      if (alt) return alt;
+    }
 
     const dividaTotal = n(r.financialData?.totalDebt);
     const caixa = n(r.financialData?.totalCash);
@@ -192,15 +304,17 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
       depreciacao,
       capex,
       despesaFinanceira,
-      selic: selic ?? 0.15,
+      selic,
       fonte: "Yahoo Finance + Banco Central",
       atualizadoEm: new Date().toISOString(),
+      observacao: null,
       error: null,
     };
   } catch (err) {
     console.error("[collectValuationInputs] failed", err);
-    return { ...base, error: "Falha ao coletar os dados do ativo." };
+    return fallback();
   } finally {
     clearTimeout(timer);
   }
 }
+
