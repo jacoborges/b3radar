@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, Loader2, RotateCcw } from "lucide-react";
+import { Calculator, Loader2, RefreshCw, RotateCcw } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InfoTip } from "./InfoTip";
