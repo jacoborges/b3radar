@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, Loader2, RotateCcw } from "lucide-react";
+import { Calculator, Loader2, RefreshCw, RotateCcw } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InfoTip } from "./InfoTip";
@@ -69,7 +71,7 @@ function NumField({
 }
 
 export function ValuationPanel({ ticker, precoAtual }: Props) {
-  const { data, isLoading, error } = useValuation(ticker);
+  const { data, isLoading, isFetching, error, refetch } = useValuation(ticker);
   const [tipo, setTipo] = useState<TipoFluxo>("FCFF");
   const [prem, setPrem] = useState<Premissas | null>(null);
 
@@ -154,12 +156,46 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
         )}
 
         {!isLoading && (error || data?.error) && (
-          <p className="text-sm text-[color:var(--color-danger)]">
-            {data?.error ?? "Falha ao coletar os dados do ativo."}
+          <div className="space-y-2">
+            <p className="text-sm text-[color:var(--color-danger)]">
+              {data?.error ?? "Falha ao coletar os dados do ativo."}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                disabled={isFetching}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2.5 py-1 text-xs font-medium hover:bg-muted/50 disabled:opacity-60"
+              >
+                {isFetching ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                Tentar novamente
+              </button>
+              {data?.errorCode === "sem-token" && (
+                <Link
+                  to="/configuracoes"
+                  className="text-xs font-medium text-primary underline underline-offset-2"
+                >
+                  Cadastrar token em Ajustes
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!isLoading && data && !data.error && data.setorFinanceiro && (
+          <p className="mb-3 rounded-md border border-[color:var(--color-warning)]/40 bg-[color:var(--color-warning)]/10 px-3 py-2 text-xs text-[color:var(--color-warning)]">
+            Banco ou seguradora: EBIT e CAPEX não representam a operação deste setor, então o FCD
+            por FCFF tende a distorcer o preço justo. Prefira a leitura por FCFE (caixa do
+            acionista) e trate o resultado como referência, não como valor definitivo.
           </p>
         )}
 
         {!isLoading && data && !data.error && calc && prem && (
+
           <div className="space-y-5">
             {/* ---- Resumo ---- */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -377,13 +413,38 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
               {data.observacao && (
                 <p className="mt-2 text-[11px] text-muted-foreground">{data.observacao}</p>
               )}
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                <span>Fonte: {data.fonte ?? "—"}</span>
+                {data.atualizadoEm && (
+                  <span>
+                    · Coletado em{" "}
+                    {new Date(data.atualizadoEm).toLocaleString("pt-BR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  disabled={isFetching}
+                  className="inline-flex items-center gap-1 text-primary hover:underline disabled:opacity-60"
+                >
+                  {isFetching ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3" />
+                  )}
+                  Atualizar
+                </button>
+              </p>
               {!calc.ativo && (
-
                 <p className="mt-2 text-xs text-[color:var(--color-warning)]">
                   Faltam linhas contábeis (EBIT, depreciação ou CAPEX) para este ativo — o
                   cálculo do FCD está incompleto.
                 </p>
               )}
+
             </div>
 
             {/* ---- Fluxos projetados ---- */}

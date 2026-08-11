@@ -30,7 +30,12 @@ export interface ValuationInputs {
   atualizadoEm: string | null;
   /** aviso sobre aproximações feitas na coleta (ex.: D&A estimada) */
   observacao: string | null;
+  /** código do erro para a UI escolher a mensagem/ação */
+  errorCode: "sem-token" | "limite-fonte" | "sem-demonstracoes" | "indisponivel" | null;
+  /** banco/seguradora: EBIT e CAPEX não representam a operação */
+  setorFinanceiro: boolean;
   error: string | null;
+
 
 }
 

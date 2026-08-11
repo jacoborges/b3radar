@@ -124,25 +124,32 @@ function firstRow(
   return (v?.[key] as BrapiRow[] | undefined)?.[0] ?? {};
 }
 
-/** Fonte alternativa quando o Yahoo está indisponível/limitado. */
+type BrapiOutcome =
+  | { ok: true; inputs: ValuationInputs }
+  | { ok: false; code: "sem-token" | "limite-fonte" | "sem-demonstracoes" | "indisponivel" };
+
+/** Fonte alternativa (dados CVM/B3) quando o Yahoo está indisponível/limitado. */
 async function collectFromBrapi(
   ticker: string,
   selic: number,
-): Promise<ValuationInputs | null> {
+  token?: string,
+): Promise<BrapiOutcome> {
   try {
     const url = new URL(`https://brapi.dev/api/quote/${ticker}`);
     url.searchParams.set(
       "modules",
       "incomeStatementHistory,cashflowHistory,defaultKeyStatistics,financialData",
     );
-    const token = process.env["BRAPI_TOKEN"];
     if (token) url.searchParams.set("token", token);
 
     const res = await fetch(url.toString(), { headers: { accept: "application/json" } });
-    if (!res.ok) return null;
+    if (res.status === 401 || res.status === 403) return { ok: false, code: "sem-token" };
+    if (res.status === 429) return { ok: false, code: "limite-fonte" };
+    if (!res.ok) return { ok: false, code: "indisponivel" };
+
     const json = (await res.json()) as { results?: BrapiQuote[] };
     const q = json.results?.[0];
-    if (!q) return null;
+    if (!q) return { ok: false, code: "sem-demonstracoes" };
 
     const dre = firstRow(q.incomeStatementHistory as never, "incomeStatementHistory");
     const dfc = firstRow(q.cashflowHistory as never, "cashflowStatements");
@@ -157,7 +164,7 @@ async function collectFromBrapi(
       return v == null ? null : Math.abs(v);
     })();
 
-    // A brapi não publica D&A e CAPEX separadamente: aproximamos pelo fluxo de caixa.
+    // A fonte não publica D&A e CAPEX separadamente: aproximamos pelo fluxo de caixa.
     const ocf = bn(dfc["operatingCashFlow"]);
     const invest = bn(dfc["investmentCashFlow"]);
     const depreciacao =
@@ -169,36 +176,75 @@ async function collectFromBrapi(
     const dividaLiquida =
       dividaTotal != null || caixa != null ? (dividaTotal ?? 0) - (caixa ?? 0) : null;
 
-    if (ebit == null && receita == null) return null;
+    if (ebit == null && receita == null) return { ok: false, code: "sem-demonstracoes" };
 
     return {
-      ticker,
-      precoAtual: bn(q.regularMarketPrice),
-      marketCap: bn(q.marketCap),
-      acoes: bn(ks["sharesOutstanding"]),
-      dividaTotal,
-      caixa,
-      dividaLiquida,
-      beta: bn(ks["beta"]),
-      receita,
-      ebit,
-      lucroLiquido,
-      depreciacao,
-      capex,
-      despesaFinanceira,
-      selic,
-      fonte: "brapi (CVM/B3) + Banco Central",
-      atualizadoEm: new Date().toISOString(),
-      observacao:
-        "Depreciação/amortização e CAPEX estimados a partir do fluxo de caixa operacional e de investimento.",
-      error: null,
+      ok: true,
+      inputs: {
+        ticker,
+        precoAtual: bn(q.regularMarketPrice),
+        marketCap: bn(q.marketCap),
+        acoes: bn(ks["sharesOutstanding"]),
+        dividaTotal,
+        caixa,
+        dividaLiquida,
+        beta: bn(ks["beta"]),
+        receita,
+        ebit,
+        lucroLiquido,
+        depreciacao,
+        capex,
+        despesaFinanceira,
+        selic,
+        fonte: "CVM/B3 (brapi) + Banco Central",
+        atualizadoEm: new Date().toISOString(),
+        observacao:
+          "Depreciação/amortização e CAPEX estimados a partir do fluxo de caixa operacional e de investimento.",
+        errorCode: null,
+        setorFinanceiro: isSetorFinanceiro(ebit, capex, receita, lucroLiquido),
+        error: null,
+      },
     };
   } catch {
-    return null;
+    return { ok: false, code: "indisponivel" };
   }
 }
 
-export async function collectValuationInputs(ticker: string): Promise<ValuationInputs> {
+/**
+ * Heurística: em bancos/seguradoras o EBIT e o CAPEX não representam a operação
+ * (EBIT negativo ou irrisório frente ao lucro líquido, CAPEX ausente).
+ */
+function isSetorFinanceiro(
+  ebit: number | null,
+  capex: number | null,
+  receita: number | null,
+  lucroLiquido: number | null,
+): boolean {
+  if (lucroLiquido != null && lucroLiquido > 0) {
+    if (ebit == null || ebit <= 0) return true;
+    if (ebit < lucroLiquido * 0.6) return true;
+  }
+  // EBIT negativo (ou ausente) com receita relevante: típico de banco/seguradora
+  if (receita != null && receita > 0 && (ebit == null || ebit <= 0)) return true;
+  if (receita != null && receita > 0 && ebit != null && ebit > receita) return true;
+  if (capex == null) return true;
+  return false;
+
+}
+
+const ERROR_TEXT: Record<string, string> = {
+  "sem-token":
+    "A fonte de demonstrações financeiras exige um token. Cadastre seu token brapi em Ajustes para liberar o Valuation.",
+  "limite-fonte":
+    "Fonte temporariamente limitada (muitas consultas). Tente novamente em alguns minutos.",
+  "sem-demonstracoes": "Este ativo não possui demonstrações financeiras publicadas nesta fonte.",
+  indisponivel: "Fonte de dados indisponível no momento.",
+};
+
+export async function collectValuationInputs(
+  ticker: string,
+  userToken?: string,
+): Promise<ValuationInputs> {
   const symbol = ticker.endsWith(".SA") ? ticker : `${ticker}.SA`;
   const base: ValuationInputs = {
     ticker,
@@ -219,6 +265,8 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
     fonte: null,
     atualizadoEm: new Date().toISOString(),
     observacao: null,
+    errorCode: null,
+    setorFinanceiro: false,
     error: null,
   };
 
@@ -226,9 +274,22 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
   const selic = selicRaw ?? 0.15;
   base.selic = selic;
 
+  const envToken = process.env["BRAPI_TOKEN"];
+  const tokens = [userToken, envToken, undefined].filter(
+    (t, i, arr) => arr.indexOf(t) === i,
+  ) as Array<string | undefined>;
+
+  /** Tenta a fonte alternativa com token do usuário, do projeto e anônimo. */
   const fallback = async (): Promise<ValuationInputs> => {
-    const alt = await collectFromBrapi(ticker, selic);
-    return alt ?? { ...base, error: "Fonte de dados indisponível no momento." };
+    let last: BrapiOutcome = { ok: false, code: "indisponivel" };
+    for (const t of tokens) {
+      const out = await collectFromBrapi(ticker, selic, t);
+      if (out.ok) return out.inputs;
+      last = out;
+      if (out.code === "sem-demonstracoes") break;
+    }
+    const code = last.ok ? "indisponivel" : last.code;
+    return { ...base, errorCode: code, error: ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]! };
   };
 
   if (!auth) return fallback();
@@ -280,8 +341,8 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
     const capex = capexRaw == null ? null : Math.abs(capexRaw);
 
     if (ebit == null || depreciacao == null || capex == null) {
-      const alt = await collectFromBrapi(ticker, selic);
-      if (alt) return alt;
+      const alt = await fallback();
+      if (alt.error == null) return alt;
     }
 
     const dividaTotal = n(r.financialData?.totalDebt);
@@ -308,6 +369,8 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
       fonte: "Yahoo Finance + Banco Central",
       atualizadoEm: new Date().toISOString(),
       observacao: null,
+      errorCode: null,
+      setorFinanceiro: isSetorFinanceiro(ebit, capex, receita, lucroLiquido),
       error: null,
     };
   } catch (err) {
@@ -317,4 +380,5 @@ export async function collectValuationInputs(ticker: string): Promise<ValuationI
     clearTimeout(timer);
   }
 }
+
 
