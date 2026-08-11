@@ -29,6 +29,8 @@ import { InfoTip } from "./InfoTip";
 import { HistoryChartButton } from "./IndicatorHistoryDialog";
 import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
+import { ValuationPanel } from "./ValuationPanel";
+
 
 
 import {
@@ -317,6 +319,10 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 precoAtual={stock.preco}
                 historico={proventos?.historico ?? null}
               />
+
+              <ValuationPanel ticker={stock.ticker} precoAtual={stock.preco} />
+
+
 
 
 
