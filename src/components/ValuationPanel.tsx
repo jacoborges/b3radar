@@ -154,12 +154,46 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
         )}
 
         {!isLoading && (error || data?.error) && (
-          <p className="text-sm text-[color:var(--color-danger)]">
-            {data?.error ?? "Falha ao coletar os dados do ativo."}
+          <div className="space-y-2">
+            <p className="text-sm text-[color:var(--color-danger)]">
+              {data?.error ?? "Falha ao coletar os dados do ativo."}
+            </p>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void refetch()}
+                disabled={isFetching}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2.5 py-1 text-xs font-medium hover:bg-muted/50 disabled:opacity-60"
+              >
+                {isFetching ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-3.5 w-3.5" />
+                )}
+                Tentar novamente
+              </button>
+              {data?.errorCode === "sem-token" && (
+                <Link
+                  to="/configuracoes"
+                  className="text-xs font-medium text-primary underline underline-offset-2"
+                >
+                  Cadastrar token em Ajustes
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+
+        {!isLoading && data && !data.error && data.setorFinanceiro && (
+          <p className="mb-3 rounded-md border border-[color:var(--color-warning)]/40 bg-[color:var(--color-warning)]/10 px-3 py-2 text-xs text-[color:var(--color-warning)]">
+            Banco ou seguradora: EBIT e CAPEX não representam a operação deste setor, então o FCD
+            por FCFF tende a distorcer o preço justo. Prefira a leitura por FCFE (caixa do
+            acionista) e trate o resultado como referência, não como valor definitivo.
           </p>
         )}
 
         {!isLoading && data && !data.error && calc && prem && (
+
           <div className="space-y-5">
             {/* ---- Resumo ---- */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
