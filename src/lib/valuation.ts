@@ -28,7 +28,10 @@ export interface ValuationInputs {
   selic: number | null;
   fonte: string | null;
   atualizadoEm: string | null;
+  /** aviso sobre aproximações feitas na coleta (ex.: D&A estimada) */
+  observacao: string | null;
   error: string | null;
+
 }
 
 export interface Premissas {
