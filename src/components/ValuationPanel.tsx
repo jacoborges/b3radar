@@ -374,7 +374,11 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
                   </div>
                 ))}
               </div>
+              {data.observacao && (
+                <p className="mt-2 text-[11px] text-muted-foreground">{data.observacao}</p>
+              )}
               {!calc.ativo && (
+
                 <p className="mt-2 text-xs text-[color:var(--color-warning)]">
                   Faltam linhas contábeis (EBIT, depreciação ou CAPEX) para este ativo — o
                   cálculo do FCD está incompleto.
