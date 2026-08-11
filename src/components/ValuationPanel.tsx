@@ -413,13 +413,38 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
               {data.observacao && (
                 <p className="mt-2 text-[11px] text-muted-foreground">{data.observacao}</p>
               )}
+              <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                <span>Fonte: {data.fonte ?? "—"}</span>
+                {data.atualizadoEm && (
+                  <span>
+                    · Coletado em{" "}
+                    {new Date(data.atualizadoEm).toLocaleString("pt-BR", {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => void refetch()}
+                  disabled={isFetching}
+                  className="inline-flex items-center gap-1 text-primary hover:underline disabled:opacity-60"
+                >
+                  {isFetching ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3 w-3" />
+                  )}
+                  Atualizar
+                </button>
+              </p>
               {!calc.ativo && (
-
                 <p className="mt-2 text-xs text-[color:var(--color-warning)]">
                   Faltam linhas contábeis (EBIT, depreciação ou CAPEX) para este ativo — o
                   cálculo do FCD está incompleto.
                 </p>
               )}
+
             </div>
 
             {/* ---- Fluxos projetados ---- */}
