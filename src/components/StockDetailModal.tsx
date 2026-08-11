@@ -29,6 +29,8 @@ import { InfoTip } from "./InfoTip";
 import { HistoryChartButton } from "./IndicatorHistoryDialog";
 import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
+import { ValuationPanel } from "./ValuationPanel";
+
 
 
 import {
