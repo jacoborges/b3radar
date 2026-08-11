@@ -71,7 +71,7 @@ function NumField({
 }
 
 export function ValuationPanel({ ticker, precoAtual }: Props) {
-  const { data, isLoading, error } = useValuation(ticker);
+  const { data, isLoading, isFetching, error, refetch } = useValuation(ticker);
   const [tipo, setTipo] = useState<TipoFluxo>("FCFF");
   const [prem, setPrem] = useState<Premissas | null>(null);
 
