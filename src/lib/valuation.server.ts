@@ -224,9 +224,12 @@ function isSetorFinanceiro(
     if (ebit == null || ebit <= 0) return true;
     if (ebit < lucroLiquido * 0.6) return true;
   }
+  // EBIT negativo (ou ausente) com receita relevante: típico de banco/seguradora
+  if (receita != null && receita > 0 && (ebit == null || ebit <= 0)) return true;
   if (receita != null && receita > 0 && ebit != null && ebit > receita) return true;
   if (capex == null) return true;
   return false;
+
 }
 
 const ERROR_TEXT: Record<string, string> = {
