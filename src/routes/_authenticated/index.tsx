@@ -235,6 +235,14 @@ function HomePage() {
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
               </p>
+              {live.error && (
+                <p className="mt-1 text-xs text-destructive">
+                  {live.error}{" "}
+                  <Link to="/configuracoes" className="underline">
+                    Ajustar token brapi
+                  </Link>
+                </p>
+              )}
             </div>
 
 
