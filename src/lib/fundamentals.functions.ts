@@ -89,11 +89,18 @@ export const getTickerFundamentals = createServerFn({ method: "POST" })
         headers: { accept: "application/json" },
       });
       if (!res.ok) {
-        return {
-          fundamentals: null,
-          fonte: null,
-          error: `brapi HTTP ${res.status}`,
-        };
+        let message = `brapi HTTP ${res.status}`;
+        try {
+          const body = (await res.json()) as { message?: string };
+          if (body?.message) message = body.message;
+        } catch {
+          /* corpo não-JSON */
+        }
+        if (res.status === 401 || res.status === 403)
+          message = "Token brapi inválido ou sem permissão — confira em Ajustes.";
+        if (res.status === 429)
+          message = "Limite de consultas da brapi atingido — tente em alguns minutos.";
+        return { fundamentals: null, fonte: null, error: message };
       }
       const json = (await res.json()) as { results?: BrapiQuote[] };
       const q = json.results?.[0];

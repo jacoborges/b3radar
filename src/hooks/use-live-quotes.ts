@@ -3,8 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { fetchLiveQuotes, type LiveQuote } from "@/lib/quotes.functions";
 
-const REFRESH_MS = 15_000;
-const MAX_TICKERS = 120;
+// Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
+// ativos e com menos frequência para não estourar a cota.
+const REFRESH_MS = 60_000;
+const MAX_TICKERS = 40;
 export const BRAPI_TOKEN_STORAGE_KEY = "b3radar:brapi-token";
 
 export interface LiveQuotesMap {

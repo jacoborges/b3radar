@@ -230,7 +230,14 @@ function CarteiraPage() {
                 : "Cotações do último fechamento"}
           </span>
         </div>
-
+        {quotes.error && (
+          <div className="mx-auto max-w-6xl px-4 pb-3 text-xs text-destructive md:px-8">
+            {quotes.error}{" "}
+            <Link to="/configuracoes" className="underline">
+              Ajustar token brapi
+            </Link>
+          </div>
+        )}
       </header>
 
       <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[260px_1fr] md:px-8">
