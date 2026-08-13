@@ -145,6 +145,35 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
           ? "Fundamentos + Preço: Fundamentus · Proventos: B3"
           : "Fundamentos + Preço: Fundamentus (offline)";
 
+  // Carimbo do cache: momento em que os dados guardados deste ativo foram atualizados.
+  const cachedAtLabel = useMemo(() => {
+    if (!ticker) return null;
+    const keys = [
+      ["fundamentus-ticker", ticker],
+      ["proventos", ticker],
+      ["price-history", ticker],
+    ];
+    const times = keys
+      .map((k) => queryClient.getQueryState(k)?.dataUpdatedAt ?? 0)
+      .filter((t) => t > 0);
+    if (times.length === 0) return null;
+    return new Date(Math.max(...times)).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticker, queryClient, liveFund, proventos, priceHistory, isFetching, fundFetching]);
+
+  const refreshTicker = () => {
+    if (!ticker) return;
+    void queryClient.invalidateQueries({
+      predicate: (q) => q.queryKey.some((part) => part === ticker),
+      refetchType: "active",
+    });
+  };
+
 
 
   const chartUrl = useMemo(() => {
