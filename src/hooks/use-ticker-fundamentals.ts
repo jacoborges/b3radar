@@ -5,8 +5,7 @@ import {
   type TickerFundamentusPayload,
 } from "@/lib/stocks.functions";
 
-const FIFTEEN_MIN = 15 * 60 * 1000;
-const ONE_HOUR = 60 * 60 * 1000;
+const TWELVE_HOURS = 12 * 60 * 60 * 1000;
 
 export interface UseTickerFundamentalsResult {
   data: TickerFundamentusPayload | null;
@@ -25,9 +24,11 @@ export function useTickerFundamentals(
     queryKey: ["fundamentus-ticker", t],
     queryFn: () => call({ data: { ticker: t } }),
     enabled: !!ticker,
-    staleTime: FIFTEEN_MIN,
-    gcTime: ONE_HOUR,
+    staleTime: TWELVE_HOURS,
+    gcTime: TWELVE_HOURS * 4,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: 1,
   });
 
