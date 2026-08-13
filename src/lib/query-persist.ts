@@ -1,5 +1,4 @@
 import type { QueryClient } from "@tanstack/react-query";
-import type { Query } from "@tanstack/react-query";
 import { persistQueryClient } from "@tanstack/query-persist-client-core";
 import { createAsyncStoragePersister } from "@tanstack/query-async-storage-persister";
 
@@ -33,12 +32,12 @@ export function startQueryPersistence(queryClient: QueryClient) {
   });
 
   persistQueryClient({
-    queryClient,
+    queryClient: queryClient as never,
     persister,
     maxAge: MAX_AGE,
     buster: CACHE_VERSION,
     dehydrateOptions: {
-      shouldDehydrateQuery: (query: Query) => {
+      shouldDehydrateQuery: (query: { state: { status: string }; queryKey: readonly unknown[] }) => {
         if (query.state.status !== "success") return false;
         const head = query.queryKey?.[0];
         return typeof head === "string" && PERSISTED_PREFIXES.includes(head);
