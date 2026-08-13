@@ -8,15 +8,18 @@ import type { TvResult } from "@/lib/tradingview-rating";
 const FIVE_MIN = 5 * 60 * 1000;
 const ONE_MIN = 60 * 1000;
 
+const SIX_HOURS = 6 * 60 * 60 * 1000;
+
 export function useTradingViewTechnical(ticker: string | null) {
   return useQuery({
     queryKey: ["tv-technical", ticker],
     queryFn: () => getTradingViewTechnical({ data: { ticker: ticker! } }),
     enabled: !!ticker,
-    staleTime: ONE_MIN,
-    gcTime: 10 * 60 * 1000,
-    refetchInterval: ONE_MIN,
+    staleTime: SIX_HOURS,
+    gcTime: SIX_HOURS * 4,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 
