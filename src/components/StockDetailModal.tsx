@@ -231,8 +231,22 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   {sourceLabel}
                 </Badge>
               </DialogTitle>
-              <DialogDescription className="mt-1 text-base">
-                {stock.nome}
+              <DialogDescription className="mt-1 flex flex-wrap items-center gap-3 text-base">
+                <span>{stock.nome}</span>
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {cachedAtLabel && <span>Atualizado em {cachedAtLabel}</span>}
+                  <button
+                    type="button"
+                    onClick={refreshTicker}
+                    disabled={isFetching || fundFetching}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1 text-xs font-medium hover:bg-muted/50 disabled:opacity-60"
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${isFetching || fundFetching ? "animate-spin" : ""}`}
+                    />
+                    Atualizar
+                  </button>
+                </span>
               </DialogDescription>
             </DialogHeader>
 
