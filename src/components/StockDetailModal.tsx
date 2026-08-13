@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +52,7 @@ interface Props {
 export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const ticker = baseStock?.ticker ?? null;
   const [chartLoaded, setChartLoaded] = useState(false);
+  const queryClient = useQueryClient();
   const { proventos, isLoading, isFetching } = useTickerData(ticker);
   const {
     data: liveFund,
