@@ -4,7 +4,7 @@ import { getValuationInputs } from "@/lib/valuation.functions";
 import { useBrapiToken } from "@/hooks/use-live-quotes";
 import type { ValuationInputs } from "@/lib/valuation";
 
-const SIX_HOURS = 6 * 60 * 60 * 1000;
+const ONE_DAY = 24 * 60 * 60 * 1000;
 
 export function useValuation(ticker: string | null, enabled = true) {
   const call = useServerFn(getValuationInputs);
@@ -16,9 +16,11 @@ export function useValuation(ticker: string | null, enabled = true) {
     queryFn: () =>
       call({ data: token ? { ticker: t, token } : { ticker: t } }),
     enabled: !!ticker && enabled,
-    staleTime: SIX_HOURS,
-    gcTime: SIX_HOURS,
+    staleTime: ONE_DAY,
+    gcTime: ONE_DAY * 7,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: 1,
   });
 
