@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -50,6 +52,7 @@ interface Props {
 export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const ticker = baseStock?.ticker ?? null;
   const [chartLoaded, setChartLoaded] = useState(false);
+  const queryClient = useQueryClient();
   const { proventos, isLoading, isFetching } = useTickerData(ticker);
   const {
     data: liveFund,
@@ -145,6 +148,35 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
           ? "Fundamentos + Preço: Fundamentus · Proventos: B3"
           : "Fundamentos + Preço: Fundamentus (offline)";
 
+  // Carimbo do cache: momento em que os dados guardados deste ativo foram atualizados.
+  const cachedAtLabel = useMemo(() => {
+    if (!ticker) return null;
+    const keys = [
+      ["fundamentus-ticker", ticker],
+      ["proventos", ticker],
+      ["price-history", ticker],
+    ];
+    const times = keys
+      .map((k) => queryClient.getQueryState(k)?.dataUpdatedAt ?? 0)
+      .filter((t) => t > 0);
+    if (times.length === 0) return null;
+    return new Date(Math.max(...times)).toLocaleString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ticker, queryClient, liveFund, proventos, priceHistory, isFetching, fundFetching]);
+
+  const refreshTicker = () => {
+    if (!ticker) return;
+    void queryClient.invalidateQueries({
+      predicate: (q) => q.queryKey.some((part) => part === ticker),
+      refetchType: "active",
+    });
+  };
+
 
 
   const chartUrl = useMemo(() => {
@@ -199,8 +231,22 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   {sourceLabel}
                 </Badge>
               </DialogTitle>
-              <DialogDescription className="mt-1 text-base">
-                {stock.nome}
+              <DialogDescription className="mt-1 flex flex-wrap items-center gap-3 text-base">
+                <span>{stock.nome}</span>
+                <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                  {cachedAtLabel && <span>Atualizado em {cachedAtLabel}</span>}
+                  <button
+                    type="button"
+                    onClick={refreshTicker}
+                    disabled={isFetching || fundFetching}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1 text-xs font-medium hover:bg-muted/50 disabled:opacity-60"
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${isFetching || fundFetching ? "animate-spin" : ""}`}
+                    />
+                    Atualizar
+                  </button>
+                </span>
               </DialogDescription>
             </DialogHeader>
 

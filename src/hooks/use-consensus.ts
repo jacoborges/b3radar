@@ -3,15 +3,18 @@ import { getAnalystConsensus, getConsensusBatch } from "@/lib/consensus.function
 import type { ConsensusResult } from "@/lib/consensus-rating";
 
 const FIVE_MIN = 5 * 60 * 1000;
+const SIX_HOURS = 6 * 60 * 60 * 1000;
 
 export function useAnalystConsensus(ticker: string | null) {
   return useQuery({
     queryKey: ["consensus", ticker],
     queryFn: () => getAnalystConsensus({ data: { ticker: ticker! } }),
     enabled: !!ticker,
-    staleTime: FIVE_MIN,
-    gcTime: 30 * 60 * 1000,
+    staleTime: SIX_HOURS,
+    gcTime: SIX_HOURS * 4,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }
 

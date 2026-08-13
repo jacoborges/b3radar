@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getTickerProventos, type TickerProventosResult } from "@/lib/proventos.functions";
 
-const ONE_HOUR = 60 * 60 * 1000;
+const ONE_DAY = 24 * 60 * 60 * 1000;
 
 export interface UseTickerDataResult {
   proventos: TickerProventosResult | null;
@@ -18,8 +18,11 @@ export function useTickerData(ticker: string | null): UseTickerDataResult {
     queryKey: ["proventos", t],
     queryFn: () => callProventos({ data: { ticker: t } }),
     enabled: !!ticker,
-    staleTime: ONE_HOUR,
-    gcTime: ONE_HOUR * 2,
+    staleTime: ONE_DAY,
+    gcTime: ONE_DAY * 7,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     retry: 1,
   });
 
