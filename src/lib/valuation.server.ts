@@ -1,5 +1,5 @@
 /**
- * Coleta dos insumos do Valuation (FCD): demonstrativos + mercado (Yahoo)
+ * Coleta dos insumos do Valuation (FCD): demonstrativos + mercado (Yahoo e CVM/B3)
  * e taxa livre de risco (API pública do Banco Central).
  * Server-only.
  */
@@ -76,6 +76,9 @@ interface YahooSummary {
         totalCash?: YNum;
         totalRevenue?: YNum;
         ebitda?: YNum;
+        operatingMargins?: YNum;
+        operatingCashflow?: YNum;
+        freeCashflow?: YNum;
       };
       incomeStatementHistory?: { incomeStatementHistory?: YRow[] };
       cashflowStatementHistory?: { cashflowStatements?: YRow[] };
@@ -99,6 +102,109 @@ async function fetchSelic(): Promise<number | null> {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Derivação das linhas contábeis                                      */
+/* ------------------------------------------------------------------ */
+
+type Row = Record<string, unknown>;
+
+function num(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (v && typeof v === "object") {
+    const raw = (v as { raw?: unknown }).raw;
+    if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  }
+  return null;
+}
+
+/** Primeira linha (exercício mais recente) que satisfaz o predicado. */
+function pickRow(rows: Row[] | undefined, has: (r: Row) => boolean): Row {
+  if (!rows || rows.length === 0) return {};
+  return rows.find(has) ?? rows[0] ?? {};
+}
+
+export interface LinhasContabeis {
+  receita: number | null;
+  ebit: number | null;
+  lucroLiquido: number | null;
+  depreciacao: number | null;
+  capex: number | null;
+  despesaFinanceira: number | null;
+  derivacoes: string[];
+}
+
+/**
+ * Deriva EBIT, D&A e CAPEX a partir do que a fonte publicar, em cascata.
+ * Nunca inventa número: cada aproximação é registrada em `derivacoes`.
+ */
+export function derivarLinhas(dre: Row, dfc: Row, fin: Row): LinhasContabeis {
+  const derivacoes: string[] = [];
+
+  const receita = num(dre["totalRevenue"]) ?? num(fin["totalRevenue"]);
+  const lucroLiquido = num(dre["netIncome"]) ?? num(fin["netIncomeToCommon"]);
+  const ebitda = num(fin["ebitda"]) ?? num(dre["ebitda"]);
+  const ocf = num(dfc["operatingCashFlow"]) ?? num(fin["operatingCashflow"]);
+  const fcf = num(dfc["freeCashFlow"]) ?? num(fin["freeCashflow"]);
+  const invest = num(dfc["investmentCashFlow"]);
+
+  // --- EBIT ---
+  let ebit = num(dre["ebit"]) ?? num(dre["operatingIncome"]);
+  const daDireta = (() => {
+    const v =
+      num(dfc["depreciation"]) ??
+      num(dfc["depreciationAndAmortization"]) ??
+      num(dre["depreciationAndAmortization"]);
+    return v == null ? null : Math.abs(v);
+  })();
+
+  if (ebit == null && ebitda != null && daDireta != null) {
+    ebit = ebitda - daDireta;
+    derivacoes.push("EBIT estimado por EBITDA − D&A");
+  }
+  if (ebit == null) {
+    const margem = num(fin["operatingMargins"]);
+    if (margem != null && receita != null) {
+      ebit = margem * receita;
+      derivacoes.push("EBIT estimado por margem operacional × receita");
+    }
+  }
+
+  // --- Depreciação / amortização ---
+  let depreciacao = daDireta;
+  if (depreciacao == null && ebitda != null && ebit != null && ebitda - ebit > 0) {
+    depreciacao = ebitda - ebit;
+    derivacoes.push("D&A estimada por EBITDA − EBIT");
+  }
+  if (depreciacao == null && ocf != null && lucroLiquido != null && ocf - lucroLiquido > 0) {
+    depreciacao = ocf - lucroLiquido;
+    derivacoes.push("D&A estimada por caixa operacional − lucro líquido");
+  }
+
+  // --- CAPEX ---
+  let capex = (() => {
+    const v = num(dfc["capitalExpenditures"]) ?? num(dfc["capex"]);
+    return v == null ? null : Math.abs(v);
+  })();
+  if (capex == null && ocf != null && fcf != null && ocf - fcf > 0) {
+    capex = ocf - fcf;
+    derivacoes.push("CAPEX estimado por caixa operacional − fluxo de caixa livre");
+  }
+  if (capex == null && invest != null && invest < 0) {
+    capex = Math.abs(invest);
+    derivacoes.push("CAPEX aproximado pelo caixa de investimento");
+  }
+
+  const despesaFinanceira = (() => {
+    const v =
+      num(dre["interestExpense"]) ??
+      num(dre["financialExpenses"]) ??
+      num(fin["interestExpense"]);
+    return v == null ? null : Math.abs(v);
+  })();
+
+  return { receita, ebit, lucroLiquido, depreciacao, capex, despesaFinanceira, derivacoes };
+}
+
 interface BrapiRow {
   [key: string]: number | string | null | undefined;
 }
@@ -116,12 +222,12 @@ function bn(v: unknown): number | null {
   return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
-function firstRow(
+function rowsOf(
   v: BrapiRow[] | { [k: string]: BrapiRow[] | undefined } | undefined,
   key: string,
-): BrapiRow {
-  if (Array.isArray(v)) return v[0] ?? {};
-  return (v?.[key] as BrapiRow[] | undefined)?.[0] ?? {};
+): Row[] {
+  if (Array.isArray(v)) return v as Row[];
+  return ((v?.[key] as BrapiRow[] | undefined) ?? []) as Row[];
 }
 
 type BrapiOutcome =
@@ -138,7 +244,7 @@ async function collectFromBrapi(
     const url = new URL(`https://brapi.dev/api/quote/${ticker}`);
     url.searchParams.set(
       "modules",
-      "incomeStatementHistory,cashflowHistory,defaultKeyStatistics,financialData",
+      "incomeStatementHistory,cashflowHistory,balanceSheetHistory,defaultKeyStatistics,financialData",
     );
     if (token) url.searchParams.set("token", token);
 
@@ -151,32 +257,28 @@ async function collectFromBrapi(
     const q = json.results?.[0];
     if (!q) return { ok: false, code: "sem-demonstracoes" };
 
-    const dre = firstRow(q.incomeStatementHistory as never, "incomeStatementHistory");
-    const dfc = firstRow(q.cashflowHistory as never, "cashflowStatements");
-    const ks = q.defaultKeyStatistics ?? {};
-    const fin = q.financialData ?? {};
+    const dreRows = rowsOf(q.incomeStatementHistory as never, "incomeStatementHistory");
+    const dfcRows = rowsOf(q.cashflowHistory as never, "cashflowStatements");
+    const dre = pickRow(
+      dreRows,
+      (r) => num(r["ebit"]) != null || num(r["operatingIncome"]) != null,
+    );
+    const dfc = pickRow(
+      dfcRows,
+      (r) => num(r["operatingCashFlow"]) != null || num(r["investmentCashFlow"]) != null,
+    );
+    const ks = (q.defaultKeyStatistics ?? {}) as Row;
+    const fin = (q.financialData ?? {}) as Row;
 
-    const receita = bn(dre["totalRevenue"]) ?? bn(fin["totalRevenue"]);
-    const ebit = bn(dre["ebit"]) ?? bn(dre["operatingIncome"]);
-    const lucroLiquido = bn(dre["netIncome"]);
-    const despesaFinanceira = (() => {
-      const v = bn(dre["financialExpenses"]) ?? bn(dre["interestExpense"]);
-      return v == null ? null : Math.abs(v);
-    })();
-
-    // A fonte não publica D&A e CAPEX separadamente: aproximamos pelo fluxo de caixa.
-    const ocf = bn(dfc["operatingCashFlow"]);
-    const invest = bn(dfc["investmentCashFlow"]);
-    const depreciacao =
-      ocf != null && lucroLiquido != null ? Math.max(ocf - lucroLiquido, 0) : null;
-    const capex = invest == null ? null : Math.abs(invest);
+    const linhas = derivarLinhas(dre, dfc, fin);
 
     const dividaTotal = bn(fin["totalDebt"]);
     const caixa = bn(fin["totalCash"]);
     const dividaLiquida =
       dividaTotal != null || caixa != null ? (dividaTotal ?? 0) - (caixa ?? 0) : null;
 
-    if (ebit == null && receita == null) return { ok: false, code: "sem-demonstracoes" };
+    if (linhas.ebit == null && linhas.receita == null)
+      return { ok: false, code: "sem-demonstracoes" };
 
     return {
       ok: true,
@@ -189,19 +291,24 @@ async function collectFromBrapi(
         caixa,
         dividaLiquida,
         beta: bn(ks["beta"]),
-        receita,
-        ebit,
-        lucroLiquido,
-        depreciacao,
-        capex,
-        despesaFinanceira,
+        receita: linhas.receita,
+        ebit: linhas.ebit,
+        lucroLiquido: linhas.lucroLiquido,
+        depreciacao: linhas.depreciacao,
+        capex: linhas.capex,
+        despesaFinanceira: linhas.despesaFinanceira,
         selic,
         fonte: "CVM/B3 (brapi) + Banco Central",
         atualizadoEm: new Date().toISOString(),
-        observacao:
-          "Depreciação/amortização e CAPEX estimados a partir do fluxo de caixa operacional e de investimento.",
+        observacao: null,
+        derivacoes: linhas.derivacoes,
         errorCode: null,
-        setorFinanceiro: isSetorFinanceiro(ebit, capex, receita, lucroLiquido),
+        setorFinanceiro: isSetorFinanceiro(
+          linhas.ebit,
+          linhas.capex,
+          linhas.receita,
+          linhas.lucroLiquido,
+        ),
         error: null,
       },
     };
@@ -229,7 +336,6 @@ function isSetorFinanceiro(
   if (receita != null && receita > 0 && ebit != null && ebit > receita) return true;
   if (capex == null) return true;
   return false;
-
 }
 
 const ERROR_TEXT: Record<string, string> = {
@@ -240,6 +346,58 @@ const ERROR_TEXT: Record<string, string> = {
   "sem-demonstracoes": "Este ativo não possui demonstrações financeiras publicadas nesta fonte.",
   indisponivel: "Fonte de dados indisponível no momento.",
 };
+
+const CAMPOS_CHAVE = ["ebit", "depreciacao", "capex"] as const;
+
+function completo(v: ValuationInputs): boolean {
+  return CAMPOS_CHAVE.every((k) => v[k] != null);
+}
+
+/** Preenche no primeiro o que estiver faltando, usando o segundo. */
+function mesclar(base: ValuationInputs, extra: ValuationInputs): ValuationInputs {
+  const out: ValuationInputs = { ...base };
+  const campos: Array<keyof ValuationInputs> = [
+    "precoAtual",
+    "marketCap",
+    "acoes",
+    "dividaTotal",
+    "caixa",
+    "dividaLiquida",
+    "beta",
+    "receita",
+    "ebit",
+    "lucroLiquido",
+    "depreciacao",
+    "capex",
+    "despesaFinanceira",
+  ];
+  const usados: string[] = [];
+  for (const c of campos) {
+    if (out[c] == null && extra[c] != null) {
+      (out as Record<string, unknown>)[c] = extra[c];
+      usados.push(c);
+    }
+  }
+  if (usados.length > 0) {
+    out.fonte = `${base.fonte ?? "Yahoo Finance"} + ${extra.fonte ?? "CVM/B3 (brapi)"}`;
+    out.derivacoes = [
+      ...(base.derivacoes ?? []),
+      ...(extra.derivacoes ?? []),
+      `Complementado pela fonte alternativa: ${usados.join(", ")}`,
+    ];
+  }
+  out.setorFinanceiro = isSetorFinanceiro(out.ebit, out.capex, out.receita, out.lucroLiquido);
+  return out;
+}
+
+function faltantes(v: ValuationInputs): string[] {
+  const nomes: Record<string, string> = {
+    ebit: "EBIT",
+    depreciacao: "depreciação/amortização",
+    capex: "CAPEX",
+  };
+  return CAMPOS_CHAVE.filter((k) => v[k] == null).map((k) => nomes[k]!);
+}
 
 export async function collectValuationInputs(
   ticker: string,
@@ -265,6 +423,7 @@ export async function collectValuationInputs(
     fonte: null,
     atualizadoEm: new Date().toISOString(),
     observacao: null,
+    derivacoes: [],
     errorCode: null,
     setorFinanceiro: false,
     error: null,
@@ -280,7 +439,7 @@ export async function collectValuationInputs(
   ) as Array<string | undefined>;
 
   /** Tenta a fonte alternativa com token do usuário, do projeto e anônimo. */
-  const fallback = async (): Promise<ValuationInputs> => {
+  const brapi = async (): Promise<ValuationInputs | { erro: string }> => {
     let last: BrapiOutcome = { ok: false, code: "indisponivel" };
     for (const t of tokens) {
       const out = await collectFromBrapi(ticker, selic, t);
@@ -289,10 +448,35 @@ export async function collectValuationInputs(
       if (out.code === "sem-demonstracoes") break;
     }
     const code = last.ok ? "indisponivel" : last.code;
-    return { ...base, errorCode: code, error: ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]! };
+    return { erro: code };
   };
 
-  if (!auth) return fallback();
+  /** Finaliza: aplica mensagem de linha faltante quando ainda estiver incompleto. */
+  const finalizar = (v: ValuationInputs): ValuationInputs => {
+    if (completo(v)) return v;
+    const falta = faltantes(v);
+    return {
+      ...v,
+      observacao:
+        v.observacao ??
+        `Fonte não publica ${falta.join(", ")} para este ativo — o FCD fica incompleto.`,
+    };
+  };
+
+  const soBrapi = async (): Promise<ValuationInputs> => {
+    const r = await brapi();
+    if ("erro" in r) {
+      const code = r.erro as keyof typeof ERROR_TEXT;
+      return {
+        ...base,
+        errorCode: code as ValuationInputs["errorCode"],
+        error: ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]!,
+      };
+    }
+    return finalizar(r);
+  };
+
+  if (!auth) return soBrapi();
 
   const modules = [
     "price",
@@ -320,37 +504,35 @@ export async function collectValuationInputs(
     });
     if (res.status === 401 || res.status === 403) {
       cachedAuth = null;
-      return fallback();
+      return soBrapi();
     }
-    if (!res.ok) return fallback();
+    if (!res.ok) return soBrapi();
 
     const json = (await res.json()) as YahooSummary;
     const r = json.quoteSummary?.result?.[0];
-    if (!r) return fallback();
+    if (!r) return soBrapi();
 
-    const dre = r.incomeStatementHistory?.incomeStatementHistory?.[0] ?? {};
-    const dfc = r.cashflowStatementHistory?.cashflowStatements?.[0] ?? {};
+    const dreRows = (r.incomeStatementHistory?.incomeStatementHistory ?? []) as Row[];
+    const dfcRows = (r.cashflowStatementHistory?.cashflowStatements ?? []) as Row[];
+    const dre = pickRow(
+      dreRows,
+      (row) => num(row["ebit"]) != null || num(row["operatingIncome"]) != null,
+    );
+    const dfc = pickRow(
+      dfcRows,
+      (row) =>
+        num(row["capitalExpenditures"]) != null || num(row["operatingCashFlow"]) != null,
+    );
+    const fin = (r.financialData ?? {}) as Row;
 
-    const receita = n(dre["totalRevenue"] as YNum) ?? n(r.financialData?.totalRevenue);
-    const ebit = n(dre["ebit"] as YNum) ?? n(dre["operatingIncome"] as YNum);
-    const lucroLiquido = n(dre["netIncome"] as YNum);
-    const despFin = n(dre["interestExpense"] as YNum);
-    const despesaFinanceira = despFin == null ? null : Math.abs(despFin);
-    const depreciacao = n(dfc["depreciation"] as YNum);
-    const capexRaw = n(dfc["capitalExpenditures"] as YNum);
-    const capex = capexRaw == null ? null : Math.abs(capexRaw);
-
-    if (ebit == null || depreciacao == null || capex == null) {
-      const alt = await fallback();
-      if (alt.error == null) return alt;
-    }
+    const linhas = derivarLinhas(dre, dfc, fin);
 
     const dividaTotal = n(r.financialData?.totalDebt);
     const caixa = n(r.financialData?.totalCash);
     const dividaLiquida =
       dividaTotal != null || caixa != null ? (dividaTotal ?? 0) - (caixa ?? 0) : null;
 
-    return {
+    const yahoo: ValuationInputs = {
       ticker,
       precoAtual: n(r.price?.regularMarketPrice),
       marketCap: n(r.price?.marketCap),
@@ -359,26 +541,40 @@ export async function collectValuationInputs(
       caixa,
       dividaLiquida,
       beta: n(r.defaultKeyStatistics?.beta),
-      receita,
-      ebit,
-      lucroLiquido,
-      depreciacao,
-      capex,
-      despesaFinanceira,
+      receita: linhas.receita,
+      ebit: linhas.ebit,
+      lucroLiquido: linhas.lucroLiquido,
+      depreciacao: linhas.depreciacao,
+      capex: linhas.capex,
+      despesaFinanceira: linhas.despesaFinanceira,
       selic,
       fonte: "Yahoo Finance + Banco Central",
       atualizadoEm: new Date().toISOString(),
       observacao: null,
+      derivacoes: linhas.derivacoes,
       errorCode: null,
-      setorFinanceiro: isSetorFinanceiro(ebit, capex, receita, lucroLiquido),
+      setorFinanceiro: isSetorFinanceiro(
+        linhas.ebit,
+        linhas.capex,
+        linhas.receita,
+        linhas.lucroLiquido,
+      ),
       error: null,
     };
+
+    if (completo(yahoo)) return yahoo;
+
+    // Faltou alguma linha: complementa com a fonte CVM/B3 em vez de descartar.
+    const alt = await brapi();
+    if ("erro" in alt) return finalizar(yahoo);
+    const merged = mesclar(yahoo, alt);
+    if (completo(merged)) return merged;
+    // Se a alternativa estiver mais completa sozinha, prefere-a.
+    return finalizar(completo(alt) ? alt : merged);
   } catch (err) {
     console.error("[collectValuationInputs] failed", err);
-    return fallback();
+    return soBrapi();
   } finally {
     clearTimeout(timer);
   }
 }
-
-
