@@ -374,7 +374,7 @@ function mesclar(base: ValuationInputs, extra: ValuationInputs): ValuationInputs
   const usados: string[] = [];
   for (const c of campos) {
     if (out[c] == null && extra[c] != null) {
-      (out as Record<string, unknown>)[c] = extra[c];
+      (out as unknown as Record<string, unknown>)[c] = extra[c];
       usados.push(c);
     }
   }
