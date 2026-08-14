@@ -447,8 +447,16 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
               </p>
               {!calc.ativo && (
                 <p className="mt-2 text-xs text-[color:var(--color-warning)]">
-                  Faltam linhas contábeis (EBIT, depreciação ou CAPEX) para este ativo — o
-                  cálculo do FCD está incompleto.
+                  {(() => {
+                    const falta = [
+                      data.ebit == null ? "EBIT" : null,
+                      data.depreciacao == null ? "depreciação/amortização" : null,
+                      data.capex == null ? "CAPEX" : null,
+                    ].filter(Boolean) as string[];
+                    return falta.length > 0
+                      ? `A fonte não publica ${falta.join(", ")} para este ativo — o cálculo do FCD está incompleto.`
+                      : "Dados insuficientes para concluir o cálculo do FCD.";
+                  })()}
                 </p>
               )}
 
