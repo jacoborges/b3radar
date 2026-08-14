@@ -482,7 +482,9 @@ export async function collectValuationInputs(
     return finalizar(r);
   };
 
-  if (!auth) return soBrapi();
+  /** Coleta no Yahoo (usado como complemento das demonstrações da CVM/B3). */
+  const yahooCollect = async (): Promise<ValuationInputs | null> => {
+  if (!auth) return null;
 
   const modules = [
     "price",
