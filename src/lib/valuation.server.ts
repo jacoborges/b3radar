@@ -512,13 +512,13 @@ export async function collectValuationInputs(
     });
     if (res.status === 401 || res.status === 403) {
       cachedAuth = null;
-      return soBrapi();
+      return null;
     }
-    if (!res.ok) return soBrapi();
+    if (!res.ok) return null;
 
     const json = (await res.json()) as YahooSummary;
     const r = json.quoteSummary?.result?.[0];
-    if (!r) return soBrapi();
+    if (!r) return null;
 
     const dreRows = (r.incomeStatementHistory?.incomeStatementHistory ?? []) as Row[];
     const dfcRows = (r.cashflowStatementHistory?.cashflowStatements ?? []) as Row[];
