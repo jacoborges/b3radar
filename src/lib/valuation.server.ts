@@ -570,19 +570,37 @@ export async function collectValuationInputs(
       error: null,
     };
 
-    if (completo(yahoo)) return yahoo;
-
-    // Faltou alguma linha: complementa com a fonte CVM/B3 em vez de descartar.
-    const alt = await brapi();
-    if ("erro" in alt) return finalizar(yahoo);
-    const merged = mesclar(yahoo, alt);
-    if (completo(merged)) return merged;
-    // Se a alternativa estiver mais completa sozinha, prefere-a.
-    return finalizar(completo(alt) ? alt : merged);
+    return yahoo;
   } catch (err) {
-    console.error("[collectValuationInputs] failed", err);
-    return soBrapi();
+    console.error("[collectValuationInputs] yahoo failed", err);
+    return null;
   } finally {
     clearTimeout(timer);
   }
+  };
+
+  // A fonte CVM/B3 publica em reais e segue as demonstrações oficiais: vem primeiro.
+  const principal = await brapi();
+
+  if (!("erro" in principal)) {
+    if (completo(principal)) return principal;
+    const y = await yahooCollect();
+    if (y) {
+      const merged = mesclar(principal, y);
+      if (completo(merged)) return merged;
+      return finalizar(merged);
+    }
+    return finalizar(principal);
+  }
+
+  // Fonte principal indisponível: tenta o Yahoo antes de reportar erro.
+  const y = await yahooCollect();
+  if (y) return finalizar(y);
+
+  const code = principal.erro as keyof typeof ERROR_TEXT;
+  return {
+    ...base,
+    errorCode: code as ValuationInputs["errorCode"],
+    error: ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]!,
+  };
 }
