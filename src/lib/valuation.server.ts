@@ -140,11 +140,11 @@ export interface LinhasContabeis {
 export function derivarLinhas(dre: Row, dfc: Row, fin: Row): LinhasContabeis {
   const derivacoes: string[] = [];
 
-  const receita = num(dre["totalRevenue"]) ?? num(fin["totalRevenue"]);
-  const lucroLiquido = num(dre["netIncome"]) ?? num(fin["netIncomeToCommon"]);
-  const ebitda = num(fin["ebitda"]) ?? num(dre["ebitda"]);
-  const ocf = num(dfc["operatingCashFlow"]) ?? num(fin["operatingCashflow"]);
-  const fcf = num(dfc["freeCashFlow"]) ?? num(fin["freeCashflow"]);
+  const receita = nz(dre["totalRevenue"]) ?? nz(fin["totalRevenue"]);
+  const lucroLiquido = nz(dre["netIncome"]) ?? nz(fin["netIncomeToCommon"]);
+  const ebitda = nz(fin["ebitda"]) ?? nz(dre["ebitda"]);
+  const ocf = nz(dfc["operatingCashFlow"]) ?? nz(fin["operatingCashflow"]);
+  const fcf = nz(dfc["freeCashFlow"]) ?? nz(fin["freeCashflow"]);
   const invest = num(dfc["investmentCashFlow"]);
 
   // --- EBIT ---
