@@ -117,6 +117,12 @@ function num(v: unknown): number | null {
   return null;
 }
 
+/** Como as fontes usam 0 como "sem informação" nessas linhas, 0 vira nulo. */
+function nz(v: unknown): number | null {
+  const x = num(v);
+  return x === 0 ? null : x;
+}
+
 /** Primeira linha (exercício mais recente) que satisfaz o predicado. */
 function pickRow(rows: Row[] | undefined, has: (r: Row) => boolean): Row {
   if (!rows || rows.length === 0) return {};
@@ -145,15 +151,15 @@ export function derivarLinhas(dre: Row, dfc: Row, fin: Row): LinhasContabeis {
   const ebitda = nz(fin["ebitda"]) ?? nz(dre["ebitda"]);
   const ocf = nz(dfc["operatingCashFlow"]) ?? nz(fin["operatingCashflow"]);
   const fcf = nz(dfc["freeCashFlow"]) ?? nz(fin["freeCashflow"]);
-  const invest = num(dfc["investmentCashFlow"]);
+  const invest = nz(dfc["investmentCashFlow"]);
 
   // --- EBIT ---
-  let ebit = num(dre["ebit"]) ?? num(dre["operatingIncome"]);
+  let ebit = nz(dre["ebit"]) ?? nz(dre["operatingIncome"]);
   const daDireta = (() => {
     const v =
-      num(dfc["depreciation"]) ??
-      num(dfc["depreciationAndAmortization"]) ??
-      num(dre["depreciationAndAmortization"]);
+      nz(dfc["depreciation"]) ??
+      nz(dfc["depreciationAndAmortization"]) ??
+      nz(dre["depreciationAndAmortization"]);
     return v == null ? null : Math.abs(v);
   })();
 
@@ -162,7 +168,7 @@ export function derivarLinhas(dre: Row, dfc: Row, fin: Row): LinhasContabeis {
     derivacoes.push("EBIT estimado por EBITDA − D&A");
   }
   if (ebit == null) {
-    const margem = num(fin["operatingMargins"]);
+    const margem = nz(fin["operatingMargins"]);
     if (margem != null && receita != null) {
       ebit = margem * receita;
       derivacoes.push("EBIT estimado por margem operacional × receita");
@@ -182,7 +188,7 @@ export function derivarLinhas(dre: Row, dfc: Row, fin: Row): LinhasContabeis {
 
   // --- CAPEX ---
   let capex = (() => {
-    const v = num(dfc["capitalExpenditures"]) ?? num(dfc["capex"]);
+    const v = nz(dfc["capitalExpenditures"]) ?? nz(dfc["capex"]);
     return v == null ? null : Math.abs(v);
   })();
   if (capex == null && ocf != null && fcf != null && ocf - fcf > 0) {
@@ -261,11 +267,11 @@ async function collectFromBrapi(
     const dfcRows = rowsOf(q.cashflowHistory as never, "cashflowStatements");
     const dre = pickRow(
       dreRows,
-      (r) => num(r["ebit"]) != null || num(r["operatingIncome"]) != null,
+      (r) => nz(r["ebit"]) != null || nz(r["operatingIncome"]) != null,
     );
     const dfc = pickRow(
       dfcRows,
-      (r) => num(r["operatingCashFlow"]) != null || num(r["investmentCashFlow"]) != null,
+      (r) => nz(r["operatingCashFlow"]) != null || nz(r["investmentCashFlow"]) != null,
     );
     const ks = (q.defaultKeyStatistics ?? {}) as Row;
     const fin = (q.financialData ?? {}) as Row;
@@ -516,12 +522,12 @@ export async function collectValuationInputs(
     const dfcRows = (r.cashflowStatementHistory?.cashflowStatements ?? []) as Row[];
     const dre = pickRow(
       dreRows,
-      (row) => num(row["ebit"]) != null || num(row["operatingIncome"]) != null,
+      (row) => nz(row["ebit"]) != null || nz(row["operatingIncome"]) != null,
     );
     const dfc = pickRow(
       dfcRows,
       (row) =>
-        num(row["capitalExpenditures"]) != null || num(row["operatingCashFlow"]) != null,
+        nz(row["capitalExpenditures"]) != null || nz(row["operatingCashFlow"]) != null,
     );
     const fin = (r.financialData ?? {}) as Row;
 
