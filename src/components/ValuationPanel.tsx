@@ -413,6 +413,13 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
               {data.observacao && (
                 <p className="mt-2 text-[11px] text-muted-foreground">{data.observacao}</p>
               )}
+              {data.derivacoes && data.derivacoes.length > 0 && (
+                <ul className="mt-1 space-y-0.5 text-[11px] text-muted-foreground">
+                  {data.derivacoes.map((d) => (
+                    <li key={d}>· {d}</li>
+                  ))}
+                </ul>
+              )}
               <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
                 <span>Fonte: {data.fonte ?? "—"}</span>
                 {data.atualizadoEm && (
