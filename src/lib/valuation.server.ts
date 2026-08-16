@@ -385,7 +385,8 @@ function mesclar(base: ValuationInputs, extra: ValuationInputs): ValuationInputs
     }
   }
   if (usados.length > 0) {
-    out.fonte = `${base.fonte ?? "Yahoo Finance"} + ${extra.fonte ?? "CVM/B3 (brapi)"}`;
+    const extraFonte = (extra.fonte ?? "Yahoo Finance").replace(" + Banco Central", "");
+    out.fonte = `${base.fonte ?? "CVM/B3 (brapi) + Banco Central"} + ${extraFonte}`;
     out.derivacoes = [
       ...(base.derivacoes ?? []),
       ...(extra.derivacoes ?? []),
