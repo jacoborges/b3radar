@@ -469,18 +469,6 @@ export async function collectValuationInputs(
     };
   };
 
-  const soBrapi = async (): Promise<ValuationInputs> => {
-    const r = await brapi();
-    if ("erro" in r) {
-      const code = r.erro as keyof typeof ERROR_TEXT;
-      return {
-        ...base,
-        errorCode: code as ValuationInputs["errorCode"],
-        error: ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]!,
-      };
-    }
-    return finalizar(r);
-  };
 
   /** Coleta no Yahoo (usado como complemento das demonstrações da CVM/B3). */
   const yahooCollect = async (): Promise<ValuationInputs | null> => {
