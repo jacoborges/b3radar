@@ -32,6 +32,7 @@ import { HistoryChartButton } from "./IndicatorHistoryDialog";
 import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
 import { ValuationPanel } from "./ValuationPanel";
+import { MarketAnalysisDialog } from "./MarketAnalysisDialog";
 
 
 
@@ -209,6 +210,11 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center gap-3 text-2xl">
                 <span className="font-mono text-primary">{stock.ticker}</span>
+                <MarketAnalysisDialog
+                  ticker={stock.ticker}
+                  nome={stock.nome}
+                  setor={stock.setor}
+                />
                 <Badge variant="outline" className="border-border/60">
                   {stock.tipo}
                 </Badge>
