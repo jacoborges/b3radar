@@ -374,11 +374,16 @@ function isSetorFinanceiro(
 const ERROR_TEXT: Record<string, string> = {
   "sem-token":
     "A fonte de demonstrações financeiras exige um token. Cadastre seu token brapi em Ajustes para liberar o Valuation.",
+  "token-invalido":
+    "O token brapi cadastrado foi recusado pela fonte (inválido ou expirado). Confira o token em Ajustes.",
+  "plano-sem-modulos":
+    "Seu plano brapi não inclui as demonstrações financeiras (balanço, DRE e fluxo de caixa) usadas pelo FCD.",
   "limite-fonte":
     "Fonte temporariamente limitada (muitas consultas). Tente novamente em alguns minutos.",
   "sem-demonstracoes": "Este ativo não possui demonstrações financeiras publicadas nesta fonte.",
   indisponivel: "Fonte de dados indisponível no momento.",
 };
+
 
 const CAMPOS_CHAVE = ["ebit", "depreciacao", "capex"] as const;
 
