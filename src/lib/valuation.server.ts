@@ -236,9 +236,17 @@ function rowsOf(
   return ((v?.[key] as BrapiRow[] | undefined) ?? []) as Row[];
 }
 
+type BrapiCode =
+  | "sem-token"
+  | "token-invalido"
+  | "plano-sem-modulos"
+  | "limite-fonte"
+  | "sem-demonstracoes"
+  | "indisponivel";
+
 type BrapiOutcome =
   | { ok: true; inputs: ValuationInputs }
-  | { ok: false; code: "sem-token" | "limite-fonte" | "sem-demonstracoes" | "indisponivel" };
+  | { ok: false; code: BrapiCode; message?: string };
 
 /** Fonte alternativa (dados CVM/B3) quando o Yahoo está indisponível/limitado. */
 async function collectFromBrapi(
@@ -255,9 +263,28 @@ async function collectFromBrapi(
     if (token) url.searchParams.set("token", token);
 
     const res = await fetch(url.toString(), { headers: { accept: "application/json" } });
-    if (res.status === 401 || res.status === 403) return { ok: false, code: "sem-token" };
-    if (res.status === 429) return { ok: false, code: "limite-fonte" };
-    if (!res.ok) return { ok: false, code: "indisponivel" };
+    if (!res.ok) {
+      let message: string | undefined;
+      try {
+        const body = (await res.json()) as { message?: string; error?: string };
+        message = body?.message ?? body?.error;
+      } catch {
+        /* corpo não-JSON */
+      }
+      const texto = (message ?? "").toLowerCase();
+      if (res.status === 429) return { ok: false, code: "limite-fonte", message };
+      if (res.status === 401 || res.status === 403 || res.status === 402) {
+        if (!token) return { ok: false, code: "sem-token", message };
+        if (/plano|plan|módulo|modulo|module|assinatura|pro\b/.test(texto))
+          return { ok: false, code: "plano-sem-modulos", message };
+        if (/token/.test(texto)) return { ok: false, code: "token-invalido", message };
+        return { ok: false, code: "plano-sem-modulos", message };
+      }
+      if (/plano|plan|módulo|modulo|module/.test(texto))
+        return { ok: false, code: "plano-sem-modulos", message };
+      return { ok: false, code: "indisponivel", message };
+    }
+
 
     const json = (await res.json()) as { results?: BrapiQuote[] };
     const q = json.results?.[0];
@@ -347,11 +374,16 @@ function isSetorFinanceiro(
 const ERROR_TEXT: Record<string, string> = {
   "sem-token":
     "A fonte de demonstrações financeiras exige um token. Cadastre seu token brapi em Ajustes para liberar o Valuation.",
+  "token-invalido":
+    "O token brapi cadastrado foi recusado pela fonte (inválido ou expirado). Confira o token em Ajustes.",
+  "plano-sem-modulos":
+    "Seu plano brapi não inclui as demonstrações financeiras (balanço, DRE e fluxo de caixa) usadas pelo FCD.",
   "limite-fonte":
     "Fonte temporariamente limitada (muitas consultas). Tente novamente em alguns minutos.",
   "sem-demonstracoes": "Este ativo não possui demonstrações financeiras publicadas nesta fonte.",
   indisponivel: "Fonte de dados indisponível no momento.",
 };
+
 
 const CAMPOS_CHAVE = ["ebit", "depreciacao", "capex"] as const;
 
@@ -446,7 +478,7 @@ export async function collectValuationInputs(
   ) as Array<string | undefined>;
 
   /** Tenta a fonte alternativa com token do usuário, do projeto e anônimo. */
-  const brapi = async (): Promise<ValuationInputs | { erro: string }> => {
+  const brapi = async (): Promise<ValuationInputs | { erro: string; detalhe?: string }> => {
     let last: BrapiOutcome = { ok: false, code: "indisponivel" };
     for (const t of tokens) {
       const out = await collectFromBrapi(ticker, selic, t);
@@ -454,9 +486,10 @@ export async function collectValuationInputs(
       last = out;
       if (out.code === "sem-demonstracoes") break;
     }
-    const code = last.ok ? "indisponivel" : last.code;
-    return { erro: code };
+    if (last.ok) return { erro: "indisponivel" };
+    return { erro: last.code, detalhe: last.message };
   };
+
 
   /** Finaliza: aplica mensagem de linha faltante quando ainda estiver incompleto. */
   const finalizar = (v: ValuationInputs): ValuationInputs => {
@@ -587,9 +620,12 @@ export async function collectValuationInputs(
   if (y) return finalizar(y);
 
   const code = principal.erro as keyof typeof ERROR_TEXT;
+  const texto = ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]!;
+  const detalhe = "detalhe" in principal ? principal.detalhe : undefined;
   return {
     ...base,
     errorCode: code as ValuationInputs["errorCode"],
-    error: ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]!,
+    error: detalhe ? `${texto} (fonte: ${detalhe})` : texto,
+
   };
 }

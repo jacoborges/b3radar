@@ -15,7 +15,7 @@ const PERSISTED_PREFIXES = [
 ];
 
 const STORAGE_KEY = "b3radar:query-cache";
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 let started = false;
@@ -37,11 +37,19 @@ export function startQueryPersistence(queryClient: QueryClient) {
     maxAge: MAX_AGE,
     buster: CACHE_VERSION,
     dehydrateOptions: {
-      shouldDehydrateQuery: (query: { state: { status: string }; queryKey: readonly unknown[] }) => {
+      shouldDehydrateQuery: (query: {
+        state: { status: string; data?: unknown };
+        queryKey: readonly unknown[];
+      }) => {
         if (query.state.status !== "success") return false;
+        // Não guardar respostas de erro da fonte: elas devem ser reconsultadas.
+        const data = query.state.data as { errorCode?: unknown; error?: unknown } | undefined;
+        if (data && typeof data === "object" && (data.errorCode != null || data.error != null))
+          return false;
         const head = query.queryKey?.[0];
         return typeof head === "string" && PERSISTED_PREFIXES.includes(head);
       },
+
     },
   });
 }

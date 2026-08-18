@@ -8,15 +8,16 @@ const ONE_DAY = 24 * 60 * 60 * 1000;
 
 export function useValuation(ticker: string | null, enabled = true) {
   const call = useServerFn(getValuationInputs);
-  const [token] = useBrapiToken();
+  const [token, , tokenReady] = useBrapiToken();
   const t = ticker ?? "";
 
   const q = useQuery<ValuationInputs>({
     queryKey: ["valuation-inputs", t, token ? "user-token" : "anon"],
     queryFn: () =>
       call({ data: token ? { ticker: t, token } : { ticker: t } }),
-    enabled: !!ticker && enabled,
+    enabled: !!ticker && enabled && tokenReady,
     staleTime: ONE_DAY,
+
     gcTime: ONE_DAY * 7,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

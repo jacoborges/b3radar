@@ -26,11 +26,14 @@ function readStoredToken(): string {
 }
 
 /** Reactively read the brapi token from localStorage across tabs and in-tab updates. */
-export function useBrapiToken(): [string, (v: string) => void] {
-  const [token, setTokenState] = useState<string>("");
+export function useBrapiToken(): [string, (v: string) => void, boolean] {
+  // Leitura síncrona no cliente: evita a primeira consulta sair sem o token.
+  const [token, setTokenState] = useState<string>(() => readStoredToken());
+  const [ready, setReady] = useState<boolean>(() => typeof window !== "undefined");
 
   useEffect(() => {
     setTokenState(readStoredToken());
+    setReady(true);
     const onStorage = (e: StorageEvent) => {
       if (e.key === BRAPI_TOKEN_STORAGE_KEY) setTokenState(readStoredToken());
     };
@@ -55,8 +58,9 @@ export function useBrapiToken(): [string, (v: string) => void] {
     window.dispatchEvent(new Event("b3radar:brapi-token-changed"));
   };
 
-  return [token, setToken];
+  return [token, setToken, ready];
 }
+
 
 /** Shared per-ticker quote cache key so every screen reads the same price. */
 export function quoteCacheKey(ticker: string) {
