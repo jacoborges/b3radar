@@ -620,9 +620,12 @@ export async function collectValuationInputs(
   if (y) return finalizar(y);
 
   const code = principal.erro as keyof typeof ERROR_TEXT;
+  const texto = ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]!;
+  const detalhe = "detalhe" in principal ? principal.detalhe : undefined;
   return {
     ...base,
     errorCode: code as ValuationInputs["errorCode"],
-    error: ERROR_TEXT[code] ?? ERROR_TEXT["indisponivel"]!,
+    error: detalhe ? `${texto} (fonte: ${detalhe})` : texto,
+
   };
 }
