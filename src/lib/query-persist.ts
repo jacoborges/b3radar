@@ -15,7 +15,7 @@ const PERSISTED_PREFIXES = [
 ];
 
 const STORAGE_KEY = "b3radar:query-cache";
-const CACHE_VERSION = "v1";
+const CACHE_VERSION = "v2";
 const MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 dias
 
 let started = false;
