@@ -478,7 +478,7 @@ export async function collectValuationInputs(
   ) as Array<string | undefined>;
 
   /** Tenta a fonte alternativa com token do usuário, do projeto e anônimo. */
-  const brapi = async (): Promise<ValuationInputs | { erro: string }> => {
+  const brapi = async (): Promise<ValuationInputs | { erro: string; detalhe?: string }> => {
     let last: BrapiOutcome = { ok: false, code: "indisponivel" };
     for (const t of tokens) {
       const out = await collectFromBrapi(ticker, selic, t);
@@ -486,9 +486,10 @@ export async function collectValuationInputs(
       last = out;
       if (out.code === "sem-demonstracoes") break;
     }
-    const code = last.ok ? "indisponivel" : last.code;
-    return { erro: code };
+    if (last.ok) return { erro: "indisponivel" };
+    return { erro: last.code, detalhe: last.message };
   };
+
 
   /** Finaliza: aplica mensagem de linha faltante quando ainda estiver incompleto. */
   const finalizar = (v: ValuationInputs): ValuationInputs => {
