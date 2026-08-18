@@ -174,14 +174,19 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
                 )}
                 Tentar novamente
               </button>
-              {data?.errorCode === "sem-token" && (
+              {(data?.errorCode === "sem-token" ||
+                data?.errorCode === "token-invalido" ||
+                data?.errorCode === "plano-sem-modulos") && (
                 <Link
                   to="/configuracoes"
                   className="text-xs font-medium text-primary underline underline-offset-2"
                 >
-                  Cadastrar token em Ajustes
+                  {data?.errorCode === "sem-token"
+                    ? "Cadastrar token em Ajustes"
+                    : "Revisar token em Ajustes"}
                 </Link>
               )}
+
             </div>
           </div>
         )}
