@@ -33,7 +33,15 @@ export interface ValuationInputs {
   /** como cada linha derivada foi obtida (procedência das aproximações) */
   derivacoes?: string[];
   /** código do erro para a UI escolher a mensagem/ação */
-  errorCode: "sem-token" | "limite-fonte" | "sem-demonstracoes" | "indisponivel" | null;
+  errorCode:
+    | "sem-token"
+    | "token-invalido"
+    | "plano-sem-modulos"
+    | "limite-fonte"
+    | "sem-demonstracoes"
+    | "indisponivel"
+    | null;
+
   /** banco/seguradora: EBIT e CAPEX não representam a operação */
   setorFinanceiro: boolean;
   error: string | null;
