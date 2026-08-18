@@ -236,9 +236,17 @@ function rowsOf(
   return ((v?.[key] as BrapiRow[] | undefined) ?? []) as Row[];
 }
 
+type BrapiCode =
+  | "sem-token"
+  | "token-invalido"
+  | "plano-sem-modulos"
+  | "limite-fonte"
+  | "sem-demonstracoes"
+  | "indisponivel";
+
 type BrapiOutcome =
   | { ok: true; inputs: ValuationInputs }
-  | { ok: false; code: "sem-token" | "limite-fonte" | "sem-demonstracoes" | "indisponivel" };
+  | { ok: false; code: BrapiCode; message?: string };
 
 /** Fonte alternativa (dados CVM/B3) quando o Yahoo está indisponível/limitado. */
 async function collectFromBrapi(
@@ -255,9 +263,28 @@ async function collectFromBrapi(
     if (token) url.searchParams.set("token", token);
 
     const res = await fetch(url.toString(), { headers: { accept: "application/json" } });
-    if (res.status === 401 || res.status === 403) return { ok: false, code: "sem-token" };
-    if (res.status === 429) return { ok: false, code: "limite-fonte" };
-    if (!res.ok) return { ok: false, code: "indisponivel" };
+    if (!res.ok) {
+      let message: string | undefined;
+      try {
+        const body = (await res.json()) as { message?: string; error?: string };
+        message = body?.message ?? body?.error;
+      } catch {
+        /* corpo não-JSON */
+      }
+      const texto = (message ?? "").toLowerCase();
+      if (res.status === 429) return { ok: false, code: "limite-fonte", message };
+      if (res.status === 401 || res.status === 403 || res.status === 402) {
+        if (!token) return { ok: false, code: "sem-token", message };
+        if (/plano|plan|módulo|modulo|module|assinatura|pro\b/.test(texto))
+          return { ok: false, code: "plano-sem-modulos", message };
+        if (/token/.test(texto)) return { ok: false, code: "token-invalido", message };
+        return { ok: false, code: "plano-sem-modulos", message };
+      }
+      if (/plano|plan|módulo|modulo|module/.test(texto))
+        return { ok: false, code: "plano-sem-modulos", message };
+      return { ok: false, code: "indisponivel", message };
+    }
+
 
     const json = (await res.json()) as { results?: BrapiQuote[] };
     const q = json.results?.[0];
