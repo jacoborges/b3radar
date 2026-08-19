@@ -110,7 +110,7 @@ export function MarketAnalysisDialog({ ticker, nome, setor }: Props) {
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto border-border/60">
+        <DialogContent className="max-w-2xl border-border/60">
           <DialogHeader>
             <DialogTitle className="text-lg">
               Análise do mercado — <span className="font-mono text-primary">{ticker}</span>

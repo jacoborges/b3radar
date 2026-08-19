@@ -127,7 +127,7 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual, historico }: Props) {
         ) : (
           <>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs">
+              <table className="w-full min-w-[26rem] text-xs">
                 <thead>
                   <tr className="text-left text-muted-foreground">
                     <th className="py-1 pr-2 font-medium">Ano</th>

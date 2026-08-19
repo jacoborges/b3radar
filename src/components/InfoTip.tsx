@@ -33,7 +33,7 @@ export function InfoTip({ title, fundamentalista, tecnica }: Props) {
       </PopoverTrigger>
       <PopoverContent
         side="top"
-        className="w-80 border-border/60 bg-popover/95 backdrop-blur"
+        className="border-border/60 bg-popover/95 backdrop-blur"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-3 text-sm">

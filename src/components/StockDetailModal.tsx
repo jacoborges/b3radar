@@ -204,7 +204,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
   return (
     <Dialog open={!!stock} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[92vh] overflow-y-auto border-border/60">
+      <DialogContent className="max-w-6xl border-border/60">
         {stock && (
           <>
             <DialogHeader>
@@ -265,7 +265,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   BMFBOVESPA:{ticker}
                 </span>
               </div>
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg border border-border/40 bg-background sm:aspect-[16/10] sm:max-h-[55vh]">
+              <div className="relative aspect-[4/3] max-h-[60dvh] w-full overflow-hidden rounded-lg border border-border/40 bg-background landscape:max-h-[45dvh] sm:aspect-[16/10] sm:max-h-[55dvh]">
                 {!chartLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
                     Carregando gráfico…
