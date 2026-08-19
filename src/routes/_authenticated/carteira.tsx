@@ -207,7 +207,7 @@ function CarteiraPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-4 md:px-8">
+        <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-3 py-4 sm:px-6 md:px-8">
           <Button asChild variant="ghost" size="sm" className="gap-2">
             <Link to="/">
               <ArrowLeft className="h-4 w-4" />
@@ -231,7 +231,7 @@ function CarteiraPage() {
           </span>
         </div>
         {quotes.error && (
-          <div className="mx-auto max-w-6xl px-4 pb-3 text-xs text-destructive md:px-8">
+          <div className="mx-auto w-full max-w-6xl px-3 pb-3 text-xs text-destructive sm:px-6 md:px-8">
             {quotes.error}{" "}
             <Link to="/configuracoes" className="underline">
               Ajustar token brapi
@@ -240,7 +240,7 @@ function CarteiraPage() {
         )}
       </header>
 
-      <main className="mx-auto grid max-w-6xl gap-6 px-4 py-6 md:grid-cols-[260px_1fr] md:px-8">
+      <main className="mx-auto grid w-full max-w-6xl gap-6 px-3 py-6 sm:px-6 md:grid-cols-[260px_1fr] md:px-8">
         {/* Lista de carteiras */}
         <aside className="space-y-3">
           <div className="rounded-xl border border-border/60 bg-card p-3">

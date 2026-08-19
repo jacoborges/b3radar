@@ -401,7 +401,7 @@ function DividendosPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto max-w-6xl px-4 py-6">
+      <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
         <div className="mb-4 flex items-center gap-3">
           <Button asChild variant="outline" size="icon" className="border-border/60">
             <Link to="/" aria-label="Voltar">

@@ -141,7 +141,7 @@ function UsersPage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-20 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-5xl items-center gap-3 px-3 py-4 sm:px-6">
           <Button asChild variant="ghost" size="sm">
             <Link to="/">
               <ArrowLeft className="mr-1 h-4 w-4" />
@@ -155,7 +155,7 @@ function UsersPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">
+      <main className="mx-auto w-full max-w-5xl space-y-6 px-3 py-6 sm:px-6">
         <section className="rounded-xl border border-border bg-card p-4">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <UserPlus className="h-4 w-4 text-primary" />

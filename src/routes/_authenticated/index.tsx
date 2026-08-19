@@ -211,7 +211,7 @@ function HomePage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto max-w-[1400px] px-4 py-4 md:px-8">
+        <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-6 md:px-8">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -388,7 +388,7 @@ function HomePage() {
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-[1400px] px-4 py-6 md:px-8">
+      <main className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-6 md:px-8">
         <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
           <span>
             {total} ativos em {SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0).length} setores
