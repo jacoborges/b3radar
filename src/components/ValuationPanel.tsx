@@ -474,7 +474,7 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
                   Fluxos projetados ({tipo})
                 </h5>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                  <table className="w-full min-w-[26rem] text-xs">
                     <thead>
                       <tr className="text-left text-muted-foreground">
                         <th className="py-1 pr-2 font-medium">Ano</th>
@@ -531,7 +531,7 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
                   Matriz de sensibilidade — preço justo por ação
                 </h5>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-xs">
+                  <table className="w-full min-w-[26rem] text-xs">
                     <thead>
                       <tr className="text-muted-foreground">
                         <th className="py-1 pr-2 text-left font-medium">Taxa \ g</th>
