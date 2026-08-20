@@ -90,6 +90,12 @@ export function useBrapiToken(): [string, (v: string) => void, boolean] {
   return [token, setToken, ready];
 }
 
+export interface LiveQuotesMap {
+  map: Map<string, LiveQuote>;
+  updatedAt: Date | null;
+  isFetching: boolean;
+  error: string | null;
+}
 
 
 /** Shared per-ticker quote cache key so every screen reads the same price. */
