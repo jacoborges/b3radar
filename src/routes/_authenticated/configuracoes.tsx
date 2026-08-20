@@ -89,10 +89,12 @@ function SettingsPage() {
               <ExternalLink className="h-3 w-3" />
             </a>
             . Sem token o serviço funciona, mas é limitado. Crie uma conta grátis,
-            copie seu token e cole abaixo — ele fica salvo apenas no seu navegador
-            (localStorage) e é enviado só quando o painel busca preços. O painel
+            copie seu token e cole abaixo — ele fica salvo{" "}
+            <strong className="text-foreground">na sua conta</strong>, então ao entrar
+            em qualquer dispositivo ele já vem preenchido e ativo. O painel
             atualiza a cada <strong className="text-foreground">15 segundos</strong>.
           </p>
+
 
           <div className="mt-5 space-y-2">
             <Label htmlFor="brapi-token" className="text-xs uppercase tracking-wide text-muted-foreground">
