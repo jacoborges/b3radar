@@ -29,14 +29,17 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 });
 
 function SettingsPage() {
-  const [storedToken, setStoredToken] = useBrapiToken();
+  const [storedToken, setStoredToken, tokenReady] = useBrapiToken();
   const [input, setInput] = useState<string>("");
   const [saved, setSaved] = useState(false);
 
   const hasToken = storedToken.length > 0;
-  const masked = hasToken
-    ? `${storedToken.slice(0, 4)}…${storedToken.slice(-4)}`
-    : "nenhum";
+  const masked = !tokenReady
+    ? "carregando…"
+    : hasToken
+      ? `${storedToken.slice(0, 4)}…${storedToken.slice(-4)}`
+      : "nenhum";
+
 
   const onSave = () => {
     setStoredToken(input);
