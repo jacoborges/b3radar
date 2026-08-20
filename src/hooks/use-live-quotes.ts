@@ -2,19 +2,15 @@ import { useQuery, useQueryClient, type QueryClient } from "@tanstack/react-quer
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { fetchLiveQuotes, type LiveQuote } from "@/lib/quotes.functions";
+import { getMyBrapiToken, setMyBrapiToken } from "@/lib/user-settings.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 // Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
 // ativos e com menos frequência para não estourar a cota.
 const REFRESH_MS = 60_000;
 const MAX_TICKERS = 40;
 export const BRAPI_TOKEN_STORAGE_KEY = "b3radar:brapi-token";
-
-export interface LiveQuotesMap {
-  map: Map<string, LiveQuote>;
-  updatedAt: Date | null;
-  isFetching: boolean;
-  error: string | null;
-}
+const TOKEN_EVENT = "b3radar:brapi-token-changed";
 
 function readStoredToken(): string {
   if (typeof window === "undefined") return "";
@@ -25,41 +21,75 @@ function readStoredToken(): string {
   }
 }
 
-/** Reactively read the brapi token from localStorage across tabs and in-tab updates. */
+function writeStoredToken(token: string) {
+  try {
+    if (token) window.localStorage.setItem(BRAPI_TOKEN_STORAGE_KEY, token);
+    else window.localStorage.removeItem(BRAPI_TOKEN_STORAGE_KEY);
+  } catch {
+    /* storage unavailable */
+  }
+  window.dispatchEvent(new Event(TOKEN_EVENT));
+}
+
+/**
+ * Token brapi do usuário: cache local (leitura síncrona, evita corrida na
+ * primeira consulta) sincronizado com o token salvo na conta do usuário.
+ */
 export function useBrapiToken(): [string, (v: string) => void, boolean] {
-  // Leitura síncrona no cliente: evita a primeira consulta sair sem o token.
   const [token, setTokenState] = useState<string>(() => readStoredToken());
-  const [ready, setReady] = useState<boolean>(() => typeof window !== "undefined");
+  const [ready, setReady] = useState<boolean>(false);
+  const loadRemote = useServerFn(getMyBrapiToken);
+  const saveRemote = useServerFn(setMyBrapiToken);
 
   useEffect(() => {
     setTokenState(readStoredToken());
-    setReady(true);
+    const onCustom = () => setTokenState(readStoredToken());
     const onStorage = (e: StorageEvent) => {
       if (e.key === BRAPI_TOKEN_STORAGE_KEY) setTokenState(readStoredToken());
     };
-    const onCustom = () => setTokenState(readStoredToken());
     window.addEventListener("storage", onStorage);
-    window.addEventListener("b3radar:brapi-token-changed", onCustom);
+    window.addEventListener(TOKEN_EVENT, onCustom);
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) {
+          // Sem sessão: não mantemos token de outra conta neste navegador.
+          if (!cancelled && readStoredToken()) writeStoredToken("");
+          return;
+        }
+        const remote = (await loadRemote()).token ?? "";
+        if (cancelled) return;
+        if (remote && remote !== readStoredToken()) writeStoredToken(remote);
+        else if (!remote && readStoredToken()) {
+          // Primeiro login após a migração: sobe o token local para a conta.
+          void saveRemote({ data: { token: readStoredToken() } }).catch(() => {});
+        }
+      } catch {
+        /* mantém o token local */
+      } finally {
+        if (!cancelled) setReady(true);
+      }
+    })();
+
     return () => {
+      cancelled = true;
       window.removeEventListener("storage", onStorage);
-      window.removeEventListener("b3radar:brapi-token-changed", onCustom);
+      window.removeEventListener(TOKEN_EVENT, onCustom);
     };
-  }, []);
+  }, [loadRemote, saveRemote]);
 
   const setToken = (v: string) => {
     const trimmed = v.trim();
-    try {
-      if (trimmed) window.localStorage.setItem(BRAPI_TOKEN_STORAGE_KEY, trimmed);
-      else window.localStorage.removeItem(BRAPI_TOKEN_STORAGE_KEY);
-    } catch {
-      /* storage unavailable */
-    }
+    writeStoredToken(trimmed);
     setTokenState(trimmed);
-    window.dispatchEvent(new Event("b3radar:brapi-token-changed"));
+    void saveRemote({ data: { token: trimmed } }).catch(() => {});
   };
 
   return [token, setToken, ready];
 }
+
 
 
 /** Shared per-ticker quote cache key so every screen reads the same price. */
