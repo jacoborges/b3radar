@@ -31,6 +31,7 @@ import { InfoTip } from "./InfoTip";
 import { HistoryChartButton } from "./IndicatorHistoryDialog";
 import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
+import { PrecoTetoProjetivoPanel } from "./PrecoTetoProjetivoPanel";
 import { ValuationPanel } from "./ValuationPanel";
 import { MarketAnalysisDialog } from "./MarketAnalysisDialog";
 
@@ -366,6 +367,13 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               <DebtSemaphore divPL={stock.divBrutaPatrimonio} />
 
               <PrecoTetoPanel
+                ticker={stock.ticker}
+                nome={stock.nome}
+                precoAtual={stock.preco}
+                historico={proventos?.historico ?? null}
+              />
+
+              <PrecoTetoProjetivoPanel
                 ticker={stock.ticker}
                 nome={stock.nome}
                 precoAtual={stock.preco}
