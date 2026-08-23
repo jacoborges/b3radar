@@ -34,16 +34,13 @@ const SETORES_FINANCEIROS = [
   "intermediários financeiros",
   "serviços financeiros",
   "previdência e seguros",
-  "securitizadoras",
-  "holdings",
-  "bancos",
-  "exploração de imóveis", // FIIs/holdings imobiliárias listadas como ações pagadoras
+  "securitizadora",
+  "banco",
 ];
 
 export function isSetorFinanceiroNome(setor: string | null | undefined): boolean {
   const s = (setor ?? "").toLowerCase();
-  if (s.includes("exploração de imóveis")) return false;
-  return SETORES_FINANCEIROS.some((k) => s.includes(k) && k !== "exploração de imóveis");
+  return SETORES_FINANCEIROS.some((k) => s.includes(k));
 }
 
 /** r = Rf + β·(Rm − Rf) + risco-país */
