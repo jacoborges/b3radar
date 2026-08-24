@@ -50,6 +50,7 @@ import { AccountControls } from "@/components/AccountControls";
 
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
+import { margemDdmRapida } from "@/lib/valuation-ddm";
 
 
 export const Route = createFileRoute("/_authenticated/")({
