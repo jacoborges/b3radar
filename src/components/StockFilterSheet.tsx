@@ -273,6 +273,36 @@ export function StockFilterSheet({
                 )}
               </div>
             )}
+
+            {setDdmOnly && (
+              <div className="space-y-2 border-t border-border/50 pt-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="flex items-center gap-1.5 text-sm">
+                    DDM favorável (bancos)
+                    <InfoTip
+                      title="Valuation DDM (Modelo de Gordon)"
+                      fundamentalista="Valor justo = dividendo esperado ÷ (retorno exigido − crescimento). O retorno exigido vem do CAPM (Selic + beta × prêmio de mercado + risco-país) e o crescimento de ROE × retenção do lucro."
+                      tecnica="Aplicável a bancos, financeiras e seguradoras, onde o FCD não representa a operação. O filtro mostra apenas os ativos financeiros cujo preço justo estimado supera a cotação atual."
+                    />
+                  </Label>
+                  <button
+                    type="button"
+                    onClick={() => setDdmOnly(!ddmOnly)}
+                    className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                      ddmOnly
+                        ? "border-primary/70 bg-primary/10 text-primary"
+                        : "border-border/60 text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {ddmOnly ? "Somente descontadas" : "Todas"}
+                  </button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Estimativa rápida a partir de DY, P/L e ROE da base; o cálculo completo (com beta
+                  e projeções) fica no detalhe de cada ativo.
+                </p>
+              </div>
+            )}
           </div>
 
 
