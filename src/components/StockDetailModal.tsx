@@ -33,6 +33,8 @@ import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
 import { PrecoTetoProjetivoPanel } from "./PrecoTetoProjetivoPanel";
 import { ValuationPanel } from "./ValuationPanel";
+import { ValuationDdmPanel } from "./ValuationDdmPanel";
+import { isSetorFinanceiroNome } from "@/lib/valuation-ddm";
 import { MarketAnalysisDialog } from "./MarketAnalysisDialog";
 
 
@@ -379,6 +381,16 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 precoAtual={stock.preco}
                 historico={proventos?.historico ?? null}
               />
+
+              {isSetorFinanceiroNome(stock.setor) && (
+                <ValuationDdmPanel
+                  ticker={stock.ticker}
+                  nome={stock.nome}
+                  precoAtual={stock.preco}
+                  roe={stock.roe}
+                  historico={proventos?.historico ?? null}
+                />
+              )}
 
               <ValuationPanel ticker={stock.ticker} precoAtual={stock.preco} />
 
