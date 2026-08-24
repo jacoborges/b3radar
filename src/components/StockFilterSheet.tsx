@@ -36,6 +36,8 @@ export function StockFilterSheet({
   setPrecoTetoOnly,
   minDescontoTeto = 0,
   setMinDescontoTeto,
+  ddmOnly = false,
+  setDdmOnly,
   title = "Filtros por indicadores técnicos",
   extraSection,
   onClearExtra,
