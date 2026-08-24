@@ -33,6 +33,8 @@ import { DebtSemaphore } from "./DebtSemaphore";
 import { PrecoTetoPanel } from "./PrecoTetoPanel";
 import { PrecoTetoProjetivoPanel } from "./PrecoTetoProjetivoPanel";
 import { ValuationPanel } from "./ValuationPanel";
+import { ValuationDdmPanel } from "./ValuationDdmPanel";
+import { isSetorFinanceiroNome } from "@/lib/valuation-ddm";
 import { MarketAnalysisDialog } from "./MarketAnalysisDialog";
 
 
