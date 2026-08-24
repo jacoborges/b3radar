@@ -102,6 +102,7 @@ function HomePage() {
   const [minAnosPrecoAcimaSelic, setMinAnosPrecoAcimaSelic] = useState<number>(0);
   const [precoTetoOnly, setPrecoTetoOnly] = useState(false);
   const [minDescontoTeto, setMinDescontoTeto] = useState(0);
+  const [ddmOnly, setDdmOnly] = useState(false);
   const [selected, setSelected] = useState<Stock | null>(null);
 
   const [openSectors, setOpenSectors] = useState<string[]>([]);
