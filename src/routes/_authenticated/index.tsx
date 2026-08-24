@@ -134,7 +134,8 @@ function HomePage() {
     (recFilter !== "ALL" ? 1 : 0) +
     (minAnosAcimaSelic > 0 ? 1 : 0) +
     (minAnosPrecoAcimaSelic > 0 ? 1 : 0) +
-    (precoTetoOnly ? 1 : 0);
+    (precoTetoOnly ? 1 : 0) +
+    (ddmOnly ? 1 : 0);
 
   /** true quando o preço teto é o único filtro ativo → ranqueia por desconto */
   const rankByDesconto =
@@ -161,9 +162,14 @@ function HomePage() {
         const d = descontoMap.get(s.ticker);
         if (d === undefined || d < minDescontoTeto) return false;
       }
+      if (ddmOnly) {
+        const m = margemDdmRapida(s);
+        if (m === null || m <= 0) return false;
+      }
       return true;
     });
-  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap]);
+  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
+
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
