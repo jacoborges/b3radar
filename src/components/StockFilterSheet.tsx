@@ -57,6 +57,8 @@ export function StockFilterSheet({
   setPrecoTetoOnly?: (v: boolean) => void;
   minDescontoTeto?: number;
   setMinDescontoTeto?: (v: number) => void;
+  ddmOnly?: boolean;
+  setDdmOnly?: (v: boolean) => void;
   title?: string;
   /** bloco extra renderizado no topo do painel (ex.: inteligência de proventos) */
   extraSection?: ReactNode;
