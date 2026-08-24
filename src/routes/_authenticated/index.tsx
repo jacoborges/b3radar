@@ -315,6 +315,8 @@ function HomePage() {
                 setPrecoTetoOnly={setPrecoTetoOnly}
                 minDescontoTeto={minDescontoTeto}
                 setMinDescontoTeto={setMinDescontoTeto}
+                ddmOnly={ddmOnly}
+                setDdmOnly={setDdmOnly}
               />
 
 
