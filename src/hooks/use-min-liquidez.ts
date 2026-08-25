@@ -57,4 +57,4 @@ export function useMinLiquidez(): [number, (v: number | null) => void] {
 }
 
 export const formatLiquidez = (v: number) =>
-  `${v.toLocaleString("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} mi`;
+  `${v.toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} mi`;
