@@ -1,6 +1,22 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, KeyRound, ExternalLink, Check, Trash2, Target } from "lucide-react";
+import {
+  ArrowLeft,
+  KeyRound,
+  ExternalLink,
+  Check,
+  Trash2,
+  Target,
+  Droplets,
+} from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import {
+  useMinLiquidez,
+  formatLiquidez,
+  MIN_LIQUIDEZ_DEFAULT,
+  MIN_LIQUIDEZ_MIN,
+  MIN_LIQUIDEZ_MAX,
+} from "@/hooks/use-min-liquidez";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -146,10 +162,67 @@ function SettingsPage() {
 
         <BazinSection />
 
-
+        <LiquidezSection />
 
       </main>
     </div>
+  );
+}
+
+function LiquidezSection() {
+  const [minLiquidez, setMinLiquidez] = useMinLiquidez();
+
+  return (
+    <section className="mt-6 rounded-xl border border-border/60 bg-card p-5 md:p-6">
+      <div className="flex items-center gap-2">
+        <Droplets className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-semibold">Liquidez diária mínima</h2>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Ativos com liquidez diária média abaixo deste valor não aparecem nas listas, nos
+        setores e nos filtros. Com 0 mi, apenas ações sem negociação são excluídas. O valor
+        fica salvo no seu navegador.
+      </p>
+
+      <div className="mt-5 space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Limite mínimo
+          </Label>
+          <span className="font-mono text-sm">{formatLiquidez(minLiquidez)}</span>
+        </div>
+        <Slider
+          min={MIN_LIQUIDEZ_MIN}
+          max={MIN_LIQUIDEZ_MAX}
+          step={0.5}
+          value={[minLiquidez]}
+          onValueChange={([v]) => setMinLiquidez(v)}
+        />
+        <div className="flex items-center justify-between font-mono text-[11px] text-muted-foreground">
+          <span>{formatLiquidez(MIN_LIQUIDEZ_MIN)}</span>
+          <span>{formatLiquidez(MIN_LIQUIDEZ_MAX)}</span>
+        </div>
+      </div>
+
+      <div className="mt-6 flex items-center justify-between rounded-lg border border-border/40 bg-background/40 p-3">
+        <div className="text-sm">
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">
+            Limite atual
+          </div>
+          <div className="mt-1 font-mono">{formatLiquidez(minLiquidez)}</div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setMinLiquidez(null)}
+          disabled={minLiquidez === MIN_LIQUIDEZ_DEFAULT}
+          className="gap-2 text-muted-foreground"
+        >
+          <Trash2 className="h-4 w-4" />
+          Restaurar padrão
+        </Button>
+      </div>
+    </section>
   );
 }
 
