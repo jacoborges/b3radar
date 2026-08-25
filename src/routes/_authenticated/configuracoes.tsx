@@ -194,7 +194,7 @@ function LiquidezSection() {
         <Slider
           min={MIN_LIQUIDEZ_MIN}
           max={MIN_LIQUIDEZ_MAX}
-          step={0.5}
+          step={0.1}
           value={[minLiquidez]}
           onValueChange={([v]) => setMinLiquidez(v)}
         />
