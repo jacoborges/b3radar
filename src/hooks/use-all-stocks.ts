@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getAllStocks } from "@/lib/stocks.functions";
 import { buildStocks, collectSectors, type Stock } from "@/lib/stocks-data";
+import { useMinLiquidez } from "@/hooks/use-min-liquidez";
 
 const ONE_HOUR = 60 * 60 * 1000;
 
