@@ -1,6 +1,22 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, KeyRound, ExternalLink, Check, Trash2, Target } from "lucide-react";
+import {
+  ArrowLeft,
+  KeyRound,
+  ExternalLink,
+  Check,
+  Trash2,
+  Target,
+  Droplets,
+} from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import {
+  useMinLiquidez,
+  formatLiquidez,
+  MIN_LIQUIDEZ_DEFAULT,
+  MIN_LIQUIDEZ_MIN,
+  MIN_LIQUIDEZ_MAX,
+} from "@/hooks/use-min-liquidez";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
