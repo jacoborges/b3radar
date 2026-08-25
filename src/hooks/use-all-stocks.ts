@@ -25,14 +25,15 @@ export interface UseAllStocksResult {
 export function useAllStocks(): UseAllStocksResult {
   const { data, isFetching } = useSuspenseQuery(stocksQueryOptions);
   const [minLiquidez] = useMinLiquidez();
-  // Exclui ativos abaixo da liquidez diária mínima definida em Ajustes (padrão: 0 mi)
+  // Mantém todos os ativos; filtra apenas pela liquidez mínima definida em Ajustes (padrão: 0 mi)
   const stocks = useMemo(
     () =>
-      buildStocks(data.rows).filter(
-        (s) => (s.liquidezDiaria ?? 0) > 0 && (s.liquidezDiaria ?? 0) >= minLiquidez,
-      ),
+      minLiquidez > 0
+        ? buildStocks(data.rows).filter((s) => (s.liquidezDiaria ?? 0) >= minLiquidez)
+        : buildStocks(data.rows),
     [data.rows, minLiquidez],
   );
+
   const sectors = useMemo(() => collectSectors(stocks), [stocks]);
 
   return {
