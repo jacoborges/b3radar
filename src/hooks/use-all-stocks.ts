@@ -23,7 +23,11 @@ export interface UseAllStocksResult {
 
 export function useAllStocks(): UseAllStocksResult {
   const { data, isFetching } = useSuspenseQuery(stocksQueryOptions);
-  const stocks = useMemo(() => buildStocks(data.rows), [data.rows]);
+  // Exclui automaticamente ativos sem liquidez diária (0 mi)
+  const stocks = useMemo(
+    () => buildStocks(data.rows).filter((s) => (s.liquidezDiaria ?? 0) > 0),
+    [data.rows],
+  );
   const sectors = useMemo(() => collectSectors(stocks), [stocks]);
 
   return {
