@@ -195,7 +195,11 @@ function CarteiraPage() {
   }, [selected, quotes.map, stocks]);
 
   const posicoesResumo = useMemo(
-    () => positions.map((p) => ({ ticker: p.ticker, totalQty: p.totalQty })),
+    () =>
+      positions.map((p) => ({
+        ticker: p.ticker,
+        lots: p.lots.map((l) => ({ quantity: l.quantity, boughtAt: l.boughtAt })),
+      })),
     [positions],
   );
 

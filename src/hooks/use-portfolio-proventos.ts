@@ -41,8 +41,13 @@ function hojeISO() {
  * Proventos já anunciados (B3/CVM) dos ativos da carteira, com o total
  * a receber por posição.
  */
+export interface PosicaoProventos {
+  ticker: string;
+  lots: Array<{ quantity: number; boughtAt: string }>;
+}
+
 export function usePortfolioProventos(
-  posicoes: Array<{ ticker: string; totalQty: number }>,
+  posicoes: PosicaoProventos[],
 ): UsePortfolioProventosResult {
   const callProventos = useServerFn(getTickerProventos);
   const queryClient = useQueryClient();
@@ -70,18 +75,23 @@ export function usePortfolioProventos(
 
   const eventos = useMemo(() => {
     const hoje = hojeISO();
-    const qtyByTicker = new Map(posicoes.map((p) => [p.ticker, p.totalQty]));
+    const lotsByTicker = new Map(posicoes.map((p) => [p.ticker, p.lots]));
     const out: ProventoCarteira[] = [];
 
     results.forEach((r, i) => {
       const ticker = tickers[i]!;
       const data = r.data as TickerProventosResult | undefined;
-      const quantidade = qtyByTicker.get(ticker) ?? 0;
-      if (!data?.provisionados || quantidade <= 0) return;
+      const lots = lotsByTicker.get(ticker) ?? [];
+      if (!data?.provisionados || lots.length === 0) return;
       for (const p of data.provisionados) {
         if (!(p.valorPorAcao > 0)) continue;
         const pagamento = p.dataPagamento || p.dataEx;
         if (pagamento < hoje) continue;
+        // Só dá direito ao provento o lote comprado ANTES da data com.
+        const quantidade = lots
+          .filter((l) => l.boughtAt < p.dataCom)
+          .reduce((s, l) => s + l.quantity, 0);
+        if (quantidade <= 0) continue;
         out.push({
           ticker,
           tipo: p.tipo,
