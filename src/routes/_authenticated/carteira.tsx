@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
+import { PortfolioProventos } from "@/components/PortfolioProventos";
 import {
   addLot,
   createPortfolio,
@@ -193,7 +194,13 @@ function CarteiraPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, quotes.map, stocks]);
 
+  const posicoesResumo = useMemo(
+    () => positions.map((p) => ({ ticker: p.ticker, totalQty: p.totalQty })),
+    [positions],
+  );
+
   const totals = useMemo(() => {
+
     const invested = positions.reduce((s, p) => s + p.invested, 0);
     const current = positions.reduce((s, p) => s + (p.current ?? p.invested), 0);
     return {
@@ -405,6 +412,10 @@ function CarteiraPage() {
                   mAddLot.mutate({ portfolioId: selected.id, ...v })
                 }
               />
+
+              <PortfolioProventos posicoes={posicoesResumo} />
+
+
 
               {positions.length === 0 ? (
                 <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
