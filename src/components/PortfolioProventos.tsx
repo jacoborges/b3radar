@@ -1,7 +1,10 @@
 import { CalendarClock, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { usePortfolioProventos } from "@/hooks/use-portfolio-proventos";
+import {
+  usePortfolioProventos,
+  type PosicaoProventos,
+} from "@/hooks/use-portfolio-proventos";
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -22,7 +25,7 @@ const qty = (v: number) =>
 export function PortfolioProventos({
   posicoes,
 }: {
-  posicoes: Array<{ ticker: string; totalQty: number }>;
+  posicoes: PosicaoProventos[];
 }) {
   const { eventos, total, isLoading, isFetching, refetch } =
     usePortfolioProventos(posicoes);
@@ -33,7 +36,7 @@ export function PortfolioProventos({
         <CalendarClock className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold">Próximos proventos a receber</h3>
         <span className="text-[11px] text-muted-foreground">
-          somente anúncios oficiais (B3/CVM/RI)
+          anúncios oficiais (B3/CVM/RI), só lotes comprados antes da data com
         </span>
         <Button
           size="sm"
