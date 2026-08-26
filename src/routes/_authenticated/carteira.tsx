@@ -194,7 +194,13 @@ function CarteiraPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, quotes.map, stocks]);
 
+  const posicoesResumo = useMemo(
+    () => positions.map((p) => ({ ticker: p.ticker, totalQty: p.totalQty })),
+    [positions],
+  );
+
   const totals = useMemo(() => {
+
     const invested = positions.reduce((s, p) => s + p.invested, 0);
     const current = positions.reduce((s, p) => s + (p.current ?? p.invested), 0);
     return {
