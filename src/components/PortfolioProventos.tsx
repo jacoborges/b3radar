@@ -33,6 +33,12 @@ const dia = (iso: string) => {
 const qty = (v: number) =>
   v.toLocaleString("pt-BR", { maximumFractionDigits: 6 });
 
+interface GrupoProventos {
+  ticker: string;
+  eventos: ReturnType<typeof usePortfolioProventos>["eventos"];
+  subtotal: number;
+}
+
 export function PortfolioProventos({
   posicoes,
 }: {
@@ -41,6 +47,22 @@ export function PortfolioProventos({
   const [open, setOpen] = useState(false);
   const { eventos, total, isLoading, isFetching, refetch } =
     usePortfolioProventos(posicoes);
+
+  const grupos = useMemo(() => {
+    const map = new Map<string, GrupoProventos["eventos"]);
+    for (const e of eventos) {
+      const list = map.get(e.ticker) ?? [];
+      list.push(e);
+      map.set(e.ticker, list);
+    }
+    return Array.from(map.entries())
+      .map(([ticker, items]) => ({
+        ticker,
+        eventos: items,
+        subtotal: items.reduce((s, e) => s + e.total, 0),
+      }))
+      .sort((a, b) => a.ticker.localeCompare(b.ticker));
+  }, [eventos]);
 
   const hasData = posicoes.length > 0 && eventos.length > 0;
   const totalLabel =
@@ -124,88 +146,118 @@ export function PortfolioProventos({
                     </tr>
                   </thead>
                   <tbody>
-                    {eventos.map((e, i) => (
-                      <tr
-                        key={`${e.ticker}-${e.dataPagamento}-${i}`}
-                        className="border-b border-border/40 last:border-0"
-                      >
-                        <td className="px-4 py-2 font-semibold">{e.ticker}</td>
-                        <td className="px-3 py-2">
-                          <Badge
-                            variant="outline"
-                            className={
-                              e.tipo === "JCP"
-                                ? "border-primary/40 text-primary"
-                                : "border-success/40 text-success"
-                            }
+                    {grupos.map((g) => (
+                      <>
+                        <tr
+                          key={`group-${g.ticker}`}
+                          className="border-b border-border/60 bg-muted/30"
+                        >
+                          <td className="px-4 py-2 font-bold">{g.ticker}</td>
+                          <td className="px-3 py-2 text-[11px] text-muted-foreground" colSpan={3}>
+                            Total do ativo
+                          </td>
+                          <td className="px-3 py-2 text-right font-bold tabular-nums text-success">
+                            {brl(g.subtotal)}
+                          </td>
+                          <td className="px-3 py-2" colSpan={3} />
+                        </tr>
+                        {g.eventos.map((e, i) => (
+                          <tr
+                            key={`${e.ticker}-${e.dataPagamento}-${i}`}
+                            className="border-b border-border/40 last:border-0"
                           >
-                            {e.tipo}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums">
-                          {brl4(e.valorPorAcao)}
-                        </td>
-                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                          {qty(e.quantidade)}
-                        </td>
-                        <td className="px-3 py-2 text-right font-semibold tabular-nums text-success">
-                          {brl(e.total)}
-                        </td>
-                        <td className="px-3 py-2 text-center text-xs">
-                          {dia(e.dataCom)}
-                          {e.direitoGarantido && (
-                            <span className="ml-1 text-[10px] text-success">✓</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-center text-xs text-muted-foreground">
-                          {dia(e.dataEx)}
-                        </td>
-                        <td className="px-4 py-2 text-center text-xs font-medium">
-                          {dia(e.dataPagamento)}
-                        </td>
-                      </tr>
+                            <td className="px-4 py-2 font-semibold">{e.ticker}</td>
+                            <td className="px-3 py-2">
+                              <Badge
+                                variant="outline"
+                                className={
+                                  e.tipo === "JCP"
+                                    ? "border-primary/40 text-primary"
+                                    : "border-success/40 text-success"
+                                }
+                              >
+                                {e.tipo}
+                              </Badge>
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums">
+                              {brl4(e.valorPorAcao)}
+                            </td>
+                            <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                              {qty(e.quantidade)}
+                            </td>
+                            <td className="px-3 py-2 text-right font-semibold tabular-nums text-success">
+                              {brl(e.total)}
+                            </td>
+                            <td className="px-3 py-2 text-center text-xs">
+                              {dia(e.dataCom)}
+                              {e.direitoGarantido && (
+                                <span className="ml-1 text-[10px] text-success">✓</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-center text-xs text-muted-foreground">
+                              {dia(e.dataEx)}
+                            </td>
+                            <td className="px-4 py-2 text-center text-xs font-medium">
+                              {dia(e.dataPagamento)}
+                            </td>
+                          </tr>
+                        ))}
+                      </>
                     ))}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile */}
-              <div className="space-y-2 p-3 md:hidden">
-                {eventos.map((e, i) => (
-                  <div
-                    key={`${e.ticker}-${e.dataPagamento}-${i}`}
-                    className="rounded-lg border border-border/50 p-3"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{e.ticker}</span>
-                      <Badge
-                        variant="outline"
-                        className={
-                          e.tipo === "JCP"
-                            ? "border-primary/40 text-primary"
-                            : "border-success/40 text-success"
-                        }
-                      >
-                        {e.tipo}
-                      </Badge>
-                      <span className="ml-auto font-semibold text-success">
-                        {brl(e.total)}
-                      </span>
+              <div className="space-y-4 p-3 md:hidden">
+                {grupos.map((g) => (
+                  <div key={`mobile-group-${g.ticker}`} className="space-y-2">
+                    <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold">{g.ticker}</span>
+                        <span className="font-bold text-success">{brl(g.subtotal)}</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">Total do ativo</p>
                     </div>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {brl4(e.valorPorAcao)} × {qty(e.quantidade)}
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      Com {dia(e.dataCom)} · Ex {dia(e.dataEx)} ·{" "}
-                      <span className="font-medium text-foreground">
-                        Pagamento {dia(e.dataPagamento)}
-                      </span>
-                    </p>
-                    {e.direitoGarantido && (
-                      <p className="mt-1 text-[11px] text-success">
-                        Direito garantido (data com já passou)
-                      </p>
-                    )}
+                    <div className="space-y-2 pl-2">
+                      {g.eventos.map((e, i) => (
+                        <div
+                          key={`${e.ticker}-${e.dataPagamento}-${i}`}
+                          className="rounded-lg border border-border/50 p-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{e.ticker}</span>
+                            <Badge
+                              variant="outline"
+                              className={
+                                e.tipo === "JCP"
+                                  ? "border-primary/40 text-primary"
+                                  : "border-success/40 text-success"
+                              }
+                            >
+                              {e.tipo}
+                            </Badge>
+                            <span className="ml-auto font-semibold text-success">
+                              {brl(e.total)}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            {brl4(e.valorPorAcao)} × {qty(e.quantidade)}
+                          </p>
+                          <p className="mt-1 text-[11px] text-muted-foreground">
+                            Com {dia(e.dataCom)} · Ex {dia(e.dataEx)} ·{" "}
+                            <span className="font-medium text-foreground">
+                              Pagamento {dia(e.dataPagamento)}
+                            </span>
+                          </p>
+                          {e.direitoGarantido && (
+                            <p className="mt-1 text-[11px] text-success">
+                              Direito garantido (data com já passou)
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
