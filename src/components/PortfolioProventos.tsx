@@ -1,6 +1,17 @@
-import { CalendarClock, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import {
+  CalendarClock,
+  ChevronDown,
+  ChevronRight,
+  RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   usePortfolioProventos,
   type PosicaoProventos,
@@ -27,68 +38,146 @@ export function PortfolioProventos({
 }: {
   posicoes: PosicaoProventos[];
 }) {
+  const [open, setOpen] = useState(false);
   const { eventos, total, isLoading, isFetching, refetch } =
     usePortfolioProventos(posicoes);
 
-  return (
-    <section className="rounded-xl border border-border/60 bg-card">
-      <header className="flex flex-wrap items-center gap-2 border-b border-border/60 px-4 py-3">
-        <CalendarClock className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold">Próximos proventos a receber</h3>
-        <span className="text-[11px] text-muted-foreground">
-          anúncios oficiais (B3/CVM/RI), só lotes comprados antes da data com
-        </span>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="ml-auto h-7 gap-1.5 text-xs"
-          onClick={refetch}
-          disabled={isFetching || posicoes.length === 0}
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
-          Atualizar
-        </Button>
-      </header>
+  const hasData = posicoes.length > 0 && eventos.length > 0;
+  const totalLabel =
+    posicoes.length === 0 || eventos.length === 0
+      ? "—"
+      : isLoading
+        ? "Calculando…"
+        : brl(total);
 
-      {posicoes.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-          Adicione ativos à carteira para ver os proventos anunciados.
-        </p>
-      ) : isLoading ? (
-        <div className="space-y-2 p-4">
-          {[0, 1, 2].map((i) => (
-            <div key={i} className="h-10 animate-pulse rounded-lg bg-muted/40" />
-          ))}
-        </div>
-      ) : eventos.length === 0 ? (
-        <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-          Nenhum provento anunciado no momento para os ativos da carteira.
-        </p>
-      ) : (
-        <>
-          {/* Desktop */}
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 text-[11px] uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-2 text-left font-medium">Ativo</th>
-                  <th className="px-3 py-2 text-left font-medium">Tipo</th>
-                  <th className="px-3 py-2 text-right font-medium">Por ação</th>
-                  <th className="px-3 py-2 text-right font-medium">Qtd.</th>
-                  <th className="px-3 py-2 text-right font-medium">Total</th>
-                  <th className="px-3 py-2 text-center font-medium">Data com</th>
-                  <th className="px-3 py-2 text-center font-medium">Data ex</th>
-                  <th className="px-4 py-2 text-center font-medium">Pagamento</th>
-                </tr>
-              </thead>
-              <tbody>
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <section className="rounded-xl border border-border/60 bg-card">
+        <CollapsibleTrigger asChild>
+          <header className="flex cursor-pointer flex-wrap items-center gap-2 border-b border-border/60 px-4 py-3 transition-colors hover:bg-muted/20">
+            <CalendarClock className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-semibold">Próximos proventos a receber</h3>
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">
+              anúncios oficiais (B3/CVM/RI), só lotes comprados antes da data com
+            </span>
+
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 gap-1.5 text-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  refetch();
+                }}
+                disabled={isFetching || posicoes.length === 0}
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+                />
+                Atualizar
+              </Button>
+
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-muted-foreground">Total previsto</span>
+                <span className="font-bold text-success">{totalLabel}</span>
+                {open ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </div>
+          </header>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          {posicoes.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              Adicione ativos à carteira para ver os proventos anunciados.
+            </p>
+          ) : isLoading ? (
+            <div className="space-y-2 p-4">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-10 animate-pulse rounded-lg bg-muted/40" />
+              ))}
+            </div>
+          ) : eventos.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+              Nenhum provento anunciado no momento para os ativos da carteira.
+            </p>
+          ) : (
+            <>
+              {/* Desktop */}
+              <div className="hidden overflow-x-auto md:block">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border/60 text-[11px] uppercase tracking-wide text-muted-foreground">
+                      <th className="px-4 py-2 text-left font-medium">Ativo</th>
+                      <th className="px-3 py-2 text-left font-medium">Tipo</th>
+                      <th className="px-3 py-2 text-right font-medium">Por ação</th>
+                      <th className="px-3 py-2 text-right font-medium">Qtd.</th>
+                      <th className="px-3 py-2 text-right font-medium">Total</th>
+                      <th className="px-3 py-2 text-center font-medium">Data com</th>
+                      <th className="px-3 py-2 text-center font-medium">Data ex</th>
+                      <th className="px-4 py-2 text-center font-medium">Pagamento</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {eventos.map((e, i) => (
+                      <tr
+                        key={`${e.ticker}-${e.dataPagamento}-${i}`}
+                        className="border-b border-border/40 last:border-0"
+                      >
+                        <td className="px-4 py-2 font-semibold">{e.ticker}</td>
+                        <td className="px-3 py-2">
+                          <Badge
+                            variant="outline"
+                            className={
+                              e.tipo === "JCP"
+                                ? "border-primary/40 text-primary"
+                                : "border-success/40 text-success"
+                            }
+                          >
+                            {e.tipo}
+                          </Badge>
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums">
+                          {brl4(e.valorPorAcao)}
+                        </td>
+                        <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                          {qty(e.quantidade)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-semibold tabular-nums text-success">
+                          {brl(e.total)}
+                        </td>
+                        <td className="px-3 py-2 text-center text-xs">
+                          {dia(e.dataCom)}
+                          {e.direitoGarantido && (
+                            <span className="ml-1 text-[10px] text-success">✓</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2 text-center text-xs text-muted-foreground">
+                          {dia(e.dataEx)}
+                        </td>
+                        <td className="px-4 py-2 text-center text-xs font-medium">
+                          {dia(e.dataPagamento)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile */}
+              <div className="space-y-2 p-3 md:hidden">
                 {eventos.map((e, i) => (
-                  <tr
+                  <div
                     key={`${e.ticker}-${e.dataPagamento}-${i}`}
-                    className="border-b border-border/40 last:border-0"
+                    className="rounded-lg border border-border/50 p-3"
                   >
-                    <td className="px-4 py-2 font-semibold">{e.ticker}</td>
-                    <td className="px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{e.ticker}</span>
                       <Badge
                         variant="outline"
                         className={
@@ -99,81 +188,36 @@ export function PortfolioProventos({
                       >
                         {e.tipo}
                       </Badge>
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {brl4(e.valorPorAcao)}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
-                      {qty(e.quantidade)}
-                    </td>
-                    <td className="px-3 py-2 text-right font-semibold tabular-nums text-success">
-                      {brl(e.total)}
-                    </td>
-                    <td className="px-3 py-2 text-center text-xs">
-                      {dia(e.dataCom)}
-                      {e.direitoGarantido && (
-                        <span className="ml-1 text-[10px] text-success">✓</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-center text-xs text-muted-foreground">
-                      {dia(e.dataEx)}
-                    </td>
-                    <td className="px-4 py-2 text-center text-xs font-medium">
-                      {dia(e.dataPagamento)}
-                    </td>
-                  </tr>
+                      <span className="ml-auto font-semibold text-success">
+                        {brl(e.total)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {brl4(e.valorPorAcao)} × {qty(e.quantidade)}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Com {dia(e.dataCom)} · Ex {dia(e.dataEx)} ·{" "}
+                      <span className="font-medium text-foreground">
+                        Pagamento {dia(e.dataPagamento)}
+                      </span>
+                    </p>
+                    {e.direitoGarantido && (
+                      <p className="mt-1 text-[11px] text-success">
+                        Direito garantido (data com já passou)
+                      </p>
+                    )}
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile */}
-          <div className="space-y-2 p-3 md:hidden">
-            {eventos.map((e, i) => (
-              <div
-                key={`${e.ticker}-${e.dataPagamento}-${i}`}
-                className="rounded-lg border border-border/50 p-3"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">{e.ticker}</span>
-                  <Badge
-                    variant="outline"
-                    className={
-                      e.tipo === "JCP"
-                        ? "border-primary/40 text-primary"
-                        : "border-success/40 text-success"
-                    }
-                  >
-                    {e.tipo}
-                  </Badge>
-                  <span className="ml-auto font-semibold text-success">
-                    {brl(e.total)}
-                  </span>
-                </div>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {brl4(e.valorPorAcao)} × {qty(e.quantidade)}
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Com {dia(e.dataCom)} · Ex {dia(e.dataEx)} ·{" "}
-                  <span className="font-medium text-foreground">
-                    Pagamento {dia(e.dataPagamento)}
-                  </span>
-                </p>
-                {e.direitoGarantido && (
-                  <p className="mt-1 text-[11px] text-success">
-                    Direito garantido (data com já passou)
-                  </p>
-                )}
               </div>
-            ))}
-          </div>
 
-          <footer className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-sm">
-            <span className="text-muted-foreground">Total previsto</span>
-            <span className="font-bold text-success">{brl(total)}</span>
-          </footer>
-        </>
-      )}
-    </section>
+              <footer className="flex items-center justify-between border-t border-border/60 px-4 py-3 text-sm">
+                <span className="text-muted-foreground">Total previsto</span>
+                <span className="font-bold text-success">{brl(total)}</span>
+              </footer>
+            </>
+          )}
+        </CollapsibleContent>
+      </section>
+    </Collapsible>
   );
 }
