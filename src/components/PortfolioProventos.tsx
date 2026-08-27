@@ -50,7 +50,7 @@ export function PortfolioProventos({
     usePortfolioProventos(posicoes);
 
   const grupos = useMemo(() => {
-    const map = new Map<string, GrupoProventos["eventos"]);
+    const map = new Map<string, ProventoCarteira[]>();
     for (const e of eventos) {
       const list = map.get(e.ticker) ?? [];
       list.push(e);
