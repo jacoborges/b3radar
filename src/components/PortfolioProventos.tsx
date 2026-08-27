@@ -15,6 +15,7 @@ import {
 import {
   usePortfolioProventos,
   type PosicaoProventos,
+  type ProventoCarteira,
 } from "@/hooks/use-portfolio-proventos";
 
 const brl = (v: number) =>
