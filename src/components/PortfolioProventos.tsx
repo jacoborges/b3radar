@@ -36,7 +36,7 @@ const qty = (v: number) =>
 
 interface GrupoProventos {
   ticker: string;
-  eventos: ReturnType<typeof usePortfolioProventos>["eventos"];
+  eventos: ProventoCarteira[];
   subtotal: number;
 }
 
