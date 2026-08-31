@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
+import { Route as AuthenticatedSimuladorRouteImport } from './routes/_authenticated/simulador'
 import { Route as AuthenticatedDividendosRouteImport } from './routes/_authenticated/dividendos'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
@@ -35,6 +36,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
   id: '/usuarios',
   path: '/usuarios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSimuladorRoute = AuthenticatedSimuladorRouteImport.update({
+  id: '/simulador',
+  path: '/simulador',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDividendosRoute = AuthenticatedDividendosRouteImport.update({
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
+  '/simulador': typeof AuthenticatedSimuladorRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
 }
@@ -74,6 +81,7 @@ export interface FileRoutesByTo {
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
+  '/simulador': typeof AuthenticatedSimuladorRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
@@ -85,6 +93,7 @@ export interface FileRoutesById {
   '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dividendos': typeof AuthenticatedDividendosRoute
+  '/_authenticated/simulador': typeof AuthenticatedSimuladorRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/carteira'
     | '/configuracoes'
     | '/dividendos'
+    | '/simulador'
     | '/usuarios'
     | '/api/public/refresh-proventos'
   fileRoutesByTo: FileRoutesByTo
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
     | '/carteira'
     | '/configuracoes'
     | '/dividendos'
+    | '/simulador'
     | '/usuarios'
     | '/'
     | '/api/public/refresh-proventos'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carteira'
     | '/_authenticated/configuracoes'
     | '/_authenticated/dividendos'
+    | '/_authenticated/simulador'
     | '/_authenticated/usuarios'
     | '/_authenticated/'
     | '/api/public/refresh-proventos'
@@ -156,6 +168,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/simulador': {
+      id: '/_authenticated/simulador'
+      path: '/simulador'
+      fullPath: '/simulador'
+      preLoaderRoute: typeof AuthenticatedSimuladorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dividendos': {
       id: '/_authenticated/dividendos'
       path: '/dividendos'
@@ -191,6 +210,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDividendosRoute: typeof AuthenticatedDividendosRoute
+  AuthenticatedSimuladorRoute: typeof AuthenticatedSimuladorRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -199,6 +219,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDividendosRoute: AuthenticatedDividendosRoute,
+  AuthenticatedSimuladorRoute: AuthenticatedSimuladorRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
