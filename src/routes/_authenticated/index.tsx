@@ -8,6 +8,7 @@ import {
   TrendingDown,
   Coins,
   Wallet,
+  LineChart,
   X,
 } from "lucide-react";
 
