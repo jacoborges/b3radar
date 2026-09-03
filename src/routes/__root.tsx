@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { startQueryPersistence } from "../lib/query-persist";
+import { useOnlinePresence } from "../hooks/use-online-users";
 
 function NotFoundComponent() {
   return (
@@ -120,9 +121,12 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useOnlinePresence();
+
   useEffect(() => {
     startQueryPersistence(queryClient);
   }, [queryClient]);
+
 
   return (
     <QueryClientProvider client={queryClient}>
