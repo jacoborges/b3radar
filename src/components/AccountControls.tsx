@@ -55,6 +55,8 @@ export function AccountControls() {
 
   return (
     <>
+      {data?.role === "admin" && <OnlineBadge />}
+
       {canManage && (
         <Button
           asChild
