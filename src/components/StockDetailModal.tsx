@@ -268,7 +268,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   BMFBOVESPA:{ticker}
                 </span>
               </div>
-              <div className="relative aspect-[4/3] max-h-[60dvh] w-full overflow-hidden rounded-lg border border-border/40 bg-background landscape:max-h-[45dvh] sm:aspect-[16/10] sm:max-h-[55dvh]">
+              <div className="relative mx-auto aspect-video max-h-[70dvh] w-full overflow-hidden rounded-lg border border-border/40 bg-background landscape:max-h-[80dvh]">
                 {!chartLoaded && (
                   <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
                     Carregando gráfico…
