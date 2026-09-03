@@ -120,9 +120,12 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useOnlinePresence();
+
   useEffect(() => {
     startQueryPersistence(queryClient);
   }, [queryClient]);
+
 
   return (
     <QueryClientProvider client={queryClient}>
