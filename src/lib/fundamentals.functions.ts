@@ -162,4 +162,18 @@ export const getTickerFundamentals = createServerFn({ method: "POST" })
       console.error("[getTickerFundamentals] failed", err);
       return { fundamentals: null, fonte: null, error: "Falha ao consultar brapi" };
     }
+}
+
+export const getTickerFundamentals = createServerFn({ method: "POST" })
+  .inputValidator((data) => inputSchema.parse(data))
+  .handler(async ({ data }): Promise<TickerFundamentalsResult> => {
+    const { withCache, CACHE_TTL } = await import("./market-cache.server");
+    return withCache<TickerFundamentalsResult>({
+      kind: "brapi-fundamentals",
+      ticker: data.ticker,
+      ttlMs: CACHE_TTL.fundamentals,
+      force: data.force,
+      fetcher: () => fetchFundamentalsFromBrapi(data.ticker, data.token),
+      shouldStore: (v) => !v.error && v.fundamentals != null,
+    });
   });
