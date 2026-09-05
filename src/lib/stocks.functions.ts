@@ -190,6 +190,7 @@ export interface TickerFundamentusPayload {
 
 const tickerSchema = z.object({
   ticker: z.string().trim().min(4).max(7).toUpperCase(),
+  force: z.boolean().optional(),
 });
 
 async function fetchFundamentusDetail(ticker: string): Promise<string> {
