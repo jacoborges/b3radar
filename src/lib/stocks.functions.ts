@@ -247,15 +247,9 @@ function numOrNull(s: string | undefined): number | null {
   return n === 0 && !/^-?0[.,]?0*%?$/.test(s.trim()) ? null : n;
 }
 
-export const getTickerFundamentus = createServerFn({ method: "POST" })
-  .inputValidator((data) => tickerSchema.parse(data))
-  .handler(async ({ data }): Promise<TickerFundamentusPayload> => {
-    const ticker = data.ticker;
-    setResponseHeader(
-      "cache-control",
-      "public, s-maxage=900, stale-while-revalidate=3600",
-    );
-
+async function buildTickerFundamentus(
+  ticker: string,
+): Promise<TickerFundamentusPayload> {
     try {
       const html = await fetchFundamentusDetail(ticker);
       const kv = parseFundamentusDetail(html);
