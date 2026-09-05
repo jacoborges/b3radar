@@ -297,5 +297,24 @@ async function buildTickerFundamentus(
         error: msg,
       };
     }
+}
+
+export const getTickerFundamentus = createServerFn({ method: "POST" })
+  .inputValidator((data) => tickerSchema.parse(data))
+  .handler(async ({ data }): Promise<TickerFundamentusPayload> => {
+    setResponseHeader(
+      "cache-control",
+      "public, s-maxage=900, stale-while-revalidate=3600",
+    );
+    const { withCache, CACHE_TTL } = await import("./market-cache.server");
+    return withCache<TickerFundamentusPayload>({
+      kind: "fundamentus-ticker",
+      ticker: data.ticker,
+      ttlMs: CACHE_TTL.fundamentusTicker,
+      force: data.force,
+      fetcher: () => buildTickerFundamentus(data.ticker),
+      shouldStore: (v) => !v.error && v.fields != null,
+    });
   });
+
 
