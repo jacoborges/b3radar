@@ -125,7 +125,7 @@ export const getTradingViewTechnical = createServerFn({ method: "GET" })
           } as TvResult;
         }
       },
-      shouldStore: (v) => v.available !== false,
+      shouldStore: (v) => (v as { available?: boolean }).available !== false,
     });
   });
 
