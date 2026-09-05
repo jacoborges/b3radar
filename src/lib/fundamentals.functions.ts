@@ -5,6 +5,7 @@ import { z } from "zod";
 const inputSchema = z.object({
   ticker: z.string().trim().min(4).max(7).toUpperCase(),
   token: z.string().trim().min(1).max(120).optional(),
+  force: z.boolean().optional(),
 });
 
 export interface TickerFundamentals {
