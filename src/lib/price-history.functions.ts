@@ -8,12 +8,25 @@ export type { PriceHistoryResult, PriceYear };
 
 export const getPriceHistory = createServerFn({ method: "POST" })
   .inputValidator((data) =>
-    z.object({ ticker: z.string().trim().min(4).max(7).toUpperCase() }).parse(data),
+    z
+      .object({
+        ticker: z.string().trim().min(4).max(7).toUpperCase(),
+        force: z.boolean().optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ data }): Promise<PriceHistoryResult> => {
     setResponseHeader(
       "cache-control",
       "public, s-maxage=86400, stale-while-revalidate=604800",
     );
-    return fetchPriceHistory(data.ticker);
+    const { withCache, CACHE_TTL } = await import("./market-cache.server");
+    return withCache<PriceHistoryResult>({
+      kind: "price-history",
+      ticker: data.ticker,
+      ttlMs: CACHE_TTL.priceHistory,
+      force: data.force,
+      fetcher: () => fetchPriceHistory(data.ticker),
+      shouldStore: (v) => !v.error && (v.anos?.length ?? 0) > 0,
+    });
   });

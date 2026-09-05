@@ -50,6 +50,27 @@ export type Database = {
         }
         Relationships: []
       }
+      market_cache: {
+        Row: {
+          fetched_at: string
+          kind: string
+          payload: Json
+          ticker: string
+        }
+        Insert: {
+          fetched_at?: string
+          kind: string
+          payload: Json
+          ticker: string
+        }
+        Update: {
+          fetched_at?: string
+          kind?: string
+          payload?: Json
+          ticker?: string
+        }
+        Relationships: []
+      }
       portfolio_lots: {
         Row: {
           bought_at: string

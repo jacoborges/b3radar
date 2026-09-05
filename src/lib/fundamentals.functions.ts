@@ -5,6 +5,7 @@ import { z } from "zod";
 const inputSchema = z.object({
   ticker: z.string().trim().min(4).max(7).toUpperCase(),
   token: z.string().trim().min(1).max(120).optional(),
+  force: z.boolean().optional(),
 });
 
 export interface TickerFundamentals {
@@ -69,11 +70,13 @@ function pct(v: unknown): number | null {
   return Math.abs(n) < 3 ? n * 100 : n;
 }
 
-export const getTickerFundamentals = createServerFn({ method: "POST" })
-  .inputValidator((data) => inputSchema.parse(data))
-  .handler(async ({ data }): Promise<TickerFundamentalsResult> => {
-    const ticker = data.ticker;
-    const token = data.token ?? process.env.BRAPI_TOKEN;
+async function fetchFundamentalsFromBrapi(
+  tickerInput: string,
+  tokenInput: string | undefined,
+): Promise<TickerFundamentalsResult> {
+    const ticker = tickerInput;
+    const token = tokenInput ?? process.env.BRAPI_TOKEN;
+
 
     try {
       const url = new URL(`https://brapi.dev/api/quote/${ticker}`);
@@ -161,4 +164,18 @@ export const getTickerFundamentals = createServerFn({ method: "POST" })
       console.error("[getTickerFundamentals] failed", err);
       return { fundamentals: null, fonte: null, error: "Falha ao consultar brapi" };
     }
+}
+
+export const getTickerFundamentals = createServerFn({ method: "POST" })
+  .inputValidator((data) => inputSchema.parse(data))
+  .handler(async ({ data }): Promise<TickerFundamentalsResult> => {
+    const { withCache, CACHE_TTL } = await import("./market-cache.server");
+    return withCache<TickerFundamentalsResult>({
+      kind: "brapi-fundamentals",
+      ticker: data.ticker,
+      ttlMs: CACHE_TTL.fundamentals,
+      force: data.force,
+      fetcher: () => fetchFundamentalsFromBrapi(data.ticker, data.token),
+      shouldStore: (v) => !v.error && v.fundamentals != null,
+    });
   });
