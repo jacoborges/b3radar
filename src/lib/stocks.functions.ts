@@ -129,6 +129,28 @@ async function fetchFundamentusHtml(): Promise<string> {
   }
 }
 
+async function buildAllStocks(): Promise<StocksPayload> {
+  try {
+    const html = await fetchFundamentusHtml();
+    const rows = parseFundamentus(html);
+    return {
+      rows,
+      fonte: "fundamentus",
+      updatedAt: new Date().toISOString(),
+      error: null,
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[getAllStocks] fallback para snapshot:", msg);
+    return {
+      rows: SNAPSHOT,
+      fonte: "snapshot",
+      updatedAt: new Date().toISOString(),
+      error: msg,
+    };
+  }
+}
+
 export const getAllStocks = createServerFn({ method: "GET" }).handler(
   async (): Promise<StocksPayload> => {
     // Cache HTTP: 1h fresco, 24h stale-while-revalidate.
@@ -136,26 +158,14 @@ export const getAllStocks = createServerFn({ method: "GET" }).handler(
       "cache-control",
       "public, s-maxage=3600, stale-while-revalidate=86400",
     );
-
-    try {
-      const html = await fetchFundamentusHtml();
-      const rows = parseFundamentus(html);
-      return {
-        rows,
-        fonte: "fundamentus",
-        updatedAt: new Date().toISOString(),
-        error: null,
-      };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error("[getAllStocks] fallback para snapshot:", msg);
-      return {
-        rows: SNAPSHOT,
-        fonte: "snapshot",
-        updatedAt: new Date().toISOString(),
-        error: msg,
-      };
-    }
+    const { withCache, CACHE_TTL } = await import("./market-cache.server");
+    return withCache<StocksPayload>({
+      kind: "fundamentus-list",
+      ticker: "_ALL_",
+      ttlMs: CACHE_TTL.fundamentusList,
+      fetcher: buildAllStocks,
+      shouldStore: (v) => v.fonte === "fundamentus" && v.rows.length > 0,
+    });
   },
 );
 
