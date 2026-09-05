@@ -70,11 +70,13 @@ function pct(v: unknown): number | null {
   return Math.abs(n) < 3 ? n * 100 : n;
 }
 
-export const getTickerFundamentals = createServerFn({ method: "POST" })
-  .inputValidator((data) => inputSchema.parse(data))
-  .handler(async ({ data }): Promise<TickerFundamentalsResult> => {
-    const ticker = data.ticker;
-    const token = data.token ?? process.env.BRAPI_TOKEN;
+async function fetchFundamentalsFromBrapi(
+  tickerInput: string,
+  tokenInput: string | undefined,
+): Promise<TickerFundamentalsResult> {
+    const ticker = tickerInput;
+    const token = tokenInput ?? process.env.BRAPI_TOKEN;
+
 
     try {
       const url = new URL(`https://brapi.dev/api/quote/${ticker}`);
