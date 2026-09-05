@@ -239,15 +239,22 @@ async function fetchYahooConsensus(ticker: string): Promise<ConsensusResult> {
 }
 
 export const getAnalystConsensus = createServerFn({ method: "GET" })
-  .inputValidator((data: { ticker: string }) => {
+  .inputValidator((data: { ticker: string; force?: boolean }) => {
     if (!data || typeof data.ticker !== "string" || data.ticker.length === 0) {
       throw new Error("ticker é obrigatório");
     }
-    return { ticker: data.ticker.trim().toUpperCase() };
+    return { ticker: data.ticker.trim().toUpperCase(), force: !!data.force };
   })
   .handler(async ({ data }): Promise<ConsensusResult> => {
     setResponseHeader("cache-control", "no-store");
-    return fetchYahooConsensus(data.ticker);
+    const { withCache, CACHE_TTL } = await import("./market-cache.server");
+    return withCache<ConsensusResult>({
+      kind: "consensus",
+      ticker: data.ticker,
+      ttlMs: CACHE_TTL.consensus,
+      force: data.force,
+      fetcher: () => fetchYahooConsensus(data.ticker),
+    });
   });
 
 async function sleep(ms: number) {
