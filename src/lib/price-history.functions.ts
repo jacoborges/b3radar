@@ -27,6 +27,6 @@ export const getPriceHistory = createServerFn({ method: "POST" })
       ttlMs: CACHE_TTL.priceHistory,
       force: data.force,
       fetcher: () => fetchPriceHistory(data.ticker),
-      shouldStore: (v) => !v.error && (v.years?.length ?? 0) > 0,
+      shouldStore: (v) => !v.error && (v.anos?.length ?? 0) > 0,
     });
   });
