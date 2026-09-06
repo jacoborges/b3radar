@@ -29,7 +29,7 @@ export const Route = createFileRoute("/api/public/refresh-proventos")({
         const { pickStaleTickers, refreshTickers } = await import(
           "@/lib/proventos-cache.server"
         );
-        const alvo = await pickStaleTickers(universe, limit, SIX_HOURS * 4);
+        const alvo = await pickStaleTickers(universe, limit, SIX_HOURS);
         if (alvo.length === 0) {
           return Response.json({ processed: 0, comDados: 0, pendentes: 0 });
         }
