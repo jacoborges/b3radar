@@ -176,6 +176,7 @@ Considere o setor e o modelo de negócio da empresa (exportadora, importadora, e
       }
 
       CACHE.set(cacheKey, { content: text, ts: Date.now(), citations });
+      await writeCache("ai-macro", data.ticker, { content: text, citations });
       return {
         content: text,
         cached: false,
