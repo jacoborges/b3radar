@@ -175,6 +175,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
   const refreshTicker = () => {
     if (!ticker) return;
+    markForceRefresh(ticker);
     void queryClient.invalidateQueries({
       predicate: (q) => q.queryKey.some((part) => part === ticker),
       refetchType: "active",
