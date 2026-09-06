@@ -63,11 +63,11 @@ export function usePortfolioProventos(
     queries: tickers.map((ticker) => ({
       queryKey: ["proventos", ticker],
       queryFn: () => callProventos({ data: { ticker } }),
-      staleTime: ONE_DAY,
+      staleTime: SIX_HOURS,
       gcTime: ONE_DAY * 7,
-      refetchOnMount: false,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
+      refetchOnMount: true,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       retry: 1,
     })),
   });
