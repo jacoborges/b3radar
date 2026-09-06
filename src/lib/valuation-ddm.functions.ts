@@ -79,7 +79,11 @@ export const buscarDadosDdm = createServerFn({ method: "POST" })
     const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
     const stored = data.force
       ? null
-      : await readCache<(typeof hit)["value"]>("ai-valuation-ddm", data.ticker, CACHE_TTL.ai);
+      : await readCache<Omit<DadosDdmResult, "cached" | "updatedAt">>(
+          "ai-valuation-ddm",
+          data.ticker,
+          CACHE_TTL.ai,
+        );
     if (stored) {
       CACHE.set(cacheKey, { value: stored.payload, ts: new Date(stored.fetchedAt).getTime() });
       return { ...stored.payload, cached: true, updatedAt: stored.fetchedAt };
