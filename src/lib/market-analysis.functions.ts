@@ -69,6 +69,21 @@ export const analyzeMarketView = createServerFn({ method: "POST" })
       };
     }
 
+    type StoredMa = { content: string | null; recomendacao: string | null };
+    const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
+    const stored = data.force
+      ? null
+      : await readCache<StoredMa>("ai-market-analysis", data.ticker, CACHE_TTL.ai);
+    if (stored) {
+      return {
+        content: stored.payload.content,
+        recomendacao: stored.payload.recomendacao as never,
+        cached: true,
+        updatedAt: stored.fetchedAt,
+        error: null,
+      };
+    }
+
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
     const setorTxt = data.setor ? ` (setor: ${data.setor})` : "";
 
