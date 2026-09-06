@@ -175,6 +175,7 @@ Nunca prometa retorno. Deixe claro quando algo é incerto.`;
       const recomendacao = extractRecomendacao(raw);
       const content = stripRecomendacao(raw);
       CACHE.set(cacheKey, { content, recomendacao, ts: Date.now() });
+      await writeCache("ai-market-analysis", data.ticker, { content, recomendacao });
 
       return { content, recomendacao, cached: false, updatedAt: now, error: null };
     } catch (err) {
