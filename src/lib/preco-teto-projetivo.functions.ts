@@ -184,6 +184,13 @@ PAYOUT_PCT: <payout em porcentagem, ex.: 40, ou vazio>`;
         citations,
         ts: Date.now(),
       });
+      await writeCache("ai-preco-teto-projetivo", data.ticker, {
+        lucroProjetado: lucro,
+        ano,
+        payout,
+        content: visible,
+        citations,
+      });
 
       return {
         lucroProjetado: lucro,
