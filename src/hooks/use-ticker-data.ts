@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { getTickerProventos, type TickerProventosResult } from "@/lib/proventos.functions";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
+/** Anúncios de dividendos/JCP saem ao longo do dia: revalidar a cada 6h. */
+const SIX_HOURS = 6 * 60 * 60 * 1000;
 
 export interface UseTickerDataResult {
   proventos: TickerProventosResult | null;
