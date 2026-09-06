@@ -169,6 +169,7 @@ ANO: ${anoAlvo}`;
       };
 
       CACHE.set(cacheKey, { value, ts: Date.now() });
+      await writeCache("ai-valuation-ddm", data.ticker, value);
       return { ...value, cached: false, updatedAt: now };
     } catch (err) {
       console.error("[buscarDadosDdm] failed", data.ticker, err);
