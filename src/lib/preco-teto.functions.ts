@@ -214,6 +214,13 @@ SOMA_MAXIMO: <somatório máximo em caso de divergência entre as três fontes, 
         citations,
         ts: Date.now(),
       });
+      await writeCache("ai-preco-teto", data.ticker, {
+        content: visible,
+        media,
+        minimo,
+        maximo,
+        citations,
+      });
 
       return {
         content: visible,
