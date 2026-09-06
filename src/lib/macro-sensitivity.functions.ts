@@ -53,6 +53,27 @@ export const analyzeMacroSensitivity = createServerFn({ method: "POST" })
       };
     }
 
+    const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
+    const stored = await readCache<{ content: string; citations: string[] }>(
+      "ai-macro",
+      data.ticker,
+      CACHE_TTL.ai,
+    );
+    if (stored) {
+      CACHE.set(cacheKey, {
+        content: stored.payload.content,
+        citations: stored.payload.citations ?? [],
+        ts: new Date(stored.fetchedAt).getTime(),
+      });
+      return {
+        content: stored.payload.content,
+        cached: true,
+        updatedAt: stored.fetchedAt,
+        error: null,
+        citations: stored.payload.citations ?? [],
+      };
+    }
+
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
     const setorTxt = data.setor ? ` do setor de ${data.setor}` : "";
 
