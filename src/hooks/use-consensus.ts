@@ -1,6 +1,7 @@
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { getAnalystConsensus, getConsensusBatch } from "@/lib/consensus.functions";
 import type { ConsensusResult } from "@/lib/consensus-rating";
+import { isForced } from "@/lib/force-refresh";
 
 const FIVE_MIN = 5 * 60 * 1000;
 const SIX_HOURS = 6 * 60 * 60 * 1000;
@@ -8,7 +9,7 @@ const SIX_HOURS = 6 * 60 * 60 * 1000;
 export function useAnalystConsensus(ticker: string | null) {
   return useQuery({
     queryKey: ["consensus", ticker],
-    queryFn: () => getAnalystConsensus({ data: { ticker: ticker! } }),
+    queryFn: () => getAnalystConsensus({ data: { ticker: ticker!, force: isForced(ticker) } }),
     enabled: !!ticker,
     staleTime: SIX_HOURS,
     gcTime: SIX_HOURS * 4,
