@@ -8,6 +8,8 @@ import {
 import type { ProventoProvisionado } from "@/lib/stocks-data";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
+/** Novos anúncios da B3 aparecem durante o dia: revalidar a cada 6h. */
+const SIX_HOURS = 6 * 60 * 60 * 1000;
 
 export interface ProventoCarteira {
   ticker: string;
