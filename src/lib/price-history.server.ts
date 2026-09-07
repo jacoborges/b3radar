@@ -78,3 +78,67 @@ export async function fetchPriceHistory(ticker: string): Promise<PriceHistoryRes
     return { anos: [], fonte: null, error: "Falha ao consultar cotações" };
   }
 }
+
+export interface PriceOnDateResult {
+  ticker: string;
+  /** Data pedida (AAAA-MM-DD). */
+  date: string;
+  /** Fechamento ajustado do pregão igual ou imediatamente anterior. */
+  close: number | null;
+  /** Data do pregão efetivamente usado. */
+  usedDate: string | null;
+  error: string | null;
+}
+
+/** Fechamento ajustado de um ticker numa data (usa o pregão anterior se feriado). */
+export async function fetchPriceOnDate(
+  ticker: string,
+  date: string,
+): Promise<PriceOnDateResult> {
+  const target = new Date(`${date}T00:00:00Z`).getTime();
+  if (!Number.isFinite(target)) {
+    return { ticker, date, close: null, usedDate: null, error: "Data inválida" };
+  }
+  const period1 = Math.floor((target - 14 * 24 * 60 * 60 * 1000) / 1000);
+  const period2 = Math.floor((target + 3 * 24 * 60 * 60 * 1000) / 1000);
+  const url =
+    `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}.SA` +
+    `?period1=${period1}&period2=${period2}&interval=1d&includeAdjustedClose=true`;
+  try {
+    const res = await fetch(url, {
+      headers: {
+        accept: "application/json",
+        "user-agent":
+          "Mozilla/5.0 (compatible; B3Radar/1.0; +https://b3radar.lovable.app)",
+      },
+    });
+    if (!res.ok)
+      return { ticker, date, close: null, usedDate: null, error: `HTTP ${res.status}` };
+    const json = (await res.json()) as YahooChart;
+    const r = json.chart?.result?.[0];
+    const ts = r?.timestamp ?? [];
+    const closes =
+      r?.indicators?.adjclose?.[0]?.adjclose ?? r?.indicators?.quote?.[0]?.close ?? [];
+    let best: { close: number; day: string } | null = null;
+    for (let i = 0; i < ts.length; i++) {
+      const c = closes[i];
+      if (c == null || !Number.isFinite(c)) continue;
+      const dayMs = ts[i] * 1000;
+      if (dayMs > target + 24 * 60 * 60 * 1000) continue;
+      const day = new Date(dayMs).toISOString().slice(0, 10);
+      if (day > date) continue;
+      if (!best || day > best.day) best = { close: Number(c.toFixed(2)), day };
+    }
+    if (!best)
+      return {
+        ticker,
+        date,
+        close: null,
+        usedDate: null,
+        error: "Sem cotação nessa data",
+      };
+    return { ticker, date, close: best.close, usedDate: best.day, error: null };
+  } catch {
+    return { ticker, date, close: null, usedDate: null, error: "Falha ao consultar cotações" };
+  }
+}
