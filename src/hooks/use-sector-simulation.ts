@@ -103,7 +103,7 @@ export function useSectorSimulation(opts: {
             },
           ],
           proventos.byTicker.get(ticker) ?? [],
-          quotes.map.get(ticker)?.preco ?? null,
+          quotes.map.get(ticker)?.price ?? null,
           hoje,
         ),
       );
