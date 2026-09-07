@@ -254,7 +254,7 @@ function BazinSection() {
         <strong className="text-foreground">
           média ponderada dos proventos (5 anos) ÷ divisor
         </strong>
-        . O divisor é o yield mínimo desejado — 0,06 equivale a 6% ao ano. Ajuste
+        . O divisor é o yield mínimo desejado — 0,07 equivale a 7% ao ano. Ajuste
         conforme sua necessidade (entre {formatDivisor(BAZIN_DIVISOR_MIN)} e{" "}
         {formatDivisor(BAZIN_DIVISOR_MAX)}). O valor fica salvo apenas no seu navegador e
         recalcula o preço teto na hora, sem nova consulta à IA.
@@ -274,7 +274,7 @@ function BazinSection() {
             inputMode="decimal"
             autoComplete="off"
             spellCheck={false}
-            placeholder="0,06"
+            placeholder="0,07"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             maxLength={8}
@@ -288,7 +288,7 @@ function BazinSection() {
         {input.trim() !== "" && !valid && (
           <p className="text-xs text-destructive">
             Informe um número entre {formatDivisor(BAZIN_DIVISOR_MIN)} e{" "}
-            {formatDivisor(BAZIN_DIVISOR_MAX)} (ex.: 0,06).
+            {formatDivisor(BAZIN_DIVISOR_MAX)} (ex.: 0,07).
           </p>
         )}
       </div>
