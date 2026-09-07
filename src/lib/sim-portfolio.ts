@@ -261,3 +261,22 @@ export function proventosPorAno(posicoes: SimPosition[]): AnoResumo[] {
     .map(([ano, proventos]) => ({ ano, proventos }))
     .sort((a, b) => a.ano - b.ano);
 }
+
+export type RankCriterio = "yieldOnCost" | "retornoTotal";
+
+export interface RankedPosition {
+  posicao: number;
+  sim: SimPosition;
+}
+
+/** Ordena as posições do comparador e atribui 1º, 2º, 3º lugar… */
+export function rankearPosicoes(
+  posicoes: SimPosition[],
+  criterio: RankCriterio = "yieldOnCost",
+): RankedPosition[] {
+  const valor = (p: SimPosition) =>
+    criterio === "yieldOnCost" ? (p.yieldOnCost ?? -Infinity) : (p.retornoTotalPct ?? -Infinity);
+  return [...posicoes]
+    .sort((a, b) => valor(b) - valor(a) || a.ticker.localeCompare(b.ticker))
+    .map((sim, i) => ({ posicao: i + 1, sim }));
+}
