@@ -301,6 +301,12 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
                             {p.ganhoCapitalPct != null ? pct(p.ganhoCapitalPct) : "—"}
                           </div>
                         </div>
+                        <div>
+                          <div className="text-muted-foreground">Yield on cost</div>
+                          <div className="font-mono text-success">
+                            {p.yieldOnCost != null ? pct(p.yieldOnCost) : "—"}
+                          </div>
+                        </div>
                       </div>
 
                       {p.eventos.length > 0 ? (
