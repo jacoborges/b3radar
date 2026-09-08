@@ -246,9 +246,6 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
                     <div className="text-right text-xs">
                       <div className="text-muted-foreground">Proventos</div>
                       <div className="font-mono text-success">{brl(p.proventos)}</div>
-                      <div className="font-mono text-[11px] text-success">
-                        {p.yieldOnCost != null ? pct(p.yieldOnCost) : "—"}
-                      </div>
                     </div>
                     <div className="text-right text-xs">
                       <div className="text-muted-foreground">Retorno total</div>
@@ -257,6 +254,15 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
                       </div>
                       <div className={`font-mono text-[11px] ${tone(p.retornoTotal)}`}>
                         {p.retornoTotal != null ? brl(p.retornoTotal) : "—"}
+                      </div>
+                    </div>
+                    <div className="text-right text-xs">
+                      <div className="text-muted-foreground">Yield on cost</div>
+                      <div className="font-mono text-success">
+                        {p.yieldOnCost != null ? pct(p.yieldOnCost) : "—"}
+                      </div>
+                      <div className="font-mono text-[11px] text-success">
+                        {brl(p.proventos)}
                       </div>
                     </div>
                     {isOpen ? (
@@ -293,6 +299,12 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
                           <div className="text-muted-foreground">Valorização</div>
                           <div className={`font-mono ${tone(p.ganhoCapitalPct)}`}>
                             {p.ganhoCapitalPct != null ? pct(p.ganhoCapitalPct) : "—"}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-muted-foreground">Yield on cost</div>
+                          <div className="font-mono text-success">
+                            {p.yieldOnCost != null ? pct(p.yieldOnCost) : "—"}
                           </div>
                         </div>
                       </div>
