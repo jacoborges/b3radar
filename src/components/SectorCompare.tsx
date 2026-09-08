@@ -34,7 +34,7 @@ function medalha(pos: number) {
 function anosDe(sim: SimPosition) {
   const map = new Map<number, number>();
   for (const e of sim.eventos) map.set(e.ano, (map.get(e.ano) ?? 0) + e.total);
-  return [...map.entries()].sort((a, b) => a.ano - b.ano ? a[0] - b[0] : a[0] - b[0]);
+  return [...map.entries()].sort((a, b) => a[0] - b[0]);
 }
 
 export function SectorCompare({ stocks }: { stocks: Stock[] }) {
