@@ -208,48 +208,94 @@ function CarteiraPage() {
 
   const positions: Position[] = useMemo(() => {
     if (!selected) return [];
-    const byTicker = new Map<string, PortfolioLot[]>();
-    for (const lot of selected.lots) {
-      const arr = byTicker.get(lot.ticker) ?? [];
-      arr.push(lot);
-      byTicker.set(lot.ticker, arr);
-    }
-    return Array.from(byTicker.entries())
-      .map(([ticker, lots]) => {
-        const totalQty = lots.reduce((s, l) => s + l.quantity, 0);
-        const invested = lots.reduce((s, l) => s + l.quantity * l.price, 0);
-        const avgPrice = totalQty > 0 ? invested / totalQty : 0;
+    const tickersSet = new Set<string>([
+      ...selected.lots.map((l) => l.ticker),
+      ...selected.sales.map((s) => s.ticker),
+    ]);
+
+    return Array.from(tickersSet)
+      .map((ticker) => {
+        const lots = selected.lots.filter((l) => l.ticker === ticker);
+        const sales = selected.sales
+          .filter((s) => s.ticker === ticker)
+          .sort((a, b) => a.soldAt.localeCompare(b.soldAt));
+
+        const boughtQty = lots.reduce((s, l) => s + l.quantity, 0);
+        const boughtValue = lots.reduce((s, l) => s + l.quantity * l.price, 0);
+        const avgPrice = boughtQty > 0 ? boughtValue / boughtQty : 0;
+        const soldQty = sales.reduce((s, v) => s + v.quantity, 0);
+        const totalQty = boughtQty - soldQty;
+
+        // Resultado realizado: preço de venda − preço médio das compras até a data.
+        const realized = sales.reduce((acc, v) => {
+          const before = lots.filter((l) => l.boughtAt <= v.soldAt);
+          const q = before.reduce((s, l) => s + l.quantity, 0);
+          const val = before.reduce((s, l) => s + l.quantity * l.price, 0);
+          const media = q > 0 ? val / q : avgPrice;
+          return acc + (v.price - media) * v.quantity;
+        }, 0);
+
+        const invested = totalQty * avgPrice;
         const price = priceOf(ticker);
         const current = price != null ? price * totalQty : null;
         const pl = current != null ? current - invested : null;
         const plPct =
           current != null && invested > 0 ? (current / invested - 1) * 100 : null;
-        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots };
+
+        return {
+          ticker,
+          totalQty,
+          boughtQty,
+          soldQty,
+          avgPrice,
+          invested,
+          current,
+          pl,
+          plPct,
+          realized,
+          lots,
+          sales,
+        };
       })
       .sort((a, b) => a.ticker.localeCompare(b.ticker));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, quotes.map, stocks]);
+
+  const posicoesAtivas = useMemo(
+    () => positions.filter((p) => p.totalQty > 1e-9),
+    [positions],
+  );
+  const posicoesEncerradas = useMemo(
+    () => positions.filter((p) => p.totalQty <= 1e-9),
+    [positions],
+  );
 
   const posicoesResumo = useMemo(
     () =>
       positions.map((p) => ({
         ticker: p.ticker,
         lots: p.lots.map((l) => ({ quantity: l.quantity, boughtAt: l.boughtAt })),
+        sales: p.sales.map((s) => ({ quantity: s.quantity, soldAt: s.soldAt })),
+        encerrada: p.totalQty <= 1e-9,
       })),
     [positions],
   );
 
   const totals = useMemo(() => {
-
-    const invested = positions.reduce((s, p) => s + p.invested, 0);
-    const current = positions.reduce((s, p) => s + (p.current ?? p.invested), 0);
+    const invested = posicoesAtivas.reduce((s, p) => s + p.invested, 0);
+    const current = posicoesAtivas.reduce(
+      (s, p) => s + (p.current ?? p.invested),
+      0,
+    );
+    const realized = positions.reduce((s, p) => s + p.realized, 0);
     return {
       invested,
       current,
+      realized,
       pl: current - invested,
       plPct: invested > 0 ? (current / invested - 1) * 100 : 0,
     };
-  }, [positions]);
+  }, [positions, posicoesAtivas]);
 
   return (
     <div className="min-h-screen bg-background">
