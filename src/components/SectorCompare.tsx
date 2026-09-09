@@ -76,6 +76,7 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
     quantidade: qtd,
     criterio,
     enabled: rodando && tickers.length > 0,
+    cacheKey: [setor, max],
   });
 
   const nomeDe = useMemo(
