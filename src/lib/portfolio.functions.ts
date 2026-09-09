@@ -47,6 +47,21 @@ const updateLotSchema = z.object({
   boughtAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
+const saleSchema = z.object({
+  portfolioId: z.string().uuid(),
+  ticker: z.string().trim().min(1).max(12).toUpperCase(),
+  price: z.number().positive().max(1_000_000),
+  quantity: z.number().positive().max(1_000_000_000),
+  soldAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+const updateSaleSchema = z.object({
+  id: z.string().uuid(),
+  price: z.number().positive().max(1_000_000),
+  quantity: z.number().positive().max(1_000_000_000),
+  soldAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
 export const listPortfolios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Portfolio[]> => {
