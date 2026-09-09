@@ -82,22 +82,29 @@ export function usePortfolioProventos(
 
   const eventos = useMemo(() => {
     const hoje = hojeISO();
-    const lotsByTicker = new Map(posicoes.map((p) => [p.ticker, p.lots]));
+    const byTicker = new Map(posicoes.map((p) => [p.ticker, p]));
     const out: ProventoCarteira[] = [];
 
     results.forEach((r, i) => {
       const ticker = tickers[i]!;
       const data = r.data as TickerProventosResult | undefined;
-      const lots = lotsByTicker.get(ticker) ?? [];
+      const pos = byTicker.get(ticker);
+      const lots = pos?.lots ?? [];
+      const sales = pos?.sales ?? [];
       if (!data?.provisionados || lots.length === 0) return;
       for (const p of data.provisionados) {
         if (!(p.valorPorAcao > 0)) continue;
         const pagamento = p.dataPagamento || p.dataEx;
         if (pagamento < hoje) continue;
-        // Só dá direito ao provento o lote comprado ANTES da data com.
-        const quantidade = lots
+        // Direito = quantidade que estava em carteira na data com:
+        // comprada antes da data com, menos a vendida antes da data com.
+        const comprada = lots
           .filter((l) => l.boughtAt < p.dataCom)
           .reduce((s, l) => s + l.quantity, 0);
+        const vendida = sales
+          .filter((s) => s.soldAt < p.dataCom)
+          .reduce((s, v) => s + v.quantity, 0);
+        const quantidade = comprada - vendida;
         if (quantidade <= 0) continue;
         out.push({
           ticker,
@@ -109,6 +116,7 @@ export function usePortfolioProventos(
           dataEx: p.dataEx,
           dataPagamento: pagamento,
           direitoGarantido: p.dataCom <= hoje,
+          posicaoEncerrada: pos?.encerrada === true,
         });
       }
     });
