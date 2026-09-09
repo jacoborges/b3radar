@@ -7,6 +7,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Minus,
   Pencil,
   Plus,
   Trash2,
@@ -22,14 +23,18 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import {
   addLot,
+  addSale,
   createPortfolio,
   deleteLot,
   deletePortfolio,
+  deleteSale,
   listPortfolios,
   renamePortfolio,
   updateLot,
+  updateSale,
   type Portfolio,
   type PortfolioLot,
+  type PortfolioSale,
 } from "@/lib/portfolio.functions";
 
 export const Route = createFileRoute("/_authenticated/carteira")({
@@ -77,13 +82,19 @@ const qty = (v: number) =>
 
 interface Position {
   ticker: string;
+  /** saldo atual = comprado − vendido */
   totalQty: number;
+  boughtQty: number;
+  soldQty: number;
   avgPrice: number;
   invested: number;
   current: number | null;
   pl: number | null;
   plPct: number | null;
+  /** resultado já realizado nas vendas */
+  realized: number;
   lots: PortfolioLot[];
+  sales: PortfolioSale[];
 }
 
 function toneClass(v: number | null | undefined) {
@@ -104,6 +115,9 @@ function CarteiraPage() {
   const callAddLot = useServerFn(addLot);
   const callUpdateLot = useServerFn(updateLot);
   const callDeleteLot = useServerFn(deleteLot);
+  const callAddSale = useServerFn(addSale);
+  const callUpdateSale = useServerFn(updateSale);
+  const callDeleteSale = useServerFn(deleteSale);
 
   const { data: portfolios = [], isLoading } = useQuery({
     queryKey: ["portfolios"],
@@ -148,6 +162,29 @@ function CarteiraPage() {
     mutationFn: (id: string) => callDeleteLot({ data: { id } }),
     onSuccess: invalidate,
   });
+  const mAddSale = useMutation({
+    mutationFn: (v: {
+      portfolioId: string;
+      ticker: string;
+      price: number;
+      quantity: number;
+      soldAt: string;
+    }) => callAddSale({ data: v }),
+    onSuccess: invalidate,
+  });
+  const mUpdateSale = useMutation({
+    mutationFn: (v: {
+      id: string;
+      price: number;
+      quantity: number;
+      soldAt: string;
+    }) => callUpdateSale({ data: v }),
+    onSuccess: invalidate,
+  });
+  const mDeleteSale = useMutation({
+    mutationFn: (id: string) => callDeleteSale({ data: { id } }),
+    onSuccess: invalidate,
+  });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
@@ -158,7 +195,15 @@ function CarteiraPage() {
     portfolios.find((p) => p.id === selectedId) ?? portfolios[0] ?? null;
 
   const tickers = useMemo(
-    () => Array.from(new Set(portfolios.flatMap((p) => p.lots.map((l) => l.ticker)))),
+    () =>
+      Array.from(
+        new Set(
+          portfolios.flatMap((p) => [
+            ...p.lots.map((l) => l.ticker),
+            ...p.sales.map((s) => s.ticker),
+          ]),
+        ),
+      ),
     [portfolios],
   );
   const quotes = useLiveQuotes(tickers);
@@ -172,48 +217,94 @@ function CarteiraPage() {
 
   const positions: Position[] = useMemo(() => {
     if (!selected) return [];
-    const byTicker = new Map<string, PortfolioLot[]>();
-    for (const lot of selected.lots) {
-      const arr = byTicker.get(lot.ticker) ?? [];
-      arr.push(lot);
-      byTicker.set(lot.ticker, arr);
-    }
-    return Array.from(byTicker.entries())
-      .map(([ticker, lots]) => {
-        const totalQty = lots.reduce((s, l) => s + l.quantity, 0);
-        const invested = lots.reduce((s, l) => s + l.quantity * l.price, 0);
-        const avgPrice = totalQty > 0 ? invested / totalQty : 0;
+    const tickersSet = new Set<string>([
+      ...selected.lots.map((l) => l.ticker),
+      ...selected.sales.map((s) => s.ticker),
+    ]);
+
+    return Array.from(tickersSet)
+      .map((ticker) => {
+        const lots = selected.lots.filter((l) => l.ticker === ticker);
+        const sales = selected.sales
+          .filter((s) => s.ticker === ticker)
+          .sort((a, b) => a.soldAt.localeCompare(b.soldAt));
+
+        const boughtQty = lots.reduce((s, l) => s + l.quantity, 0);
+        const boughtValue = lots.reduce((s, l) => s + l.quantity * l.price, 0);
+        const avgPrice = boughtQty > 0 ? boughtValue / boughtQty : 0;
+        const soldQty = sales.reduce((s, v) => s + v.quantity, 0);
+        const totalQty = boughtQty - soldQty;
+
+        // Resultado realizado: preço de venda − preço médio das compras até a data.
+        const realized = sales.reduce((acc, v) => {
+          const before = lots.filter((l) => l.boughtAt <= v.soldAt);
+          const q = before.reduce((s, l) => s + l.quantity, 0);
+          const val = before.reduce((s, l) => s + l.quantity * l.price, 0);
+          const media = q > 0 ? val / q : avgPrice;
+          return acc + (v.price - media) * v.quantity;
+        }, 0);
+
+        const invested = totalQty * avgPrice;
         const price = priceOf(ticker);
         const current = price != null ? price * totalQty : null;
         const pl = current != null ? current - invested : null;
         const plPct =
           current != null && invested > 0 ? (current / invested - 1) * 100 : null;
-        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots };
+
+        return {
+          ticker,
+          totalQty,
+          boughtQty,
+          soldQty,
+          avgPrice,
+          invested,
+          current,
+          pl,
+          plPct,
+          realized,
+          lots,
+          sales,
+        };
       })
       .sort((a, b) => a.ticker.localeCompare(b.ticker));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, quotes.map, stocks]);
+
+  const posicoesAtivas = useMemo(
+    () => positions.filter((p) => p.totalQty > 1e-9),
+    [positions],
+  );
+  const posicoesEncerradas = useMemo(
+    () => positions.filter((p) => p.totalQty <= 1e-9),
+    [positions],
+  );
 
   const posicoesResumo = useMemo(
     () =>
       positions.map((p) => ({
         ticker: p.ticker,
         lots: p.lots.map((l) => ({ quantity: l.quantity, boughtAt: l.boughtAt })),
+        sales: p.sales.map((s) => ({ quantity: s.quantity, soldAt: s.soldAt })),
+        encerrada: p.totalQty <= 1e-9,
       })),
     [positions],
   );
 
   const totals = useMemo(() => {
-
-    const invested = positions.reduce((s, p) => s + p.invested, 0);
-    const current = positions.reduce((s, p) => s + (p.current ?? p.invested), 0);
+    const invested = posicoesAtivas.reduce((s, p) => s + p.invested, 0);
+    const current = posicoesAtivas.reduce(
+      (s, p) => s + (p.current ?? p.invested),
+      0,
+    );
+    const realized = positions.reduce((s, p) => s + p.realized, 0);
     return {
       invested,
       current,
+      realized,
       pl: current - invested,
       plPct: invested > 0 ? (current / invested - 1) * 100 : 0,
     };
-  }, [positions]);
+  }, [positions, posicoesAtivas]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -397,6 +488,14 @@ function CarteiraPage() {
                   <h2 className="text-lg font-semibold">{selected.name}</h2>
                   <p className="text-xs text-muted-foreground">
                     Investido {brl(totals.invested)} · Atual {brl(totals.current)}
+                    {totals.realized !== 0 && (
+                      <>
+                        {" · "}Realizado{" "}
+                        <span className={toneClass(totals.realized)}>
+                          {brl(totals.realized)}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="text-right">
@@ -428,15 +527,42 @@ function CarteiraPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {positions.map((pos) => (
+                  {posicoesAtivas.map((pos) => (
                     <PositionRow
                       key={pos.ticker}
                       pos={pos}
                       price={priceOf(pos.ticker)}
                       onUpdateLot={(v) => mUpdateLot.mutate(v)}
                       onDeleteLot={(id) => mDeleteLot.mutate(id)}
+                      onAddSale={(v) =>
+                        mAddSale.mutate({ portfolioId: selected.id, ...v })
+                      }
+                      onUpdateSale={(v) => mUpdateSale.mutate(v)}
+                      onDeleteSale={(id) => mDeleteSale.mutate(id)}
                     />
                   ))}
+
+                  {posicoesEncerradas.length > 0 && (
+                    <>
+                      <p className="pt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Posições encerradas
+                      </p>
+                      {posicoesEncerradas.map((pos) => (
+                        <PositionRow
+                          key={pos.ticker}
+                          pos={pos}
+                          price={priceOf(pos.ticker)}
+                          onUpdateLot={(v) => mUpdateLot.mutate(v)}
+                          onDeleteLot={(id) => mDeleteLot.mutate(id)}
+                          onAddSale={(v) =>
+                            mAddSale.mutate({ portfolioId: selected.id, ...v })
+                          }
+                          onUpdateSale={(v) => mUpdateSale.mutate(v)}
+                          onDeleteSale={(id) => mDeleteSale.mutate(id)}
+                        />
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </>
@@ -579,6 +705,9 @@ function PositionRow({
   price,
   onUpdateLot,
   onDeleteLot,
+  onAddSale,
+  onUpdateSale,
+  onDeleteSale,
 }: {
   pos: Position;
   price: number | null;
@@ -589,12 +718,43 @@ function PositionRow({
     boughtAt: string;
   }) => void;
   onDeleteLot: (id: string) => void;
+  onAddSale: (v: { ticker: string; price: number; quantity: number; soldAt: string }) => void;
+  onUpdateSale: (v: {
+    id: string;
+    price: number;
+    quantity: number;
+    soldAt: string;
+  }) => void;
+  onDeleteSale: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [ep, setEp] = useState("");
   const [eq, setEq] = useState("");
   const [ed, setEd] = useState("");
+  const [sellOpen, setSellOpen] = useState(false);
+  const [sp, setSp] = useState("");
+  const [sq, setSq] = useState("");
+  const [sd, setSd] = useState(() => new Date().toISOString().slice(0, 10));
+  const [sErr, setSErr] = useState<string | null>(null);
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [vp, setVp] = useState("");
+  const [vq, setVq] = useState("");
+  const [vd, setVd] = useState("");
+
+  const submitSale = () => {
+    const p = Number(sp.replace(",", "."));
+    const q = Number(sq.replace(",", "."));
+    if (!(p > 0)) return setSErr("Informe um preço de venda válido.");
+    if (!(q > 0)) return setSErr("Informe uma quantidade válida.");
+    if (q > pos.totalQty + 1e-9)
+      return setSErr(`Você tem apenas ${qty(pos.totalQty)} un. disponíveis.`);
+    setSErr(null);
+    onAddSale({ ticker: pos.ticker, price: p, quantity: q, soldAt: sd });
+    setSp("");
+    setSq("");
+    setSellOpen(false);
+  };
 
   return (
     <div className="rounded-xl border border-border/60 bg-card">
@@ -612,15 +772,20 @@ function PositionRow({
         <Badge variant="outline" className="font-mono text-xs">
           {qty(pos.totalQty)} un.
         </Badge>
+        {pos.totalQty <= 1e-9 && (
+          <Badge variant="secondary" className="text-[10px]">
+            Vendida
+          </Badge>
+        )}
         <span className="text-xs text-muted-foreground">
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
         </span>
         <span className="ml-auto text-right">
           <span className={`block text-sm font-semibold ${toneClass(pos.pl)}`}>
-            {pos.pl != null ? brl(pos.pl) : "—"}
+            {pos.totalQty > 1e-9 && pos.pl != null ? brl(pos.pl) : "—"}
           </span>
           <span className={`block text-xs ${toneClass(pos.plPct)}`}>
-            {pos.plPct != null ? pct(pos.plPct) : "—"}
+            {pos.totalQty > 1e-9 && pos.plPct != null ? pct(pos.plPct) : "—"}
           </span>
         </span>
       </button>
@@ -630,7 +795,88 @@ function PositionRow({
           <p className="mb-2 text-xs text-muted-foreground">
             Investido {brl(pos.invested)} · Valor atual{" "}
             {pos.current != null ? brl(pos.current) : "—"}
+            {pos.soldQty > 0 && (
+              <>
+                {" · "}Vendido {qty(pos.soldQty)} un. · Resultado realizado{" "}
+                <span className={toneClass(pos.realized)}>{brl(pos.realized)}</span>
+              </>
+            )}
           </p>
+
+          {/* Registrar venda */}
+          {pos.totalQty > 1e-9 && (
+            <div className="mb-3">
+              {!sellOpen ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => setSellOpen(true)}
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                  Vender ativo
+                </Button>
+              ) : (
+                <div className="rounded-lg border border-border/60 p-3">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Preço de venda
+                      </Label>
+                      <Input
+                        value={sp}
+                        onChange={(e) => setSp(e.target.value)}
+                        className="mt-1 h-8"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Quantidade (máx. {qty(pos.totalQty)})
+                      </Label>
+                      <Input
+                        value={sq}
+                        onChange={(e) => setSq(e.target.value)}
+                        className="mt-1 h-8"
+                        inputMode="decimal"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Data da venda
+                      </Label>
+                      <Input
+                        type="date"
+                        value={sd}
+                        onChange={(e) => setSd(e.target.value)}
+                        className="mt-1 h-8"
+                      />
+                    </div>
+                  </div>
+                  {sErr && (
+                    <p className="mt-2 text-xs text-destructive">{sErr}</p>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={submitSale}>
+                      Registrar venda
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSellOpen(false);
+                        setSErr(null);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="space-y-1">
             {pos.lots.map((lot) =>
               editingId === lot.id ? (
@@ -708,6 +954,98 @@ function PositionRow({
               ),
             )}
           </div>
+
+          {pos.sales.length > 0 && (
+            <div className="mt-3 space-y-1">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Vendas
+              </p>
+              {pos.sales.map((sale) =>
+                editingSaleId === sale.id ? (
+                  <div key={sale.id} className="flex flex-wrap items-end gap-2">
+                    <Input
+                      value={vp}
+                      onChange={(e) => setVp(e.target.value)}
+                      className="h-8 w-24"
+                      inputMode="decimal"
+                    />
+                    <Input
+                      value={vq}
+                      onChange={(e) => setVq(e.target.value)}
+                      className="h-8 w-24"
+                      inputMode="decimal"
+                    />
+                    <Input
+                      type="date"
+                      value={vd}
+                      onChange={(e) => setVd(e.target.value)}
+                      className="h-8 w-36"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        const p = Number(vp.replace(",", "."));
+                        const q = Number(vq.replace(",", "."));
+                        if (p > 0 && q > 0)
+                          onUpdateSale({
+                            id: sale.id,
+                            price: p,
+                            quantity: q,
+                            soldAt: vd,
+                          });
+                        setEditingSaleId(null);
+                      }}
+                    >
+                      Salvar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingSaleId(null)}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    key={sale.id}
+                    className="flex items-center gap-3 rounded-md bg-destructive/10 px-3 py-1.5 text-xs"
+                  >
+                    <span className="text-muted-foreground">
+                      {new Date(`${sale.soldAt}T12:00:00`).toLocaleDateString("pt-BR")}
+                    </span>
+                    <span className="font-mono">−{qty(sale.quantity)} un.</span>
+                    <span className="font-mono">{brl(sale.price)}</span>
+                    <span className="ml-auto flex gap-1">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        aria-label="Editar venda"
+                        onClick={() => {
+                          setEditingSaleId(sale.id);
+                          setVp(String(sale.price));
+                          setVq(String(sale.quantity));
+                          setVd(sale.soldAt);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        aria-label="Excluir venda"
+                        onClick={() => onDeleteSale(sale.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </span>
+                  </div>
+                ),
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

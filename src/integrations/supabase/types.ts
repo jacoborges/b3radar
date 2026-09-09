@@ -112,6 +112,47 @@ export type Database = {
           },
         ]
       }
+      portfolio_sales: {
+        Row: {
+          created_at: string
+          id: string
+          portfolio_id: string
+          price: number
+          quantity: number
+          sold_at: string
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          portfolio_id: string
+          price: number
+          quantity: number
+          sold_at?: string
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          portfolio_id?: string
+          price?: number
+          quantity?: number
+          sold_at?: string
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "portfolio_sales_portfolio_id_fkey"
+            columns: ["portfolio_id"]
+            isOneToOne: false
+            referencedRelation: "portfolios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       portfolios: {
         Row: {
           created_at: string
