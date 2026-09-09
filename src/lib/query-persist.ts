@@ -7,6 +7,8 @@ const PERSISTED_PREFIXES = [
   "proventos",
   "fundamentus-ticker",
   "price-history",
+  "price-on-date",
+  "sector-compare",
   "consensus",
   "tv-technical",
   "preco-teto",
