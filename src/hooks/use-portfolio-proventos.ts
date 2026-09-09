@@ -48,6 +48,9 @@ function hojeISO() {
 export interface PosicaoProventos {
   ticker: string;
   lots: Array<{ quantity: number; boughtAt: string }>;
+  sales?: Array<{ quantity: number; soldAt: string }>;
+  /** true quando o saldo atual do ativo é zero (posição encerrada) */
+  encerrada?: boolean;
 }
 
 export function usePortfolioProventos(
