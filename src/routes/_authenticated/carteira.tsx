@@ -114,6 +114,9 @@ function CarteiraPage() {
   const callAddLot = useServerFn(addLot);
   const callUpdateLot = useServerFn(updateLot);
   const callDeleteLot = useServerFn(deleteLot);
+  const callAddSale = useServerFn(addSale);
+  const callUpdateSale = useServerFn(updateSale);
+  const callDeleteSale = useServerFn(deleteSale);
 
   const { data: portfolios = [], isLoading } = useQuery({
     queryKey: ["portfolios"],
