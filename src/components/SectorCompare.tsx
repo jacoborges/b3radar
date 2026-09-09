@@ -147,13 +147,13 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
           </div>
           <div>
             <Label className="text-xs text-muted-foreground" htmlFor="limite">
-              Máximo de ativos (mais líquidos)
+              Máximo de ativos (vazio = todos)
             </Label>
             <Input
               id="limite"
               type="number"
               min={2}
-              max={50}
+              placeholder="Todos"
               className="mt-1 h-9"
               value={limite}
               onChange={(e) => setLimite(e.target.value)}
