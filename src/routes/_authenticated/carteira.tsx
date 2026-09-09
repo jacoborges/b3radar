@@ -7,6 +7,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  Minus,
   Pencil,
   Plus,
   Trash2,
