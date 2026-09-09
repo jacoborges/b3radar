@@ -84,6 +84,15 @@ export const listPortfolios = createServerFn({ method: "GET" })
       bought_at: string;
     }> = [];
 
+    let sales: Array<{
+      id: string;
+      portfolio_id: string;
+      ticker: string;
+      price: number | string;
+      quantity: number | string;
+      sold_at: string;
+    }> = [];
+
     if (ids.length > 0) {
       const { data, error: lotsError } = await supabase
         .from("portfolio_lots")
@@ -92,6 +101,14 @@ export const listPortfolios = createServerFn({ method: "GET" })
         .order("bought_at", { ascending: true });
       if (lotsError) throw new Error(lotsError.message);
       lots = data ?? [];
+
+      const { data: salesData, error: salesError } = await supabase
+        .from("portfolio_sales")
+        .select("id, portfolio_id, ticker, price, quantity, sold_at")
+        .in("portfolio_id", ids)
+        .order("sold_at", { ascending: true });
+      if (salesError) throw new Error(salesError.message);
+      sales = salesData ?? [];
     }
 
     return (portfolios ?? []).map((p) => ({
@@ -106,6 +123,15 @@ export const listPortfolios = createServerFn({ method: "GET" })
           price: Number(l.price),
           quantity: Number(l.quantity),
           boughtAt: l.bought_at,
+        })),
+      sales: sales
+        .filter((s) => s.portfolio_id === p.id)
+        .map((s) => ({
+          id: s.id,
+          ticker: s.ticker,
+          price: Number(s.price),
+          quantity: Number(s.quantity),
+          soldAt: s.sold_at,
         })),
     }));
   });
