@@ -22,14 +22,18 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import {
   addLot,
+  addSale,
   createPortfolio,
   deleteLot,
   deletePortfolio,
+  deleteSale,
   listPortfolios,
   renamePortfolio,
   updateLot,
+  updateSale,
   type Portfolio,
   type PortfolioLot,
+  type PortfolioSale,
 } from "@/lib/portfolio.functions";
 
 export const Route = createFileRoute("/_authenticated/carteira")({
