@@ -158,6 +158,29 @@ function CarteiraPage() {
     mutationFn: (id: string) => callDeleteLot({ data: { id } }),
     onSuccess: invalidate,
   });
+  const mAddSale = useMutation({
+    mutationFn: (v: {
+      portfolioId: string;
+      ticker: string;
+      price: number;
+      quantity: number;
+      soldAt: string;
+    }) => callAddSale({ data: v }),
+    onSuccess: invalidate,
+  });
+  const mUpdateSale = useMutation({
+    mutationFn: (v: {
+      id: string;
+      price: number;
+      quantity: number;
+      soldAt: string;
+    }) => callUpdateSale({ data: v }),
+    onSuccess: invalidate,
+  });
+  const mDeleteSale = useMutation({
+    mutationFn: (id: string) => callDeleteSale({ data: { id } }),
+    onSuccess: invalidate,
+  });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
