@@ -215,3 +215,137 @@ export const deleteLot = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+type Sb = Parameters<typeof requireSupabaseAuth extends never ? never : never>;
+void (null as unknown as Sb);
+
+/** Quantidade disponível para venda de um ticker até a data informada. */
+async function saldoDisponivel(
+  supabase: {
+    from: (t: string) => {
+      select: (c: string) => {
+        eq: (
+          k: string,
+          v: string,
+        ) => {
+          eq: (
+            k: string,
+            v: string,
+          ) => {
+            lte: (
+              k: string,
+              v: string,
+            ) => Promise<{ data: unknown; error: { message: string } | null }>;
+          };
+        };
+      };
+    };
+  },
+  portfolioId: string,
+  ticker: string,
+  ateData: string,
+  ignoreSaleId?: string,
+) {
+  const buys = (await supabase
+    .from("portfolio_lots")
+    .select("quantity, bought_at")
+    .eq("portfolio_id", portfolioId)
+    .eq("ticker", ticker)
+    .lte("bought_at", ateData)) as {
+    data: Array<{ quantity: number | string }> | null;
+    error: { message: string } | null;
+  };
+  if (buys.error) throw new Error(buys.error.message);
+
+  const sells = (await supabase
+    .from("portfolio_sales")
+    .select("id, quantity, sold_at")
+    .eq("portfolio_id", portfolioId)
+    .eq("ticker", ticker)
+    .lte("sold_at", ateData)) as {
+    data: Array<{ id: string; quantity: number | string }> | null;
+    error: { message: string } | null;
+  };
+  if (sells.error) throw new Error(sells.error.message);
+
+  const comprado = (buys.data ?? []).reduce((s, b) => s + Number(b.quantity), 0);
+  const vendido = (sells.data ?? [])
+    .filter((s) => s.id !== ignoreSaleId)
+    .reduce((s, v) => s + Number(v.quantity), 0);
+  return comprado - vendido;
+}
+
+export const addSale = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => saleSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const disponivel = await saldoDisponivel(
+      context.supabase as never,
+      data.portfolioId,
+      data.ticker,
+      data.soldAt,
+    );
+    if (data.quantity > disponivel + 1e-9) {
+      throw new Error(
+        `Quantidade maior que o saldo disponível nessa data (${disponivel}).`,
+      );
+    }
+    const { error } = await context.supabase.from("portfolio_sales").insert({
+      portfolio_id: data.portfolioId,
+      ticker: data.ticker,
+      price: data.price,
+      quantity: data.quantity,
+      sold_at: data.soldAt,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const updateSale = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => updateSaleSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { data: atual, error: findError } = await context.supabase
+      .from("portfolio_sales")
+      .select("portfolio_id, ticker")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (findError) throw new Error(findError.message);
+    if (!atual) throw new Error("Venda não encontrada.");
+
+    const disponivel = await saldoDisponivel(
+      context.supabase as never,
+      atual.portfolio_id,
+      atual.ticker,
+      data.soldAt,
+      data.id,
+    );
+    if (data.quantity > disponivel + 1e-9) {
+      throw new Error(
+        `Quantidade maior que o saldo disponível nessa data (${disponivel}).`,
+      );
+    }
+
+    const { error } = await context.supabase
+      .from("portfolio_sales")
+      .update({
+        price: data.price,
+        quantity: data.quantity,
+        sold_at: data.soldAt,
+      })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteSale = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => idSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("portfolio_sales")
+      .delete()
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
