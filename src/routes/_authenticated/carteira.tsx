@@ -81,13 +81,19 @@ const qty = (v: number) =>
 
 interface Position {
   ticker: string;
+  /** saldo atual = comprado − vendido */
   totalQty: number;
+  boughtQty: number;
+  soldQty: number;
   avgPrice: number;
   invested: number;
   current: number | null;
   pl: number | null;
   plPct: number | null;
+  /** resultado já realizado nas vendas */
+  realized: number;
   lots: PortfolioLot[];
+  sales: PortfolioSale[];
 }
 
 function toneClass(v: number | null | undefined) {
