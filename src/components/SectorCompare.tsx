@@ -174,8 +174,18 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
             onClick={() => sim.refetch()}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${sim.isFetching ? "animate-spin" : ""}`} />
-            Atualizar histórico
+            Atualizar comparação
           </Button>
+          {sim.computedAt && (
+            <span className="text-xs text-muted-foreground">
+              Resultado de{" "}
+              {sim.computedAt.toLocaleString("pt-BR", {
+                dateStyle: "short",
+                timeStyle: "short",
+              })}
+              {sim.fromCache ? " (guardado no app)" : ""}
+            </span>
+          )}
           <div className="ml-auto flex items-center gap-1 text-xs">
             <span className="text-muted-foreground">Ordenar por</span>
             <Button

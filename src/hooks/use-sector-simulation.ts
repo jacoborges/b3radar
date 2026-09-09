@@ -176,7 +176,12 @@ export function useSectorSimulation(opts: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pricesDone, computed, snapKey.join("|")]);
 
-  const ranking = snapshot ? snapshot.ranking : computed.ranking;
+  const ranking = snapshot
+    ? rankearPosicoes(
+        snapshot.ranking.map((r) => r.sim),
+        criterio,
+      )
+    : computed.ranking;
   const semPreco = snapshot ? snapshot.semPreco : computed.semPreco;
 
   return {
