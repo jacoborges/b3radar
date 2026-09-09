@@ -53,21 +53,24 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
     return d.toISOString().slice(0, 10);
   });
   const [quantidade, setQuantidade] = useState<string>("100");
-  const [limite, setLimite] = useState<string>("30");
+  const [limite, setLimite] = useState<string>("");
   const [criterio, setCriterio] = useState<RankCriterio>("yieldOnCost");
   const [rodando, setRodando] = useState(false);
   const [aberto, setAberto] = useState<string | null>(null);
 
   const qtd = Math.max(1, Number(quantidade.replace(",", ".")) || 0);
-  const max = Math.min(50, Math.max(2, Number(limite) || 30));
+  const limiteNum = Number(limite);
+  const max = limite.trim() === "" || !Number.isFinite(limiteNum) || limiteNum <= 0
+    ? Infinity
+    : Math.max(2, limiteNum);
 
   const tickers = useMemo(() => {
     if (!setor) return [];
-    return stocks
+    const lista = stocks
       .filter((s) => s.setor === setor && s.preco > 0)
       .sort((a, b) => (b.liquidezDiaria ?? 0) - (a.liquidezDiaria ?? 0))
-      .slice(0, max)
       .map((s) => s.ticker);
+    return Number.isFinite(max) ? lista.slice(0, max) : lista;
   }, [stocks, setor, max]);
 
   const sim = useSectorSimulation({
