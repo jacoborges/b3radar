@@ -10,11 +10,20 @@ export interface PortfolioLot {
   boughtAt: string;
 }
 
+export interface PortfolioSale {
+  id: string;
+  ticker: string;
+  price: number;
+  quantity: number;
+  soldAt: string;
+}
+
 export interface Portfolio {
   id: string;
   name: string;
   createdAt: string;
   lots: PortfolioLot[];
+  sales: PortfolioSale[];
 }
 
 const idSchema = z.object({ id: z.string().uuid() });
