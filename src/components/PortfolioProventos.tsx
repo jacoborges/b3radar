@@ -167,7 +167,14 @@ export function PortfolioProventos({
                             key={`${e.ticker}-${e.dataPagamento}-${i}`}
                             className="border-b border-border/40 last:border-0"
                           >
-                            <td className="px-4 py-2 font-semibold">{e.ticker}</td>
+                            <td className="px-4 py-2 font-semibold">
+                              {e.ticker}
+                              {e.posicaoEncerrada && (
+                                <span className="ml-1 text-[10px] font-normal text-muted-foreground">
+                                  (vendida)
+                                </span>
+                              )}
+                            </td>
                             <td className="px-3 py-2">
                               <Badge
                                 variant="outline"
