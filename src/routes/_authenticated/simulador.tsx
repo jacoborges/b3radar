@@ -260,11 +260,24 @@ function SimuladorPage() {
         >
           Comparar setor
         </Button>
+        <Button
+          size="sm"
+          variant={aba === "ativo" ? "secondary" : "ghost"}
+          onClick={() => setAba("ativo")}
+        >
+          Comparar ativo
+        </Button>
       </div>
 
       {aba === "setor" && (
         <main className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
           <SectorCompare stocks={stocks} />
+        </main>
+      )}
+
+      {aba === "ativo" && (
+        <main className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
+          <AssetCompare stocks={stocks} />
         </main>
       )}
 
