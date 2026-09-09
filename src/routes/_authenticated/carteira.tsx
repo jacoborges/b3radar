@@ -519,15 +519,42 @@ function CarteiraPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {positions.map((pos) => (
+                  {posicoesAtivas.map((pos) => (
                     <PositionRow
                       key={pos.ticker}
                       pos={pos}
                       price={priceOf(pos.ticker)}
                       onUpdateLot={(v) => mUpdateLot.mutate(v)}
                       onDeleteLot={(id) => mDeleteLot.mutate(id)}
+                      onAddSale={(v) =>
+                        mAddSale.mutate({ portfolioId: selected.id, ...v })
+                      }
+                      onUpdateSale={(v) => mUpdateSale.mutate(v)}
+                      onDeleteSale={(id) => mDeleteSale.mutate(id)}
                     />
                   ))}
+
+                  {posicoesEncerradas.length > 0 && (
+                    <>
+                      <p className="pt-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                        Posições encerradas
+                      </p>
+                      {posicoesEncerradas.map((pos) => (
+                        <PositionRow
+                          key={pos.ticker}
+                          pos={pos}
+                          price={priceOf(pos.ticker)}
+                          onUpdateLot={(v) => mUpdateLot.mutate(v)}
+                          onDeleteLot={(id) => mDeleteLot.mutate(id)}
+                          onAddSale={(v) =>
+                            mAddSale.mutate({ portfolioId: selected.id, ...v })
+                          }
+                          onUpdateSale={(v) => mUpdateSale.mutate(v)}
+                          onDeleteSale={(id) => mDeleteSale.mutate(id)}
+                        />
+                      ))}
+                    </>
+                  )}
                 </div>
               )}
             </>
