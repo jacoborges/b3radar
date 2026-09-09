@@ -216,31 +216,21 @@ export const deleteLot = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-type Sb = Parameters<typeof requireSupabaseAuth extends never ? never : never>;
-void (null as unknown as Sb);
-
-/** Quantidade disponível para venda de um ticker até a data informada. */
-async function saldoDisponivel(
-  supabase: {
-    from: (t: string) => {
-      select: (c: string) => {
-        eq: (
-          k: string,
-          v: string,
-        ) => {
-          eq: (
-            k: string,
-            v: string,
-          ) => {
-            lte: (
-              k: string,
-              v: string,
-            ) => Promise<{ data: unknown; error: { message: string } | null }>;
-          };
+interface SaldoQuery {
+  from: (table: string) => {
+    select: (cols: string) => {
+      eq: (k: string, v: string) => {
+        eq: (k: string, v: string) => {
+          lte: (k: string, v: string) => Promise<unknown>;
         };
       };
     };
-  },
+  };
+}
+
+/** Quantidade disponível para venda de um ticker até a data informada. */
+async function saldoDisponivel(
+  supabase: SaldoQuery,
   portfolioId: string,
   ticker: string,
   ateData: string,
