@@ -480,6 +480,14 @@ function CarteiraPage() {
                   <h2 className="text-lg font-semibold">{selected.name}</h2>
                   <p className="text-xs text-muted-foreground">
                     Investido {brl(totals.invested)} · Atual {brl(totals.current)}
+                    {totals.realized !== 0 && (
+                      <>
+                        {" · "}Realizado{" "}
+                        <span className={toneClass(totals.realized)}>
+                          {brl(totals.realized)}
+                        </span>
+                      </>
+                    )}
                   </p>
                 </div>
                 <div className="text-right">
