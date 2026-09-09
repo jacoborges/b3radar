@@ -728,15 +728,20 @@ function PositionRow({
         <Badge variant="outline" className="font-mono text-xs">
           {qty(pos.totalQty)} un.
         </Badge>
+        {pos.totalQty <= 1e-9 && (
+          <Badge variant="secondary" className="text-[10px]">
+            Vendida
+          </Badge>
+        )}
         <span className="text-xs text-muted-foreground">
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
         </span>
         <span className="ml-auto text-right">
           <span className={`block text-sm font-semibold ${toneClass(pos.pl)}`}>
-            {pos.pl != null ? brl(pos.pl) : "—"}
+            {pos.totalQty > 1e-9 && pos.pl != null ? brl(pos.pl) : "—"}
           </span>
           <span className={`block text-xs ${toneClass(pos.plPct)}`}>
-            {pos.plPct != null ? pct(pos.plPct) : "—"}
+            {pos.totalQty > 1e-9 && pos.plPct != null ? pct(pos.plPct) : "—"}
           </span>
         </span>
       </button>
@@ -746,7 +751,88 @@ function PositionRow({
           <p className="mb-2 text-xs text-muted-foreground">
             Investido {brl(pos.invested)} · Valor atual{" "}
             {pos.current != null ? brl(pos.current) : "—"}
+            {pos.soldQty > 0 && (
+              <>
+                {" · "}Vendido {qty(pos.soldQty)} un. · Resultado realizado{" "}
+                <span className={toneClass(pos.realized)}>{brl(pos.realized)}</span>
+              </>
+            )}
           </p>
+
+          {/* Registrar venda */}
+          {pos.totalQty > 1e-9 && (
+            <div className="mb-3">
+              {!sellOpen ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 gap-1.5 text-xs"
+                  onClick={() => setSellOpen(true)}
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                  Vender ativo
+                </Button>
+              ) : (
+                <div className="rounded-lg border border-border/60 p-3">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Preço de venda
+                      </Label>
+                      <Input
+                        value={sp}
+                        onChange={(e) => setSp(e.target.value)}
+                        className="mt-1 h-8"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Quantidade (máx. {qty(pos.totalQty)})
+                      </Label>
+                      <Input
+                        value={sq}
+                        onChange={(e) => setSq(e.target.value)}
+                        className="mt-1 h-8"
+                        inputMode="decimal"
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">
+                        Data da venda
+                      </Label>
+                      <Input
+                        type="date"
+                        value={sd}
+                        onChange={(e) => setSd(e.target.value)}
+                        className="mt-1 h-8"
+                      />
+                    </div>
+                  </div>
+                  {sErr && (
+                    <p className="mt-2 text-xs text-destructive">{sErr}</p>
+                  )}
+                  <div className="mt-2 flex gap-2">
+                    <Button size="sm" onClick={submitSale}>
+                      Registrar venda
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setSellOpen(false);
+                        setSErr(null);
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="space-y-1">
             {pos.lots.map((lot) =>
               editingId === lot.id ? (
