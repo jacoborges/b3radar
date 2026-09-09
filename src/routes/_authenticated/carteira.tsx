@@ -195,7 +195,15 @@ function CarteiraPage() {
     portfolios.find((p) => p.id === selectedId) ?? portfolios[0] ?? null;
 
   const tickers = useMemo(
-    () => Array.from(new Set(portfolios.flatMap((p) => p.lots.map((l) => l.ticker)))),
+    () =>
+      Array.from(
+        new Set(
+          portfolios.flatMap((p) => [
+            ...p.lots.map((l) => l.ticker),
+            ...p.sales.map((s) => s.ticker),
+          ]),
+        ),
+      ),
     [portfolios],
   );
   const quotes = useLiveQuotes(tickers);
