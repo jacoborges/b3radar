@@ -28,6 +28,7 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
 import { SimReturnChart } from "@/components/SimReturnChart";
 import { SectorCompare } from "@/components/SectorCompare";
+import { AssetCompare } from "@/components/AssetCompare";
 import {
   proventosPorAno,
   simularTicker,
@@ -210,7 +211,7 @@ function SimuladorPage() {
   const totals = useMemo(() => somarPosicoes(posicoes), [posicoes]);
   const porAno = useMemo(() => proventosPorAno(posicoes), [posicoes]);
   const tickerList = useMemo(() => stocks.map((s) => s.ticker), [stocks]);
-  const [aba, setAba] = useState<"carteiras" | "setor">("carteiras");
+  const [aba, setAba] = useState<"carteiras" | "setor" | "ativo">("carteiras");
 
   return (
     <div className="min-h-screen bg-background">
@@ -260,11 +261,24 @@ function SimuladorPage() {
         >
           Comparar setor
         </Button>
+        <Button
+          size="sm"
+          variant={aba === "ativo" ? "secondary" : "ghost"}
+          onClick={() => setAba("ativo")}
+        >
+          Comparar ativo
+        </Button>
       </div>
 
       {aba === "setor" && (
         <main className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
           <SectorCompare stocks={stocks} />
+        </main>
+      )}
+
+      {aba === "ativo" && (
+        <main className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
+          <AssetCompare stocks={stocks} />
         </main>
       )}
 
