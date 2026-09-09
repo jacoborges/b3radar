@@ -22,6 +22,8 @@ export interface ProventoCarteira {
   dataPagamento: string;
   /** true quando a data com já passou (direito garantido) */
   direitoGarantido: boolean;
+  /** true quando o ativo já não está mais em carteira (saldo zero) */
+  posicaoEncerrada: boolean;
 }
 
 export interface UsePortfolioProventosResult {
