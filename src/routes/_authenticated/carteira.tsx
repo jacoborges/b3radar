@@ -661,6 +661,9 @@ function PositionRow({
   price,
   onUpdateLot,
   onDeleteLot,
+  onAddSale,
+  onUpdateSale,
+  onDeleteSale,
 }: {
   pos: Position;
   price: number | null;
@@ -671,12 +674,43 @@ function PositionRow({
     boughtAt: string;
   }) => void;
   onDeleteLot: (id: string) => void;
+  onAddSale: (v: { ticker: string; price: number; quantity: number; soldAt: string }) => void;
+  onUpdateSale: (v: {
+    id: string;
+    price: number;
+    quantity: number;
+    soldAt: string;
+  }) => void;
+  onDeleteSale: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [ep, setEp] = useState("");
   const [eq, setEq] = useState("");
   const [ed, setEd] = useState("");
+  const [sellOpen, setSellOpen] = useState(false);
+  const [sp, setSp] = useState("");
+  const [sq, setSq] = useState("");
+  const [sd, setSd] = useState(() => new Date().toISOString().slice(0, 10));
+  const [sErr, setSErr] = useState<string | null>(null);
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
+  const [vp, setVp] = useState("");
+  const [vq, setVq] = useState("");
+  const [vd, setVd] = useState("");
+
+  const submitSale = () => {
+    const p = Number(sp.replace(",", "."));
+    const q = Number(sq.replace(",", "."));
+    if (!(p > 0)) return setSErr("Informe um preço de venda válido.");
+    if (!(q > 0)) return setSErr("Informe uma quantidade válida.");
+    if (q > pos.totalQty + 1e-9)
+      return setSErr(`Você tem apenas ${qty(pos.totalQty)} un. disponíveis.`);
+    setSErr(null);
+    onAddSale({ ticker: pos.ticker, price: p, quantity: q, soldAt: sd });
+    setSp("");
+    setSq("");
+    setSellOpen(false);
+  };
 
   return (
     <div className="rounded-xl border border-border/60 bg-card">
