@@ -22,6 +22,7 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { usePortfolioProventosRecebidos } from "@/hooks/use-portfolio-proventos-recebidos";
+import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import {
   addLot,
   addSale,
@@ -489,6 +490,12 @@ function CarteiraPage() {
             </div>
           ) : (
             <>
+              <PortfolioTimeline
+                positions={positions}
+                proventosByMonth={recebidos.byMonth}
+                proventosLoading={recebidos.isLoading}
+              />
+
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card p-4">
                 <div>
                   <h2 className="text-lg font-semibold">{selected.name}</h2>
