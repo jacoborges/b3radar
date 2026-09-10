@@ -58,29 +58,31 @@ export function AccountControls() {
       {data?.role === "admin" && <OnlineBadge />}
 
       {canManage && (
+        <ActionTip tip="usuarios">
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="shrink-0 border-border/60 bg-input/60"
+          >
+            <Link to="/usuarios" aria-label="Usuários">
+              <Users className="h-4 w-4" />
+            </Link>
+          </Button>
+        </ActionTip>
+      )}
+
+      <ActionTip tip="sair">
         <Button
-          asChild
           variant="outline"
           size="icon"
           className="shrink-0 border-border/60 bg-input/60"
-          title="Usuários"
+          aria-label="Sair"
+          onClick={signOut}
         >
-          <Link to="/usuarios" aria-label="Usuários">
-            <Users className="h-4 w-4" />
-          </Link>
+          <LogOut className="h-4 w-4" />
         </Button>
-      )}
-
-      <Button
-        variant="outline"
-        size="icon"
-        className="shrink-0 border-border/60 bg-input/60"
-        title="Sair"
-        aria-label="Sair"
-        onClick={signOut}
-      >
-        <LogOut className="h-4 w-4" />
-      </Button>
+      </ActionTip>
     </>
   );
 }
