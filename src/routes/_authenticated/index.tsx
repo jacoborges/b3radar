@@ -44,6 +44,7 @@ import {
 import { type Stock } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
+import { ActionTip } from "@/components/ActionTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
