@@ -718,6 +718,7 @@ function AddLotForm({
 function PositionRow({
   pos,
   price,
+  proventos,
   onUpdateLot,
   onDeleteLot,
   onAddSale,
@@ -726,6 +727,7 @@ function PositionRow({
 }: {
   pos: Position;
   price: number | null;
+  proventos: number | null;
   onUpdateLot: (v: {
     id: string;
     price: number;
