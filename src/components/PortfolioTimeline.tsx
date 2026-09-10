@@ -220,7 +220,7 @@ export function PortfolioTimeline({
                       </span>
                     </button>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-[240px] space-y-1 text-xs">
+                  <TooltipContent className="max-w-[240px] space-y-1 border border-border/70 bg-card text-xs text-card-foreground shadow-xl">
                     <p className="font-semibold">
                       {m.label} / {anoSelecionado}
                     </p>
