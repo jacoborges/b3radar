@@ -99,15 +99,16 @@ export function MarketAnalysisDialog({ ticker, nome, setor }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={openDialog}
-        title="Análise do mercado (IA)"
-        aria-label={`Análise do mercado para ${ticker}`}
-        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
-      >
-        <HelpCircle className="h-3.5 w-3.5" />
-      </button>
+      <ActionTip tip="analiseMercado">
+        <button
+          type="button"
+          onClick={openDialog}
+          aria-label={`Análise do mercado para ${ticker}`}
+          className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-colors hover:bg-muted/50 hover:text-foreground"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </ActionTip>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl border-border/60">

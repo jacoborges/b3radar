@@ -48,6 +48,7 @@ import {
 import { DividendIntelligencePanel } from "./DividendIntelligencePanel";
 import { MacroSensitivityPanel } from "./MacroSensitivityPanel";
 import { TrendingDown, TrendingUp } from "lucide-react";
+import { ActionTip } from "./ActionTip";
 
 interface Props {
   stock: Stock | null;

@@ -339,17 +339,19 @@ export function HistoryChartButton({ ticker, kind, historico, label }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen(true);
-        }}
-        className="inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:text-primary"
-        aria-label={`Histórico de 10 anos de ${label ?? kind}`}
-      >
-        <LineChartIcon className="h-3.5 w-3.5" />
-      </button>
+      <ActionTip tip="historicoIndicador">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpen(true);
+          }}
+          className="inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:text-primary"
+          aria-label={`Histórico de 10 anos de ${label ?? kind}`}
+        >
+          <LineChartIcon className="h-3.5 w-3.5" />
+        </button>
+      </ActionTip>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
