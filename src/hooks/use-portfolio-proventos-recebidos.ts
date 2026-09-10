@@ -56,10 +56,12 @@ export function usePortfolioProventosRecebidos(
     })),
   });
 
-  const byTicker = useMemo(() => {
+  const agregados = useMemo(() => {
     const hoje = hojeISO();
     const map = new Map<string, number>();
+    const meses = new Map<string, number>();
     const posByTicker = new Map(posicoes.map((p) => [p.ticker, p]));
+
 
     results.forEach((r, i) => {
       const ticker = tickers[i]!;
