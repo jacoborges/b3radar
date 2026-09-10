@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
+import { usePortfolioProventosRecebidos } from "@/hooks/use-portfolio-proventos-recebidos";
 import {
   addLot,
   addSale,
@@ -290,6 +291,8 @@ function CarteiraPage() {
     [positions],
   );
 
+  const recebidos = usePortfolioProventosRecebidos(posicoesResumo);
+
   const totals = useMemo(() => {
     const invested = posicoesAtivas.reduce((s, p) => s + p.invested, 0);
     const current = posicoesAtivas.reduce(
@@ -297,14 +300,17 @@ function CarteiraPage() {
       0,
     );
     const realized = positions.reduce((s, p) => s + p.realized, 0);
+    const proventos = recebidos.total;
     return {
       invested,
       current,
       realized,
+      proventos,
+      realizadoTotal: realized + proventos,
       pl: current - invested,
       plPct: invested > 0 ? (current / invested - 1) * 100 : 0,
     };
-  }, [positions, posicoesAtivas]);
+  }, [positions, posicoesAtivas, recebidos.total]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -488,14 +494,21 @@ function CarteiraPage() {
                   <h2 className="text-lg font-semibold">{selected.name}</h2>
                   <p className="text-xs text-muted-foreground">
                     Investido {brl(totals.invested)} · Atual {brl(totals.current)}
-                    {totals.realized !== 0 && (
-                      <>
-                        {" · "}Realizado{" "}
-                        <span className={toneClass(totals.realized)}>
-                          {brl(totals.realized)}
-                        </span>
-                      </>
-                    )}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ganho na venda{" "}
+                    <span className={toneClass(totals.realized)}>
+                      {brl(totals.realized)}
+                    </span>
+                    {" · "}Proventos recebidos{" "}
+                    <span className="text-success">
+                      {recebidos.isLoading ? "—" : brl(totals.proventos)}
+                    </span>
+                    {" · "}Realizado total{" "}
+                    <span className={`font-semibold ${toneClass(totals.realizadoTotal)}`}>
+                      {brl(totals.realizadoTotal)}
+                    </span>
+                    {recebidos.isLoading && " (parcial)"}
                   </p>
                 </div>
                 <div className="text-right">
@@ -532,6 +545,7 @@ function CarteiraPage() {
                       key={pos.ticker}
                       pos={pos}
                       price={priceOf(pos.ticker)}
+                      proventos={recebidos.byTicker.get(pos.ticker) ?? null}
                       onUpdateLot={(v) => mUpdateLot.mutate(v)}
                       onDeleteLot={(id) => mDeleteLot.mutate(id)}
                       onAddSale={(v) =>
@@ -552,6 +566,7 @@ function CarteiraPage() {
                           key={pos.ticker}
                           pos={pos}
                           price={priceOf(pos.ticker)}
+                          proventos={recebidos.byTicker.get(pos.ticker) ?? null}
                           onUpdateLot={(v) => mUpdateLot.mutate(v)}
                           onDeleteLot={(id) => mDeleteLot.mutate(id)}
                           onAddSale={(v) =>
@@ -703,6 +718,7 @@ function AddLotForm({
 function PositionRow({
   pos,
   price,
+  proventos,
   onUpdateLot,
   onDeleteLot,
   onAddSale,
@@ -711,6 +727,7 @@ function PositionRow({
 }: {
   pos: Position;
   price: number | null;
+  proventos: number | null;
   onUpdateLot: (v: {
     id: string;
     price: number;
@@ -792,15 +809,24 @@ function PositionRow({
 
       {open && (
         <div className="border-t border-border/50 px-4 py-3">
-          <p className="mb-2 text-xs text-muted-foreground">
+          <p className="mb-1 text-xs text-muted-foreground">
             Investido {brl(pos.invested)} · Valor atual{" "}
             {pos.current != null ? brl(pos.current) : "—"}
-            {pos.soldQty > 0 && (
-              <>
-                {" · "}Vendido {qty(pos.soldQty)} un. · Resultado realizado{" "}
-                <span className={toneClass(pos.realized)}>{brl(pos.realized)}</span>
-              </>
-            )}
+            {pos.soldQty > 0 && <> · Vendido {qty(pos.soldQty)} un.</>}
+          </p>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Ganho na venda{" "}
+            <span className={toneClass(pos.realized)}>{brl(pos.realized)}</span>
+            {" · "}Proventos recebidos{" "}
+            <span className="text-success">
+              {proventos == null ? "—" : brl(proventos)}
+            </span>
+            {" · "}Realizado total{" "}
+            <span
+              className={`font-semibold ${toneClass(pos.realized + (proventos ?? 0))}`}
+            >
+              {brl(pos.realized + (proventos ?? 0))}
+            </span>
           </p>
 
           {/* Registrar venda */}
