@@ -323,53 +323,57 @@ function HomePage() {
 
 
 
-              <Button
-                asChild
-                variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
-                title="Carteira"
-              >
-                <Link to="/carteira" aria-label="Carteira">
-                  <Wallet className="h-4 w-4" />
-                </Link>
-              </Button>
+              <ActionTip tip="carteira">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 border-border/60 bg-input/60"
+                >
+                  <Link to="/carteira" aria-label="Carteira">
+                    <Wallet className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </ActionTip>
 
-              <Button
-                asChild
-                variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
-                title="Simulador de Carteira"
-              >
-                <Link to="/simulador" aria-label="Simulador de Carteira">
-                  <LineChart className="h-4 w-4" />
-                </Link>
-              </Button>
+              <ActionTip tip="simulador">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 border-border/60 bg-input/60"
+                >
+                  <Link to="/simulador" aria-label="Simulador de Carteira">
+                    <LineChart className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </ActionTip>
 
-              <Button
-                asChild
-                variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
-                title="Proventos"
-              >
-                <Link to="/dividendos" aria-label="Proventos">
-                  <Coins className="h-4 w-4" />
-                </Link>
-              </Button>
+              <ActionTip tip="dividendos">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 border-border/60 bg-input/60"
+                >
+                  <Link to="/dividendos" aria-label="Proventos">
+                    <Coins className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </ActionTip>
 
-              <Button
-                asChild
-                variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
-                title="Configurações"
-              >
-                <Link to="/configuracoes" aria-label="Configurações">
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </Button>
+              <ActionTip tip="configuracoes">
+                <Button
+                  asChild
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 border-border/60 bg-input/60"
+                >
+                  <Link to="/configuracoes" aria-label="Configurações">
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </ActionTip>
 
               <AccountControls />
 
