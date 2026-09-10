@@ -545,6 +545,7 @@ function CarteiraPage() {
                       key={pos.ticker}
                       pos={pos}
                       price={priceOf(pos.ticker)}
+                      proventos={recebidos.byTicker.get(pos.ticker) ?? null}
                       onUpdateLot={(v) => mUpdateLot.mutate(v)}
                       onDeleteLot={(id) => mDeleteLot.mutate(id)}
                       onAddSale={(v) =>
