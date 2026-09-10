@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/admin-users.functions";
 import { useOnlineUsers } from "@/hooks/use-online-users";
+import { ActionTip } from "@/components/ActionTip";
 
 /** Realtime count of signed-in users — admin only. */
 function OnlineBadge() {
