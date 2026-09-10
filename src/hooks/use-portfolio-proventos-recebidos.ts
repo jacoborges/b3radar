@@ -87,23 +87,27 @@ export function usePortfolioProventosRecebidos(
           .reduce((s, v) => s + v.quantity, 0);
         const quantidade = comprada - vendida;
         if (quantidade <= 0) continue;
-        total += ev.valor * quantidade;
+        const valor = ev.valor * quantidade;
+        total += valor;
+        const mes = pagamento.slice(0, 7);
+        meses.set(mes, (meses.get(mes) ?? 0) + valor);
       }
       map.set(ticker, total);
     });
 
-    return map;
+    return { byTicker: map, byMonth: meses };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [posicoes, tickers, results.map((r) => r.dataUpdatedAt).join("|")]);
 
   const total = useMemo(() => {
     let s = 0;
-    for (const v of byTicker.values()) s += v;
+    for (const v of agregados.byTicker.values()) s += v;
     return s;
-  }, [byTicker]);
+  }, [agregados]);
 
   return {
-    byTicker,
+    byTicker: agregados.byTicker,
+    byMonth: agregados.byMonth,
     total,
     isLoading: results.some((r) => r.isLoading),
     isFetching: results.some((r) => r.isFetching),
