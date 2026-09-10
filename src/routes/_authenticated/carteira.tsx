@@ -22,6 +22,7 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { usePortfolioProventosRecebidos } from "@/hooks/use-portfolio-proventos-recebidos";
+import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import {
   addLot,
   addSale,
