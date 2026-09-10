@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
+import { usePortfolioProventosRecebidos } from "@/hooks/use-portfolio-proventos-recebidos";
 import {
   addLot,
   addSale,
