@@ -809,15 +809,24 @@ function PositionRow({
 
       {open && (
         <div className="border-t border-border/50 px-4 py-3">
-          <p className="mb-2 text-xs text-muted-foreground">
+          <p className="mb-1 text-xs text-muted-foreground">
             Investido {brl(pos.invested)} · Valor atual{" "}
             {pos.current != null ? brl(pos.current) : "—"}
-            {pos.soldQty > 0 && (
-              <>
-                {" · "}Vendido {qty(pos.soldQty)} un. · Resultado realizado{" "}
-                <span className={toneClass(pos.realized)}>{brl(pos.realized)}</span>
-              </>
-            )}
+            {pos.soldQty > 0 && <> · Vendido {qty(pos.soldQty)} un.</>}
+          </p>
+          <p className="mb-2 text-xs text-muted-foreground">
+            Ganho na venda{" "}
+            <span className={toneClass(pos.realized)}>{brl(pos.realized)}</span>
+            {" · "}Proventos recebidos{" "}
+            <span className="text-success">
+              {proventos == null ? "—" : brl(proventos)}
+            </span>
+            {" · "}Realizado total{" "}
+            <span
+              className={`font-semibold ${toneClass(pos.realized + (proventos ?? 0))}`}
+            >
+              {brl(pos.realized + (proventos ?? 0))}
+            </span>
           </p>
 
           {/* Registrar venda */}
