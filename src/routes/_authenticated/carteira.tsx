@@ -291,6 +291,8 @@ function CarteiraPage() {
     [positions],
   );
 
+  const recebidos = usePortfolioProventosRecebidos(posicoesResumo);
+
   const totals = useMemo(() => {
     const invested = posicoesAtivas.reduce((s, p) => s + p.invested, 0);
     const current = posicoesAtivas.reduce(
@@ -298,14 +300,17 @@ function CarteiraPage() {
       0,
     );
     const realized = positions.reduce((s, p) => s + p.realized, 0);
+    const proventos = recebidos.total;
     return {
       invested,
       current,
       realized,
+      proventos,
+      realizadoTotal: realized + proventos,
       pl: current - invested,
       plPct: invested > 0 ? (current / invested - 1) * 100 : 0,
     };
-  }, [positions, posicoesAtivas]);
+  }, [positions, posicoesAtivas, recebidos.total]);
 
   return (
     <div className="min-h-screen bg-background">
