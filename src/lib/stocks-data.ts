@@ -214,7 +214,7 @@ export function buildStock(r: RawRow): Stock {
   return {
     ticker: r.t,
     nome: r.n,
-    setor: r.s,
+    setor: sectorLabel(r.s),
     tipo: (r.tp as ShareType),
     preco: r.p,
     variacaoDia,
