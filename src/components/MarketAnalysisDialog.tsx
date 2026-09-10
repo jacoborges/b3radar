@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ActionTip } from "@/components/ActionTip";
 import {
   analyzeMarketView,
   type MarketAnalysisResult,
