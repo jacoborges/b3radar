@@ -494,14 +494,21 @@ function CarteiraPage() {
                   <h2 className="text-lg font-semibold">{selected.name}</h2>
                   <p className="text-xs text-muted-foreground">
                     Investido {brl(totals.invested)} · Atual {brl(totals.current)}
-                    {totals.realized !== 0 && (
-                      <>
-                        {" · "}Realizado{" "}
-                        <span className={toneClass(totals.realized)}>
-                          {brl(totals.realized)}
-                        </span>
-                      </>
-                    )}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ganho na venda{" "}
+                    <span className={toneClass(totals.realized)}>
+                      {brl(totals.realized)}
+                    </span>
+                    {" · "}Proventos recebidos{" "}
+                    <span className="text-success">
+                      {recebidos.isLoading ? "—" : brl(totals.proventos)}
+                    </span>
+                    {" · "}Realizado total{" "}
+                    <span className={`font-semibold ${toneClass(totals.realizadoTotal)}`}>
+                      {brl(totals.realizadoTotal)}
+                    </span>
+                    {recebidos.isLoading && " (parcial)"}
                   </p>
                 </div>
                 <div className="text-right">
