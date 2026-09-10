@@ -18,6 +18,8 @@ export interface PosicaoRecebidos {
 export interface UseProventosRecebidosResult {
   /** total já recebido por ticker, no período de custódia */
   byTicker: Map<string, number>;
+  /** total já recebido por mês de pagamento ("YYYY-MM") */
+  byMonth: Map<string, number>;
   total: number;
   isLoading: boolean;
   isFetching: boolean;
