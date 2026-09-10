@@ -19,18 +19,20 @@ interface Props {
 export function InfoTip({ title, fundamentalista, tecnica }: Props) {
   return (
     <Popover>
-      <PopoverTrigger
-        asChild
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-primary"
-          aria-label={`Explicação de ${title}`}
+      <ActionTip tip="explicacaoIndicador" label={title}>
+        <PopoverTrigger
+          asChild
+          onClick={(e) => e.stopPropagation()}
         >
-          <HelpCircle className="h-3.5 w-3.5" />
-        </button>
-      </PopoverTrigger>
+          <button
+            type="button"
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-primary"
+            aria-label={`Explicação de ${title}`}
+          >
+            <HelpCircle className="h-3.5 w-3.5" />
+          </button>
+        </PopoverTrigger>
+      </ActionTip>
       <PopoverContent
         side="top"
         className="border-border/60 bg-popover/95 backdrop-blur"

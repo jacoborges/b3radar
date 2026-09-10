@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/admin-users.functions";
 import { useOnlineUsers } from "@/hooks/use-online-users";
+import { ActionTip } from "@/components/ActionTip";
 
 /** Realtime count of signed-in users — admin only. */
 function OnlineBadge() {
@@ -58,29 +59,31 @@ export function AccountControls() {
       {data?.role === "admin" && <OnlineBadge />}
 
       {canManage && (
+        <ActionTip tip="usuarios">
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="shrink-0 border-border/60 bg-input/60"
+          >
+            <Link to="/usuarios" aria-label="Usuários">
+              <Users className="h-4 w-4" />
+            </Link>
+          </Button>
+        </ActionTip>
+      )}
+
+      <ActionTip tip="sair">
         <Button
-          asChild
           variant="outline"
           size="icon"
           className="shrink-0 border-border/60 bg-input/60"
-          title="Usuários"
+          aria-label="Sair"
+          onClick={signOut}
         >
-          <Link to="/usuarios" aria-label="Usuários">
-            <Users className="h-4 w-4" />
-          </Link>
+          <LogOut className="h-4 w-4" />
         </Button>
-      )}
-
-      <Button
-        variant="outline"
-        size="icon"
-        className="shrink-0 border-border/60 bg-input/60"
-        title="Sair"
-        aria-label="Sair"
-        onClick={signOut}
-      >
-        <LogOut className="h-4 w-4" />
-      </Button>
+      </ActionTip>
     </>
   );
 }
