@@ -14,12 +14,15 @@ function OnlineBadge() {
   const total = users.length;
 
   return (
-    <span
-      title={
+    <ActionTip
+      tip="online"
+      how={
         total
-          ? `Online agora:\n${users.map((u) => u.email).join("\n")}`
-          : "Nenhum usuário online"
+          ? `Online agora: ${users.map((u) => u.email).join(", ")}`
+          : "Nenhum usuário conectado neste momento."
       }
+    >
+    <span
       className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-input/60 px-2 py-1.5 text-xs font-medium text-muted-foreground"
     >
       <span className="relative flex h-2 w-2">
