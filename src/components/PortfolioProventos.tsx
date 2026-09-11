@@ -114,6 +114,7 @@ export function PortfolioProventos({
             </div>
           </header>
         </CollapsibleTrigger>
+        </ActionTip>
 
         <CollapsibleContent>
           {posicoes.length === 0 ? (
