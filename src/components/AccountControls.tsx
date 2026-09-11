@@ -31,7 +31,8 @@ function OnlineBadge() {
       </span>
       <span className="tabular-nums text-foreground">{total}</span>
       <span className="hidden sm:inline">online</span>
-    </span>
+      </span>
+    </ActionTip>
   );
 }
 
