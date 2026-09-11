@@ -9,6 +9,7 @@ import {
   classMeta,
   type DividendClass,
 } from "@/lib/dividend-intelligence";
+import { ActionTip } from "@/components/ActionTip";
 
 interface Props {
   title: string;
