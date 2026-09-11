@@ -6,6 +6,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ActionTip } from "@/components/ActionTip";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,

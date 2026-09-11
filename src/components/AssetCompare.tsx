@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ActionTip } from "@/components/ActionTip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSectorSimulation } from "@/hooks/use-sector-simulation";
