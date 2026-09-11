@@ -6,6 +6,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ActionTip } from "@/components/ActionTip";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -76,6 +77,7 @@ export function PortfolioProventos({
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <section className="rounded-xl border border-border/60 bg-card">
+        <ActionTip tip="proximosProventos" side="bottom">
         <CollapsibleTrigger asChild>
           <header className="flex cursor-pointer flex-wrap items-center gap-2 border-b border-border/60 px-4 py-3 transition-colors hover:bg-muted/20">
             <CalendarClock className="h-4 w-4 text-primary" />
@@ -113,6 +115,7 @@ export function PortfolioProventos({
             </div>
           </header>
         </CollapsibleTrigger>
+        </ActionTip>
 
         <CollapsibleContent>
           {posicoes.length === 0 ? (

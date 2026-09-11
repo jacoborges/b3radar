@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ActionTip } from "@/components/ActionTip";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -403,11 +404,13 @@ function DividendosPage() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
         <div className="mb-4 flex items-center gap-3">
-          <Button asChild variant="outline" size="icon" className="border-border/60">
-            <Link to="/" aria-label="Voltar">
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-          </Button>
+          <ActionTip tip="voltar">
+            <Button asChild variant="outline" size="icon" className="border-border/60">
+              <Link to="/" aria-label="Voltar">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+            </Button>
+          </ActionTip>
           <div>
             <h1 className="text-xl font-semibold">Inteligência de proventos</h1>
             <p className="text-xs text-muted-foreground">

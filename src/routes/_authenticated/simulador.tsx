@@ -15,6 +15,7 @@ import {
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ActionTip } from "@/components/ActionTip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -305,17 +306,19 @@ function SimuladorPage() {
                   }
                 }}
               />
-              <Button
-                size="icon"
-                disabled={!newName.trim() || mCreate.isPending}
-                onClick={() => {
-                  mCreate.mutate(newName.trim());
-                  setNewName("");
-                }}
-                aria-label="Criar carteira simulada"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <ActionTip tip="criarCarteira">
+                <Button
+                  size="icon"
+                  disabled={!newName.trim() || mCreate.isPending}
+                  onClick={() => {
+                    mCreate.mutate(newName.trim());
+                    setNewName("");
+                  }}
+                  aria-label="Criar carteira simulada"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </ActionTip>
             </div>
           </div>
 
@@ -347,28 +350,32 @@ function SimuladorPage() {
                         onChange={(e) => setRenameValue(e.target.value)}
                         className="h-8"
                       />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        aria-label="Salvar nome"
-                        onClick={() => {
-                          if (renameValue.trim())
-                            mRename.mutate({ id: p.id, name: renameValue.trim() });
-                          setRenamingId(null);
-                        }}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        aria-label="Cancelar"
-                        onClick={() => setRenamingId(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <ActionTip tip="salvar">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          aria-label="Salvar nome"
+                          onClick={() => {
+                            if (renameValue.trim())
+                              mRename.mutate({ id: p.id, name: renameValue.trim() });
+                            setRenamingId(null);
+                          }}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </ActionTip>
+                      <ActionTip tip="cancelar">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          aria-label="Cancelar"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </ActionTip>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1">
@@ -379,18 +386,20 @@ function SimuladorPage() {
                       >
                         {p.name}
                       </button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        aria-label="Renomear"
-                        onClick={() => {
-                          setRenamingId(p.id);
-                          setRenameValue(p.name);
-                        }}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
+                      <ActionTip tip="renomear">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          aria-label="Renomear"
+                          onClick={() => {
+                            setRenamingId(p.id);
+                            setRenameValue(p.name);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </ActionTip>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -738,29 +747,33 @@ function PositionCard({
                         = {brl(l.price * l.quantity)}
                       </span>
                       <div className="ml-auto flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          aria-label="Editar lançamento"
-                          onClick={() => {
-                            setEditingId(l.id);
-                            setEp(String(l.price));
-                            setEq(String(l.quantity));
-                            setEd(l.boughtAt);
-                          }}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive"
-                          aria-label="Excluir lançamento"
-                          onClick={() => onDeleteLot(l.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <ActionTip tip="editarLancamento">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7"
+                            aria-label="Editar lançamento"
+                            onClick={() => {
+                              setEditingId(l.id);
+                              setEp(String(l.price));
+                              setEq(String(l.quantity));
+                              setEd(l.boughtAt);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </ActionTip>
+                        <ActionTip tip="excluirLancamento">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive"
+                            aria-label="Excluir lançamento"
+                            onClick={() => onDeleteLot(l.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </ActionTip>
                       </div>
                     </>
                   )}

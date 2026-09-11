@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ActionTip } from "@/components/ActionTip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -367,17 +368,19 @@ function CarteiraPage() {
                   }
                 }}
               />
-              <Button
-                size="icon"
-                disabled={!newName.trim() || mCreate.isPending}
-                onClick={() => {
-                  mCreate.mutate(newName.trim());
-                  setNewName("");
-                }}
-                aria-label="Criar carteira"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
+              <ActionTip tip="criarCarteira">
+                <Button
+                  size="icon"
+                  disabled={!newName.trim() || mCreate.isPending}
+                  onClick={() => {
+                    mCreate.mutate(newName.trim());
+                    setNewName("");
+                  }}
+                  aria-label="Criar carteira"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </ActionTip>
             </div>
           </div>
 
@@ -409,28 +412,32 @@ function CarteiraPage() {
                         onChange={(e) => setRenameValue(e.target.value)}
                         className="h-8"
                       />
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        aria-label="Salvar nome"
-                        onClick={() => {
-                          if (renameValue.trim())
-                            mRename.mutate({ id: p.id, name: renameValue.trim() });
-                          setRenamingId(null);
-                        }}
-                      >
-                        <Check className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        aria-label="Cancelar"
-                        onClick={() => setRenamingId(null)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <ActionTip tip="salvar">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          aria-label="Salvar nome"
+                          onClick={() => {
+                            if (renameValue.trim())
+                              mRename.mutate({ id: p.id, name: renameValue.trim() });
+                            setRenamingId(null);
+                          }}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      </ActionTip>
+                      <ActionTip tip="cancelar">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          aria-label="Cancelar"
+                          onClick={() => setRenamingId(null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </ActionTip>
                     </div>
                   ) : (
                     <div className="flex items-center gap-1">
@@ -444,18 +451,20 @@ function CarteiraPage() {
                           {p.lots.length} lanç.
                         </span>
                       </button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        aria-label="Renomear"
-                        onClick={() => {
-                          setRenamingId(p.id);
-                          setRenameValue(p.name);
-                        }}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
+                      <ActionTip tip="renomear">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          aria-label="Renomear"
+                          onClick={() => {
+                            setRenamingId(p.id);
+                            setRenameValue(p.name);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </ActionTip>
                       <Button
                         size="icon"
                         variant="ghost"
@@ -959,29 +968,33 @@ function PositionRow({
                   <span className="font-mono">{qty(lot.quantity)} un.</span>
                   <span className="font-mono">{brl(lot.price)}</span>
                   <span className="ml-auto flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      aria-label="Editar lançamento"
-                      onClick={() => {
-                        setEditingId(lot.id);
-                        setEp(String(lot.price));
-                        setEq(String(lot.quantity));
-                        setEd(lot.boughtAt);
-                      }}
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7 text-destructive"
-                      aria-label="Excluir lançamento"
-                      onClick={() => onDeleteLot(lot.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    <ActionTip tip="editarLancamento">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        aria-label="Editar lançamento"
+                        onClick={() => {
+                          setEditingId(lot.id);
+                          setEp(String(lot.price));
+                          setEq(String(lot.quantity));
+                          setEd(lot.boughtAt);
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </ActionTip>
+                    <ActionTip tip="excluirLancamento">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        aria-label="Excluir lançamento"
+                        onClick={() => onDeleteLot(lot.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </ActionTip>
                   </span>
                 </div>
               ),
@@ -1050,29 +1063,33 @@ function PositionRow({
                     <span className="font-mono">−{qty(sale.quantity)} un.</span>
                     <span className="font-mono">{brl(sale.price)}</span>
                     <span className="ml-auto flex gap-1">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        aria-label="Editar venda"
-                        onClick={() => {
-                          setEditingSaleId(sale.id);
-                          setVp(String(sale.price));
-                          setVq(String(sale.quantity));
-                          setVd(sale.soldAt);
-                        }}
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 text-destructive"
-                        aria-label="Excluir venda"
-                        onClick={() => onDeleteSale(sale.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <ActionTip tip="editarVenda">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          aria-label="Editar venda"
+                          onClick={() => {
+                            setEditingSaleId(sale.id);
+                            setVp(String(sale.price));
+                            setVq(String(sale.quantity));
+                            setVd(sale.soldAt);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </ActionTip>
+                      <ActionTip tip="excluirVenda">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7 text-destructive"
+                          aria-label="Excluir venda"
+                          onClick={() => onDeleteSale(sale.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </ActionTip>
                     </span>
                   </div>
                 ),
