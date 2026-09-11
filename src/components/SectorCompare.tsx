@@ -169,16 +169,18 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
           >
             Comparar {tickers.length > 0 ? `(${tickers.length} ativos)` : ""}
           </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="gap-2 text-xs"
-            disabled={!rodando || sim.isFetching}
-            onClick={() => sim.refetch()}
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${sim.isFetching ? "animate-spin" : ""}`} />
-            Atualizar comparação
-          </Button>
+          <ActionTip tip="atualizarComparacao">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-2 text-xs"
+              disabled={!rodando || sim.isFetching}
+              onClick={() => sim.refetch()}
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${sim.isFetching ? "animate-spin" : ""}`} />
+              Atualizar comparação
+            </Button>
+          </ActionTip>
           {sim.computedAt && (
             <span className="text-xs text-muted-foreground">
               Resultado de{" "}
