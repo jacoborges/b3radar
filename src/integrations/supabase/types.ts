@@ -291,18 +291,21 @@ export type Database = {
         Row: {
           brapi_token: string | null
           created_at: string
+          selected_sectors: Json | null
           updated_at: string
           user_id: string
         }
         Insert: {
           brapi_token?: string | null
           created_at?: string
+          selected_sectors?: Json | null
           updated_at?: string
           user_id: string
         }
         Update: {
           brapi_token?: string | null
           created_at?: string
+          selected_sectors?: Json | null
           updated_at?: string
           user_id?: string
         }
