@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { adminExists, bootstrapFirstAdmin } from "@/lib/admin-users.functions";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   head: () => ({
     meta: [
       { title: "Entrar — B3 Radar" },
