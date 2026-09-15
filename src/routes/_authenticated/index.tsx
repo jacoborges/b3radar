@@ -49,6 +49,8 @@ import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { AccountControls } from "@/components/AccountControls";
+import { SectorVisibilityDialog } from "@/components/SectorVisibilityDialog";
+import { useSectorVisibility } from "@/hooks/use-sector-visibility";
 
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
@@ -109,6 +111,7 @@ function HomePage() {
   const [selected, setSelected] = useState<Stock | null>(null);
 
   const [openSectors, setOpenSectors] = useState<string[]>([]);
+  const { selectedSectors, selectedSet, setSelectedSectors } = useSectorVisibility(SECTORS);
 
   const [divisor] = useBazinDivisor();
   const dividendos = useDividendBatch(STOCKS, { enabled: precoTetoOnly });
@@ -147,6 +150,7 @@ function HomePage() {
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
     return STOCKS.filter((s) => {
+      if (!selectedSet.has(s.setor)) return false;
       if (q && !s.ticker.includes(q) && !s.nome.toUpperCase().includes(q))
         return false;
       if (tipo !== "ALL" && s.tipo !== tipo) return false;
@@ -171,7 +175,7 @@ function HomePage() {
       }
       return true;
     });
-  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
+  }, [STOCKS, selectedSet, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
 
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
@@ -321,6 +325,12 @@ function HomePage() {
                 setDdmOnly={setDdmOnly}
               />
 
+              <SectorVisibilityDialog
+                sectors={SECTORS}
+                selected={selectedSectors}
+                onChange={setSelectedSectors}
+              />
+
 
 
 
@@ -442,7 +452,9 @@ function HomePage() {
         </div>
         {total === 0 ? (
           <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
-            Nenhum ativo encontrado com esses filtros.
+            {selectedSectors.length === 0
+              ? "Selecione ao menos um setor em “Visualizar somente”."
+              : "Nenhum ativo encontrado com esses filtros."}
           </div>
         ) : (
           <Accordion
