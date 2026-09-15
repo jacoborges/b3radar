@@ -16,10 +16,14 @@ function clean(items: string[]): string[] {
   );
 }
 
-function readLocal(): SectorPreference | null {
+function storageKey(userId: string | null): string {
+  return userId ? `${STORAGE_KEY}:${userId}` : STORAGE_KEY;
+}
+
+function readLocal(userId: string | null): SectorPreference | null {
   if (typeof window === "undefined") return null;
   try {
-    const value = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? "null") as unknown;
+    const value = JSON.parse(window.localStorage.getItem(storageKey(userId)) ?? "null") as unknown;
     if (!value || typeof value !== "object") return null;
     const record = value as Record<string, unknown>;
     if (!Array.isArray(record.selected) || !Array.isArray(record.known)) return null;
@@ -29,9 +33,9 @@ function readLocal(): SectorPreference | null {
   }
 }
 
-function writeLocal(preference: SectorPreference) {
+function writeLocal(preference: SectorPreference, userId: string | null) {
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(preference));
+    window.localStorage.setItem(storageKey(userId), JSON.stringify(preference));
   } catch {
     /* armazenamento local indisponível */
   }
@@ -57,27 +61,33 @@ export function useSectorVisibility(availableSectors: string[]) {
   const availableKey = useMemo(() => clean(availableSectors).join("\u0001"), [availableSectors]);
   const available = useMemo(() => (availableKey ? availableKey.split("\u0001") : []), [availableKey]);
   const [preference, setPreference] = useState<SectorPreference | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const loadRemote = useServerFn(getMySectorPreference);
   const saveRemote = useServerFn(setMySectorPreference);
 
   useEffect(() => {
-    const applyLocal = () => setPreference(reconcile(readLocal(), available));
-    applyLocal();
+    let cancelled = false;
+    let currentUserId: string | null = null;
+    const applyLocal = () => setPreference(reconcile(readLocal(currentUserId), available));
     const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) applyLocal();
+      if (event.key === storageKey(currentUserId)) applyLocal();
     };
     window.addEventListener("storage", onStorage);
     window.addEventListener(EVENT, applyLocal);
 
-    let cancelled = false;
     void (async () => {
       try {
         const { data } = await supabase.auth.getSession();
         if (!data.session) return;
+        currentUserId = data.session.user.id;
+        if (!cancelled) {
+          setUserId(currentUserId);
+          applyLocal();
+        }
         const remote = (await loadRemote()).preference;
         if (cancelled) return;
         const next = reconcile(remote, available);
-        writeLocal(next);
+        writeLocal(next, currentUserId);
         setPreference(next);
         if (!remote || JSON.stringify(next) !== JSON.stringify(remote)) {
           void saveRemote({ data: next }).catch(() => {});
@@ -104,10 +114,10 @@ export function useSectorVisibility(availableSectors: string[]) {
         known: clean([...(preference?.known ?? []), ...available]),
       };
       setPreference(next);
-      writeLocal(next);
+      writeLocal(next, userId);
       void saveRemote({ data: next }).catch(() => {});
     },
-    [available, preference?.known, saveRemote],
+    [available, preference?.known, saveRemote, userId],
   );
 
   return { selectedSectors, selectedSet, setSelectedSectors };

@@ -142,6 +142,7 @@ function HomePage() {
     (minAnosPrecoAcimaSelic > 0 ? 1 : 0) +
     (precoTetoOnly ? 1 : 0) +
     (ddmOnly ? 1 : 0);
+  const sectorFilterActive = selectedSectors.length < SECTORS.length;
 
   /** true quando o preço teto é o único filtro ativo → ranqueia por desconto */
   const rankByDesconto =
@@ -308,7 +309,7 @@ function HomePage() {
               <StockFilterSheet
                 filters={filters}
                 setFilters={setFilters}
-                activeCount={activeFilters.length + extraActiveCount}
+                activeCount={activeFilters.length + extraActiveCount + (sectorFilterActive ? 1 : 0)}
                 debtColors={debtColors}
                 setDebtColors={setDebtColors}
                 recFilter={recFilter}
@@ -460,7 +461,7 @@ function HomePage() {
           <Accordion
             type="multiple"
             value={
-              search.trim() || activeFilters.length > 0 || extraActiveCount > 0
+              search.trim() || activeFilters.length > 0 || extraActiveCount > 0 || sectorFilterActive
                 ? SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0)
                 : openSectors
             }
