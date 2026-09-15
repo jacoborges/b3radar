@@ -49,6 +49,10 @@ export const ACTION_TIPS = {
     label: "Filtros",
     how: "Abra para selecionar ativos por indicador, semáforo, yield, preço teto e liquidez.",
   },
+  visualizarSetores: {
+    label: "Visualizar somente",
+    how: "Escolha quais setores aparecem nas listas; sua seleção fica salva na conta e vale nas duas páginas.",
+  },
   atualizarCotacoes: {
     label: "Atualizar preços",
     how: "Os preços se atualizam sozinhos; clique para buscar as cotações agora mesmo.",

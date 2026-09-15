@@ -49,6 +49,8 @@ import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { AccountControls } from "@/components/AccountControls";
+import { SectorVisibilityDialog } from "@/components/SectorVisibilityDialog";
+import { useSectorVisibility } from "@/hooks/use-sector-visibility";
 
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
@@ -109,6 +111,7 @@ function HomePage() {
   const [selected, setSelected] = useState<Stock | null>(null);
 
   const [openSectors, setOpenSectors] = useState<string[]>([]);
+  const { selectedSectors, selectedSet, setSelectedSectors } = useSectorVisibility(SECTORS);
 
   const [divisor] = useBazinDivisor();
   const dividendos = useDividendBatch(STOCKS, { enabled: precoTetoOnly });
@@ -139,6 +142,7 @@ function HomePage() {
     (minAnosPrecoAcimaSelic > 0 ? 1 : 0) +
     (precoTetoOnly ? 1 : 0) +
     (ddmOnly ? 1 : 0);
+  const sectorFilterActive = selectedSectors.length < SECTORS.length;
 
   /** true quando o preço teto é o único filtro ativo → ranqueia por desconto */
   const rankByDesconto =
@@ -147,6 +151,7 @@ function HomePage() {
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
     return STOCKS.filter((s) => {
+      if (!selectedSet.has(s.setor)) return false;
       if (q && !s.ticker.includes(q) && !s.nome.toUpperCase().includes(q))
         return false;
       if (tipo !== "ALL" && s.tipo !== tipo) return false;
@@ -171,7 +176,7 @@ function HomePage() {
       }
       return true;
     });
-  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
+  }, [STOCKS, selectedSet, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
 
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
@@ -304,7 +309,7 @@ function HomePage() {
               <StockFilterSheet
                 filters={filters}
                 setFilters={setFilters}
-                activeCount={activeFilters.length + extraActiveCount}
+                activeCount={activeFilters.length + extraActiveCount + (sectorFilterActive ? 1 : 0)}
                 debtColors={debtColors}
                 setDebtColors={setDebtColors}
                 recFilter={recFilter}
@@ -319,6 +324,12 @@ function HomePage() {
                 setMinDescontoTeto={setMinDescontoTeto}
                 ddmOnly={ddmOnly}
                 setDdmOnly={setDdmOnly}
+              />
+
+              <SectorVisibilityDialog
+                sectors={SECTORS}
+                selected={selectedSectors}
+                onChange={setSelectedSectors}
               />
 
 
@@ -442,13 +453,15 @@ function HomePage() {
         </div>
         {total === 0 ? (
           <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
-            Nenhum ativo encontrado com esses filtros.
+            {selectedSectors.length === 0
+              ? "Selecione ao menos um setor em “Visualizar somente”."
+              : "Nenhum ativo encontrado com esses filtros."}
           </div>
         ) : (
           <Accordion
             type="multiple"
             value={
-              search.trim() || activeFilters.length > 0 || extraActiveCount > 0
+              search.trim() || activeFilters.length > 0 || extraActiveCount > 0 || sectorFilterActive
                 ? SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0)
                 : openSectors
             }

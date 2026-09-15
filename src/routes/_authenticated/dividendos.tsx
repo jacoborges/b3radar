@@ -26,6 +26,8 @@ import {
 } from "@/lib/dividend-intelligence";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import type { Stock } from "@/lib/stocks-data";
+import { SectorVisibilityDialog } from "@/components/SectorVisibilityDialog";
+import { useSectorVisibility } from "@/hooks/use-sector-visibility";
 
 export const Route = createFileRoute("/_authenticated/dividendos")({
   head: () => ({
@@ -100,7 +102,8 @@ const FREQ_OPTS: Array<"ALL" | Frequencia> = [
 ];
 
 function DividendosPage() {
-  const { stocks } = useAllStocks();
+  const { stocks, sectors } = useAllStocks();
+  const { selectedSectors, selectedSet, setSelectedSectors } = useSectorVisibility(sectors);
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
     useDividendBatch(stocks);
   const [q, setQ] = useState("");
@@ -166,11 +169,13 @@ function DividendosPage() {
     (debtColors.length > 0 && debtColors.length < 3 ? 1 : 0) +
     (recFilter !== "ALL" ? 1 : 0) +
     (minAnosAcimaSelic > 0 ? 1 : 0) +
-    (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
+    (minAnosPrecoAcimaSelic > 0 ? 1 : 0) +
+    (selectedSectors.length < sectors.length ? 1 : 0);
 
   const ranked = useMemo(() => {
     const hoje = new Date();
     const filtered = rows.filter((r) => {
+      if (!selectedSet.has(r.stock.setor)) return false;
       if (
         cls.length > 0 &&
         !(r.intel && cls.includes(r.intel.classification))
@@ -230,6 +235,7 @@ function DividendosPage() {
     });
   }, [
     rows,
+    selectedSet,
     q,
     cls,
     ranges,
@@ -465,6 +471,12 @@ function DividendosPage() {
             onClearExtra={clearIntel}
           />
 
+          <SectorVisibilityDialog
+            sectors={sectors}
+            selected={selectedSectors}
+            onChange={setSelectedSectors}
+          />
+
           <div className="flex flex-wrap gap-1">
             {CLASS_FILTERS.map((f) => {
               const active =
@@ -619,7 +631,9 @@ function DividendosPage() {
           ))}
           {!isLoading && ranked.length === 0 && (
             <div className="rounded-lg border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
-              Nenhum ativo encontrado para este filtro.
+              {selectedSectors.length === 0
+                ? "Selecione ao menos um setor em “Visualizar somente”."
+                : "Nenhum ativo encontrado para este filtro."}
             </div>
           )}
         </div>
