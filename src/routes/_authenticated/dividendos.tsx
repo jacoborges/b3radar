@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { InfoTip, ClassificationInfoTip } from "@/components/InfoTip";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import {
@@ -101,6 +108,8 @@ const FREQ_OPTS: Array<"ALL" | Frequencia> = [
   "Irregular",
 ];
 
+type SortMode = "score" | "yield";
+
 function DividendosPage() {
   const { stocks, sectors } = useAllStocks();
   const { selectedSectors, selectedSet, setSelectedSectors } = useSectorVisibility(sectors);
@@ -125,6 +134,7 @@ function DividendosPage() {
   const [freq, setFreq] = useState<Frequencia[]>([]);
   const [comEmDias, setComEmDias] = useState(0); // 0 = sem restrição
   const [somenteComDados, setSomenteComDados] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("score");
 
   const toggleCls = (v: DividendClass) =>
     setCls((prev) =>
@@ -230,8 +240,20 @@ function DividendosPage() {
     return filtered.sort((a, b) => {
       const sa = a.intel?.score ?? -1;
       const sb = b.intel?.score ?? -1;
+      const dya = a.intel?.dyUltimos12m;
+      const dyb = b.intel?.dyUltimos12m;
+      if (sortMode === "yield") {
+        if (dya == null && dyb != null) return 1;
+        if (dya != null && dyb == null) return -1;
+        if (dya !== dyb) return (dyb ?? -1) - (dya ?? -1);
+        if (sb !== sa) return sb - sa;
+        return a.stock.ticker.localeCompare(b.stock.ticker, "pt-BR");
+      }
       if (sb !== sa) return sb - sa;
-      return (b.intel?.dyUltimos12m ?? 0) - (a.intel?.dyUltimos12m ?? 0);
+      if (dya == null && dyb != null) return 1;
+      if (dya != null && dyb == null) return -1;
+      if (dya !== dyb) return (dyb ?? -1) - (dya ?? -1);
+      return a.stock.ticker.localeCompare(b.stock.ticker, "pt-BR");
     });
   }, [
     rows,
@@ -249,6 +271,7 @@ function DividendosPage() {
     freq,
     comEmDias,
     somenteComDados,
+    sortMode,
   ]);
 
   const rankedBySector = useMemo(() => {
@@ -476,6 +499,19 @@ function DividendosPage() {
             selected={selectedSectors}
             onChange={setSelectedSectors}
           />
+
+          <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
+            <SelectTrigger
+              className="w-full border-border/60 bg-input/60 sm:w-[190px]"
+              aria-label="Ordenar inteligência de proventos"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="score">Maior Score</SelectItem>
+              <SelectItem value="yield">Maior Yield (DY 12m)</SelectItem>
+            </SelectContent>
+          </Select>
 
           <div className="flex flex-wrap gap-1">
             {CLASS_FILTERS.map((f) => {
