@@ -5,6 +5,7 @@ import { ShieldAlert, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { getMyAccess } from "@/lib/admin-users.functions";
+import { useCloseAccessSession } from "@/hooks/use-access-session";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -20,6 +21,7 @@ function AuthenticatedLayout() {
   const fetchAccess = useServerFn(getMyAccess);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const closeAccessSession = useCloseAccessSession();
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-access"],
@@ -28,6 +30,7 @@ function AuthenticatedLayout() {
   });
 
   async function signOut() {
+    await closeAccessSession();
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();

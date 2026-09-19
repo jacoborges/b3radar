@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
+  Info,
   KeyRound,
   Loader2,
   Pause,
@@ -15,6 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -33,6 +41,12 @@ import {
   setManagedUserSuspended,
   type AppRole,
 } from "@/lib/admin-users.functions";
+import {
+  listUserAccessSessions,
+  type AccessSessionLog,
+} from "@/lib/access-sessions.functions";
+import { useCloseAccessSession } from "@/hooks/use-access-session";
+import { ActionTip } from "@/components/ActionTip";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   head: () => ({
@@ -68,6 +82,9 @@ function UsersPage() {
   const suspendFn = useServerFn(setManagedUserSuspended);
   const passwordFn = useServerFn(resetManagedUserPassword);
   const deleteFn = useServerFn(deleteManagedUser);
+  const fetchAccessSessions = useServerFn(listUserAccessSessions);
+  const closeAccessSession = useCloseAccessSession();
+  const [logUser, setLogUser] = useState<{ id: string; email: string } | null>(null);
 
   const { data: access } = useQuery({
     queryKey: ["my-access"],
@@ -81,6 +98,13 @@ function UsersPage() {
     queryKey: ["managed-users"],
     queryFn: () => fetchUsers(),
     enabled: canManage,
+  });
+
+  const accessLogsQuery = useQuery({
+    queryKey: ["user-access-sessions", logUser?.id],
+    queryFn: () => fetchAccessSessions({ data: { userId: logUser?.id ?? "" } }),
+    enabled: isAdmin && Boolean(logUser),
+    refetchInterval: logUser ? 45_000 : false,
   });
 
   const [newEmail, setNewEmail] = useState("");
@@ -116,6 +140,7 @@ function UsersPage() {
   });
 
   async function signOut() {
+    await closeAccessSession();
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
@@ -290,6 +315,21 @@ function UsersPage() {
                   </div>
 
                   <div className="flex gap-1.5">
+                    {isAdmin && (
+                      <ActionTip
+                        label="Histórico de acessos"
+                        how="Veja quando este usuário entrou, saiu e quanto tempo permaneceu conectado."
+                      >
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          aria-label={`Histórico de acessos de ${u.email}`}
+                          onClick={() => setLogUser({ id: u.id, email: u.email })}
+                        >
+                          <Info className="h-4 w-4" />
+                        </Button>
+                      </ActionTip>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -354,6 +394,105 @@ function UsersPage() {
           </ul>
         </section>
       </main>
+
+      <AccessHistoryDialog
+        user={logUser}
+        logs={accessLogsQuery.data ?? []}
+        loading={accessLogsQuery.isLoading}
+        error={accessLogsQuery.error}
+        onOpenChange={(open) => {
+          if (!open) setLogUser(null);
+        }}
+      />
     </div>
+  );
+}
+
+function formatDuration(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  if (hours > 0) return `${hours}h ${remainingMinutes}min`;
+  if (minutes > 0) return `${minutes}min`;
+  return "menos de 1 min";
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "medium",
+  }).format(new Date(value));
+}
+
+function AccessHistoryDialog({
+  user,
+  logs,
+  loading,
+  error,
+  onOpenChange,
+}: {
+  user: { id: string; email: string } | null;
+  logs: AccessSessionLog[];
+  loading: boolean;
+  error: Error | null;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Dialog open={Boolean(user)} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>Histórico de acessos</DialogTitle>
+          <DialogDescription className="break-all">{user?.email}</DialogDescription>
+        </DialogHeader>
+
+        {loading && <p className="py-8 text-center text-sm text-muted-foreground">Carregando…</p>}
+        {error && (
+          <p className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+            Não foi possível carregar o histórico.
+          </p>
+        )}
+        {!loading && !error && logs.length === 0 && (
+          <p className="py-8 text-center text-sm text-muted-foreground">
+            Ainda não há acessos registrados para este usuário.
+          </p>
+        )}
+
+        {logs.length > 0 && (
+          <div className="overflow-x-auto rounded-md border border-border">
+            <table className="w-full min-w-[620px] text-sm">
+              <thead className="bg-muted/50 text-left text-xs text-muted-foreground">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Entrada</th>
+                  <th className="px-3 py-2 font-medium">Saída</th>
+                  <th className="px-3 py-2 font-medium">Tempo conectado</th>
+                  <th className="px-3 py-2 font-medium">Situação</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {logs.map((log) => (
+                  <tr key={log.id}>
+                    <td className="px-3 py-3 text-foreground">{formatDateTime(log.signedInAt)}</td>
+                    <td className="px-3 py-3 text-muted-foreground">
+                      {log.online
+                        ? "—"
+                        : formatDateTime(log.signedOutAt ?? log.lastSeenAt)}
+                    </td>
+                    <td className="px-3 py-3 tabular-nums text-foreground">
+                      {formatDuration(log.durationSeconds)}
+                    </td>
+                    <td className="px-3 py-3">
+                      <Badge variant={log.online ? "secondary" : "outline"}>
+                        {log.online ? "Online agora" : log.signedOutAt ? "Encerrada" : "Encerrada automaticamente"}
+                      </Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">Registros disponíveis pelos últimos 12 meses.</p>
+      </DialogContent>
+    </Dialog>
   );
 }
