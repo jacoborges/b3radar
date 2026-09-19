@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { startQueryPersistence } from "../lib/query-persist";
 import { useOnlinePresence } from "../hooks/use-online-users";
+import { useAccessSessionTracker } from "../hooks/use-access-session";
 import { TooltipProvider } from "../components/ui/tooltip";
 
 function NotFoundComponent() {
@@ -123,6 +124,7 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useOnlinePresence();
+  useAccessSessionTracker();
 
   useEffect(() => {
     startQueryPersistence(queryClient);

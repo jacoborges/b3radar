@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/admin-users.functions";
 import { useOnlineUsers } from "@/hooks/use-online-users";
 import { ActionTip } from "@/components/ActionTip";
+import { useCloseAccessSession } from "@/hooks/use-access-session";
 
 /** Realtime count of signed-in users — admin only. */
 function OnlineBadge() {
@@ -42,6 +43,7 @@ export function AccountControls() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchAccess = useServerFn(getMyAccess);
+  const closeAccessSession = useCloseAccessSession();
 
   const { data } = useQuery({
     queryKey: ["my-access"],
@@ -52,6 +54,7 @@ export function AccountControls() {
   const canManage = data?.role === "admin" || data?.role === "gestor";
 
   async function signOut() {
+    await closeAccessSession();
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
