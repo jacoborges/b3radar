@@ -58,7 +58,7 @@ export const touchAccessSession = createServerFn({ method: "POST" })
     }
 
     const cutoff = new Date(now.getTime() - RETENTION_MS).toISOString();
-    void supabaseAdmin.from("user_access_sessions").delete().lt("signed_in_at", cutoff);
+    await supabaseAdmin.from("user_access_sessions").delete().lt("signed_in_at", cutoff);
     return { sessionId, touchedAt: now.toISOString() };
   });
 

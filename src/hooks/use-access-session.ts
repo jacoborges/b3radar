@@ -37,10 +37,20 @@ export function useAccessSessionTracker() {
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | undefined;
+    let trackedUserId: string | null = null;
 
-    void supabase.auth.getUser().then(async ({ data }) => {
+    const stop = () => {
+      if (timer) clearInterval(timer);
+      timer = undefined;
+      trackedUserId = null;
+    };
+
+    const start = async () => {
+      const { data } = await supabase.auth.getUser();
       const user = data.user;
-      if (!user || cancelled) return;
+      if (!user || cancelled || trackedUserId === user.id) return;
+      stop();
+      trackedUserId = user.id;
       const stored = readStored(user.id);
       let sessionId =
         stored && Date.now() - stored.touchedAt <= REUSE_WINDOW_MS
@@ -61,11 +71,18 @@ export function useAccessSessionTracker() {
       await heartbeat();
       if (cancelled) return;
       timer = setInterval(() => void heartbeat(), HEARTBEAT_MS);
+    };
+
+    void start();
+    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") void start();
+      if (event === "SIGNED_OUT") stop();
     });
 
     return () => {
       cancelled = true;
-      if (timer) clearInterval(timer);
+      stop();
+      authListener.subscription.unsubscribe();
     };
   }, [touch]);
 }
@@ -80,6 +97,8 @@ export function useCloseAccessSession() {
     const stored = readStored(user.id);
     try {
       if (stored) await close({ data: { sessionId: stored.id } });
+    } catch {
+      // Uma falha no registro nunca deve impedir a saída da conta.
     } finally {
       window.localStorage.removeItem(key);
     }
