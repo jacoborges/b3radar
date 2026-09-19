@@ -266,6 +266,44 @@ export type Database = {
         }
         Relationships: []
       }
+      user_access_sessions: {
+        Row: {
+          client_session_id: string
+          created_at: string
+          id: string
+          last_seen_at: string
+          signed_in_at: string
+          signed_out_at: string | null
+          user_id: string
+        }
+        Insert: {
+          client_session_id: string
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          signed_in_at?: string
+          signed_out_at?: string | null
+          user_id: string
+        }
+        Update: {
+          client_session_id?: string
+          created_at?: string
+          id?: string
+          last_seen_at?: string
+          signed_in_at?: string
+          signed_out_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_access_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
