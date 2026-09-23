@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  MARKET_ANALYSIS_PROMPT_DEFAULT,
+  MARKET_ANALYSIS_PROMPT_KEY,
+} from "@/lib/market-analysis-settings.functions";
 
 const inputSchema = z.object({
   ticker: z.string().trim().min(4).max(7).toUpperCase(),
@@ -25,11 +30,6 @@ const CACHE = new Map<
   { content: string; recomendacao: Recomendacao; ts: number }
 >();
 
-interface GatewayResponse {
-  choices?: Array<{ message?: { content?: string } }>;
-  error?: { message?: string };
-}
-
 function extractRecomendacao(text: string): Recomendacao {
   const m = text.match(/RECOMENDACAO\s*:\s*(COMPRA|NEUTRO|VENDA)/i);
   if (!m) return null;
@@ -40,7 +40,43 @@ function stripRecomendacao(text: string): string {
   return text.replace(/^\s*RECOMENDACAO\s*:.*$/gim, "").trim();
 }
 
+async function readGatewayStream(response: Response): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let output = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const event = JSON.parse(payload) as {
+          type?: string;
+          delta?: string;
+          response?: { output_text?: string };
+        };
+        if (event.type === "response.output_text.delta" && event.delta) output += event.delta;
+        if (!output && event.type === "response.completed" && event.response?.output_text) {
+          output = event.response.output_text;
+        }
+      } catch {
+        // Ignore non-JSON keepalive frames.
+      }
+    }
+    if (done) break;
+  }
+  return output.trim();
+}
+
 export const analyzeMarketView = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<MarketAnalysisResult> => {
     setResponseHeader("cache-control", "no-store");
@@ -57,7 +93,15 @@ export const analyzeMarketView = createServerFn({ method: "POST" })
       };
     }
 
-    const cacheKey = data.ticker;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: promptSetting } = await supabaseAdmin
+      .from("app_settings")
+      .select("value, version")
+      .eq("key", MARKET_ANALYSIS_PROMPT_KEY)
+      .maybeSingle();
+    const customPrompt = promptSetting?.value?.trim() || MARKET_ANALYSIS_PROMPT_DEFAULT;
+    const promptVersion = promptSetting?.version ?? 1;
+    const cacheKey = `${data.ticker}:v${promptVersion}`;
     const cached = CACHE.get(cacheKey);
     if (!data.force && cached && Date.now() - cached.ts < TTL_MS) {
       return {
@@ -73,7 +117,7 @@ export const analyzeMarketView = createServerFn({ method: "POST" })
     const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
     const stored = data.force
       ? null
-      : await readCache<StoredMa>("ai-market-analysis", data.ticker, CACHE_TTL.ai);
+       : await readCache<StoredMa>(`ai-market-analysis-v${promptVersion}`, data.ticker, CACHE_TTL.ai);
     if (stored) {
       return {
         content: stored.payload.content,
@@ -112,21 +156,27 @@ RECOMENDACAO: COMPRA
 
 Nunca prometa retorno. Deixe claro quando algo é incerto.`;
 
-    const userPrompt = `Quanto ao modelo de negócio, sua perenidade, seu lucro e efetividade da operação, qual a análise do mercado financeiro referente à empresa da ação ${data.ticker} (${nomeCurto})${setorTxt}? Em um termômetro simples, de acordo com a análise fundamentalista e técnica das principais casas de análise do mercado, qual a recomendação para este ativo (compra, neutro ou venda)?`;
+    const userPrompt = `Quanto ao modelo de negócio, sua perenidade, seu lucro e efetividade da operação, qual a análise do mercado financeiro referente à empresa da ação ${data.ticker} (${nomeCurto})${setorTxt}? Em um termômetro simples, de acordo com a análise fundamentalista e técnica das principais casas de análise do mercado, qual a recomendação para este ativo (compra, neutro ou venda)?
+
+Orientações adicionais definidas pelo administrador do aplicativo:
+${customPrompt}`;
 
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          "Lovable-API-Key": apiKey,
+          "X-Lovable-AIG-SDK": "fetch",
         },
         body: JSON.stringify({
-          model: "google/gemini-3.5-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
+          model: "openai/gpt-6-astra",
+          instructions: systemPrompt,
+          input: userPrompt,
+          stream: true,
+          store: false,
+          reasoning: { effort: "medium", summary: "auto" },
+          include: ["reasoning.encrypted_content"],
         }),
       });
 
@@ -150,18 +200,24 @@ Nunca prometa retorno. Deixe claro quando algo é incerto.`;
       }
       if (!res.ok) {
         const body = await res.text();
+        let safeMessage = `Falha na IA (HTTP ${res.status}).`;
+        try {
+          const parsed = JSON.parse(body) as { error?: { message?: string }; message?: string };
+          safeMessage = parsed.error?.message ?? parsed.message ?? safeMessage;
+        } catch {
+          // Keep the safe status-only fallback.
+        }
         console.error("[market-analysis] http", res.status, body);
         return {
           content: null,
           recomendacao: null,
           cached: false,
           updatedAt: now,
-          error: `Falha na IA (HTTP ${res.status}).`,
+          error: safeMessage,
         };
       }
 
-      const json = (await res.json()) as GatewayResponse;
-      const raw = json.choices?.[0]?.message?.content?.trim();
+      const raw = await readGatewayStream(res);
       if (!raw) {
         return {
           content: null,
@@ -175,7 +231,7 @@ Nunca prometa retorno. Deixe claro quando algo é incerto.`;
       const recomendacao = extractRecomendacao(raw);
       const content = stripRecomendacao(raw);
       CACHE.set(cacheKey, { content, recomendacao, ts: Date.now() });
-      await writeCache("ai-market-analysis", data.ticker, { content, recomendacao });
+      await writeCache(`ai-market-analysis-v${promptVersion}`, data.ticker, { content, recomendacao });
 
       return { content, recomendacao, cached: false, updatedAt: now, error: null };
     } catch (err) {
