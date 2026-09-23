@@ -1,6 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  MARKET_ANALYSIS_PROMPT_DEFAULT,
+  MARKET_ANALYSIS_PROMPT_KEY,
+} from "@/lib/market-analysis-settings.functions";
 
 const inputSchema = z.object({
   ticker: z.string().trim().min(4).max(7).toUpperCase(),
@@ -41,6 +46,7 @@ function stripRecomendacao(text: string): string {
 }
 
 export const analyzeMarketView = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<MarketAnalysisResult> => {
     setResponseHeader("cache-control", "no-store");
@@ -57,7 +63,15 @@ export const analyzeMarketView = createServerFn({ method: "POST" })
       };
     }
 
-    const cacheKey = data.ticker;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: promptSetting } = await supabaseAdmin
+      .from("app_settings")
+      .select("value, version")
+      .eq("key", MARKET_ANALYSIS_PROMPT_KEY)
+      .maybeSingle();
+    const customPrompt = promptSetting?.value?.trim() || MARKET_ANALYSIS_PROMPT_DEFAULT;
+    const promptVersion = promptSetting?.version ?? 1;
+    const cacheKey = `${data.ticker}:v${promptVersion}`;
     const cached = CACHE.get(cacheKey);
     if (!data.force && cached && Date.now() - cached.ts < TTL_MS) {
       return {
@@ -73,7 +87,7 @@ export const analyzeMarketView = createServerFn({ method: "POST" })
     const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
     const stored = data.force
       ? null
-      : await readCache<StoredMa>("ai-market-analysis", data.ticker, CACHE_TTL.ai);
+       : await readCache<StoredMa>(`ai-market-analysis-v${promptVersion}`, data.ticker, CACHE_TTL.ai);
     if (stored) {
       return {
         content: stored.payload.content,
@@ -112,7 +126,10 @@ RECOMENDACAO: COMPRA
 
 Nunca prometa retorno. Deixe claro quando algo é incerto.`;
 
-    const userPrompt = `Quanto ao modelo de negócio, sua perenidade, seu lucro e efetividade da operação, qual a análise do mercado financeiro referente à empresa da ação ${data.ticker} (${nomeCurto})${setorTxt}? Em um termômetro simples, de acordo com a análise fundamentalista e técnica das principais casas de análise do mercado, qual a recomendação para este ativo (compra, neutro ou venda)?`;
+    const userPrompt = `Quanto ao modelo de negócio, sua perenidade, seu lucro e efetividade da operação, qual a análise do mercado financeiro referente à empresa da ação ${data.ticker} (${nomeCurto})${setorTxt}? Em um termômetro simples, de acordo com a análise fundamentalista e técnica das principais casas de análise do mercado, qual a recomendação para este ativo (compra, neutro ou venda)?
+
+Orientações adicionais definidas pelo administrador do aplicativo:
+${customPrompt}`;
 
     try {
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -175,7 +192,7 @@ Nunca prometa retorno. Deixe claro quando algo é incerto.`;
       const recomendacao = extractRecomendacao(raw);
       const content = stripRecomendacao(raw);
       CACHE.set(cacheKey, { content, recomendacao, ts: Date.now() });
-      await writeCache("ai-market-analysis", data.ticker, { content, recomendacao });
+      await writeCache(`ai-market-analysis-v${promptVersion}`, data.ticker, { content, recomendacao });
 
       return { content, recomendacao, cached: false, updatedAt: now, error: null };
     } catch (err) {
