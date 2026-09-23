@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import {
   ArrowLeft,
   KeyRound,
@@ -8,6 +10,8 @@ import {
   Trash2,
   Target,
   Droplets,
+  Bot,
+  Loader2,
 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -18,6 +22,7 @@ import {
   MIN_LIQUIDEZ_MAX,
 } from "@/hooks/use-min-liquidez";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useBrapiToken } from "@/hooks/use-live-quotes";
@@ -28,6 +33,12 @@ import {
   BAZIN_DIVISOR_MIN,
   BAZIN_DIVISOR_MAX,
 } from "@/hooks/use-bazin-divisor";
+import { getMyAccess } from "@/lib/admin-users.functions";
+import {
+  getMarketAnalysisPrompt,
+  MARKET_ANALYSIS_PROMPT_DEFAULT,
+  setMarketAnalysisPrompt,
+} from "@/lib/market-analysis-settings.functions";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
@@ -45,6 +56,12 @@ export const Route = createFileRoute("/_authenticated/configuracoes")({
 });
 
 function SettingsPage() {
+  const fetchAccess = useServerFn(getMyAccess);
+  const { data: access } = useQuery({
+    queryKey: ["my-access"],
+    queryFn: () => fetchAccess(),
+    staleTime: 60_000,
+  });
   const [storedToken, setStoredToken, tokenReady] = useBrapiToken();
   const [input, setInput] = useState<string>("");
   const [saved, setSaved] = useState(false);
@@ -164,8 +181,98 @@ function SettingsPage() {
 
         <LiquidezSection />
 
+        {access?.role === "admin" && <MarketAnalysisPromptSection />}
+
       </main>
     </div>
+  );
+}
+
+function MarketAnalysisPromptSection() {
+  const queryClient = useQueryClient();
+  const fetchPrompt = useServerFn(getMarketAnalysisPrompt);
+  const savePrompt = useServerFn(setMarketAnalysisPrompt);
+  const [prompt, setPrompt] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const promptQuery = useQuery({
+    queryKey: ["market-analysis-prompt"],
+    queryFn: () => fetchPrompt(),
+  });
+
+  useEffect(() => {
+    if (promptQuery.data) setPrompt(promptQuery.data.prompt);
+  }, [promptQuery.data]);
+
+  const mutation = useMutation({
+    mutationFn: (value: string) => savePrompt({ data: { prompt: value } }),
+    onSuccess: async (_, value) => {
+      setPrompt(value || MARKET_ANALYSIS_PROMPT_DEFAULT);
+      setNotice(value ? "Prompt salvo. As próximas análises usarão o novo refinamento." : "Prompt padrão restaurado.");
+      await queryClient.invalidateQueries({ queryKey: ["market-analysis-prompt"] });
+      window.setTimeout(() => setNotice(null), 3000);
+    },
+  });
+
+  return (
+    <section className="mt-6 rounded-xl border border-border/60 bg-card p-5 md:p-6">
+      <div className="flex items-center gap-2">
+        <Bot className="h-4 w-4 text-primary" />
+        <h2 className="text-base font-semibold">Prompt da Análise de Mercado — IA</h2>
+      </div>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Acrescente critérios, palavras e temas que devem refinar a análise aberta no ícone de
+        interrogação ao lado de cada ativo. A estrutura e o termômetro permanecem protegidos.
+      </p>
+
+      <div className="mt-5 space-y-2">
+        <Label htmlFor="market-analysis-prompt" className="text-xs uppercase text-muted-foreground">
+          Orientações adicionais
+        </Label>
+        <Textarea
+          id="market-analysis-prompt"
+          value={prompt}
+          onChange={(event) => setPrompt(event.target.value)}
+          maxLength={4000}
+          rows={8}
+          disabled={promptQuery.isLoading || mutation.isPending}
+          className="min-h-44 resize-y bg-input/60 leading-relaxed"
+        />
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{prompt.length.toLocaleString("pt-BR")} / 4.000 caracteres</span>
+          {promptQuery.data?.updatedAt && (
+            <span>Atualizado em {new Date(promptQuery.data.updatedAt).toLocaleString("pt-BR")}</span>
+          )}
+        </div>
+      </div>
+
+      {promptQuery.error && (
+        <p className="mt-3 text-sm text-destructive">Não foi possível carregar o prompt.</p>
+      )}
+      {mutation.error && (
+        <p className="mt-3 text-sm text-destructive">
+          {mutation.error instanceof Error ? mutation.error.message : "Não foi possível salvar."}
+        </p>
+      )}
+      {notice && <p className="mt-3 text-sm text-primary">{notice}</p>}
+
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <Button
+          variant="outline"
+          disabled={mutation.isPending || promptQuery.isLoading}
+          onClick={() => mutation.mutate("")}
+        >
+          Restaurar padrão
+        </Button>
+        <Button
+          disabled={mutation.isPending || promptQuery.isLoading || !prompt.trim()}
+          onClick={() => mutation.mutate(prompt.trim())}
+        >
+          {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Salvar prompt
+        </Button>
+      </div>
+    </section>
   );
 }
 
