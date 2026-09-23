@@ -30,11 +30,6 @@ const CACHE = new Map<
   { content: string; recomendacao: Recomendacao; ts: number }
 >();
 
-interface GatewayResponse {
-  choices?: Array<{ message?: { content?: string } }>;
-  error?: { message?: string };
-}
-
 function extractRecomendacao(text: string): Recomendacao {
   const m = text.match(/RECOMENDACAO\s*:\s*(COMPRA|NEUTRO|VENDA)/i);
   if (!m) return null;
@@ -43,6 +38,41 @@ function extractRecomendacao(text: string): Recomendacao {
 
 function stripRecomendacao(text: string): string {
   return text.replace(/^\s*RECOMENDACAO\s*:.*$/gim, "").trim();
+}
+
+async function readGatewayStream(response: Response): Promise<string> {
+  if (!response.body) return "";
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let output = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    buffer += decoder.decode(value, { stream: !done });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const payload = line.slice(6).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const event = JSON.parse(payload) as {
+          type?: string;
+          delta?: string;
+          response?: { output_text?: string };
+        };
+        if (event.type === "response.output_text.delta" && event.delta) output += event.delta;
+        if (!output && event.type === "response.completed" && event.response?.output_text) {
+          output = event.response.output_text;
+        }
+      } catch {
+        // Ignore non-JSON keepalive frames.
+      }
+    }
+    if (done) break;
+  }
+  return output.trim();
 }
 
 export const analyzeMarketView = createServerFn({ method: "POST" })
@@ -132,18 +162,21 @@ Orientações adicionais definidas pelo administrador do aplicativo:
 ${customPrompt}`;
 
     try {
-      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          "Lovable-API-Key": apiKey,
+          "X-Lovable-AIG-SDK": "fetch",
         },
         body: JSON.stringify({
-          model: "google/gemini-3.5-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
+          model: "openai/gpt-6-astra",
+          instructions: systemPrompt,
+          input: userPrompt,
+          stream: true,
+          store: false,
+          reasoning: { effort: "medium", summary: "auto" },
+          include: ["reasoning.encrypted_content"],
         }),
       });
 
@@ -167,18 +200,24 @@ ${customPrompt}`;
       }
       if (!res.ok) {
         const body = await res.text();
+        let safeMessage = `Falha na IA (HTTP ${res.status}).`;
+        try {
+          const parsed = JSON.parse(body) as { error?: { message?: string }; message?: string };
+          safeMessage = parsed.error?.message ?? parsed.message ?? safeMessage;
+        } catch {
+          // Keep the safe status-only fallback.
+        }
         console.error("[market-analysis] http", res.status, body);
         return {
           content: null,
           recomendacao: null,
           cached: false,
           updatedAt: now,
-          error: `Falha na IA (HTTP ${res.status}).`,
+          error: safeMessage,
         };
       }
 
-      const json = (await res.json()) as GatewayResponse;
-      const raw = json.choices?.[0]?.message?.content?.trim();
+      const raw = await readGatewayStream(res);
       if (!raw) {
         return {
           content: null,
