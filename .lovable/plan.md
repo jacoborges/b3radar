@@ -1,76 +1,133 @@
-# Google Drive por usuário como armazenamento principal
+# Migração do B3 Radar para Google Drive central
 
 ## Objetivo
-Cada usuário conectará a própria conta Google Drive. O Drive será a fonte principal de carteiras reais, compras, vendas, simulações e relatórios do usuário, com acesso restrito aos arquivos criados pelo B3 Radar.
+Usar a conta Google Drive **evenos.jacoborges@gmail.com** como armazenamento central dos dados do B3 Radar e remover a dependência do banco, autenticação, cache e funções do Lovable Cloud.
 
-Para preservar todos os recursos existentes, o Lovable Cloud continuará somente com responsabilidades que o Drive não substitui: login, perfis, papéis de administrador, logs de acesso, usuários online, configurações globais, caches compartilhados de mercado e o vínculo seguro com cada Drive.
+O Google Drive guardará os dados em arquivos. O servidor publicado do app continuará necessário para executar cálculos, consultar fontes externas, proteger credenciais, controlar sessões e acessar o Drive sem expor a conta central no navegador.
 
-## Situação confirmada
-- O app hoje mantém carteiras, movimentações e simulações no Lovable Cloud.
-- Perfis, permissões administrativas, logs, presença online e caches de mercado também dependem do Lovable Cloud.
-- O conector por usuário do Google Drive está disponível no workspace, mas ainda não há um cliente Google configurado para ele.
-- O banco do Lovable Cloud está pausado; a migração e os testes autenticados dependem da reativação.
-
-## Implementação
-
-### 1. Vincular o Google Drive por usuário
-- Vincular ao projeto um cliente do conector Google Drive para usuários finais.
-- Solicitar somente o escopo `drive.file`, que permite ao B3 Radar acessar arquivos criados ou escolhidos pelo próprio app, sem varrer o restante do Drive.
-- Configurar o retorno OAuth oficial do gateway: `https://connector-gateway.lovable.dev/api/v1/app-users/oauth2/callback`.
-- Adicionar em **Configurações** um painel com estado da conexão, conta conectada, conectar, reconectar e desconectar.
-
-### 2. Guardar o vínculo com segurança
-- Criar uma tabela interna `app_user_connections`, acessível apenas pelo serviço do app, para relacionar usuário e conector.
-- Armazenar somente a chave de conexão criptografada; nenhum token do Google irá ao navegador, URL, logs ou arquivos do usuário.
-- Associar cada conexão ao identificador seguro do usuário autenticado, nunca ao e-mail ou a um identificador compartilhado.
-
-### 3. Estrutura dos dados no Drive
-Criar uma pasta visível **B3 Radar** contendo arquivos versionados:
+## Arquitetura final
 
 ```text
-B3 Radar/
-  manifest.json
-  carteiras.json
-  simulacoes.json
-  relatorios/
-    exportacoes geradas pelo usuário
+Usuário → Entrar com Google → servidor do B3 Radar
+                                  ↓
+                    Google Drive central do app
+                                  ↓
+          usuários, papéis, logs, carteiras, caches e ajustes
 ```
 
-- `manifest.json`: versão do formato, datas de sincronização e identificadores dos arquivos.
-- `carteiras.json`: carteiras, lotes de compra, vendas e datas necessárias para proventos e resultados realizados.
-- `simulacoes.json`: múltiplas carteiras simuladas, lotes e parâmetros das comparações.
-- Escritas serão validadas, versionadas e feitas com proteção contra sobrescrita concorrente.
+- **Google Drive central:** fonte persistente de todos os dados.
+- **Servidor do app:** valida identidade, aplica permissões, executa integrações e lê/grava os arquivos.
+- **Navegador:** recebe somente os dados permitidos; nunca recebe tokens do Drive ou credenciais administrativas.
+- **Lovable Cloud:** deixa de ser usado para banco, autenticação, presença, cache e funções de dados.
 
-### 4. Tornar o Drive a fonte principal
-- Substituir as leituras e alterações pessoais das carteiras e simulações por funções protegidas que leem e gravam no Drive do usuário.
-- Manter a mesma interface atual, cálculos, gráficos, venda de ativos, proventos em custódia, linha do tempo e comparações setoriais.
-- Atualizar a tela após cada gravação e apresentar estados claros para sincronização, perda de conexão e necessidade de reconectar.
-- Não mover para o Drive o token brapi.dev nem as preferências pessoais nesta etapa, conforme o escopo escolhido.
+## 1. Conectar a conta central
+- Vincular ao projeto o conector Google Drive da conta informada.
+- Solicitar acesso suficiente para criar e administrar somente os arquivos do B3 Radar.
+- Confirmar a conta efetivamente conectada após o consentimento; o endereço não será codificado como credencial.
+- Todas as chamadas ao Drive serão feitas no servidor do app.
 
-### 5. Migração dos dados atuais
-- Ao conectar pela primeira vez, detectar carteiras e simulações existentes no Lovable Cloud.
-- Mostrar uma prévia com quantidades de carteiras, operações e simulações antes de copiar.
-- Exportar para o Drive sem duplicar registros, validar a leitura de retorno e só então marcar a migração como concluída.
-- Manter os dados antigos temporariamente como recuperação; a remoção definitiva ficará para uma etapa posterior e exigirá confirmação administrativa.
+## 2. Substituir o login atual por Google
+- Trocar login/senha por **Entrar com Google**.
+- Validar a identidade Google no servidor e criar uma sessão segura em cookie `HttpOnly`, `Secure` e `SameSite`.
+- Manter uma lista central de usuários autorizados e seus papéis (`admin`, `manager`, `user`) no Drive.
+- Definir **evenos.jacoborges@gmail.com** como administrador principal inicial.
+- Preservar bloqueio de usuários, logout, proteção das páginas e acesso administrativo.
+- Armazenar somente identificador Google, e-mail, nome, papel e estado; nunca senha do Google.
 
-### 6. Relatórios e portabilidade
-- Adicionar ações para exportar carteiras e simulações em JSON/CSV para a pasta `relatorios`.
-- Exibir data da última sincronização e oferecer **Sincronizar agora**.
-- Permitir baixar uma cópia pelo navegador mesmo quando o Drive estiver indisponível, desde que os dados já tenham sido carregados na sessão.
+## 3. Organização dos arquivos no Drive
 
-### 7. Segurança e continuidade
-- Validar todos os arquivos e limitar tamanho, tipos e estrutura antes de processar.
-- Tratar conexão revogada sem apagar dados e oferecer reconexão.
-- Impedir acesso cruzado entre usuários e não registrar conteúdo financeiro em logs.
-- Manter autenticação, administração, auditoria, presença online, cache de mercado e automações no Lovable Cloud.
+```text
+B3 Radar Data/
+  system/
+    users.json
+    sessions-index.json
+    app-settings.json
+    schema-manifest.json
+  audit/
+    access-YYYY-MM.jsonl
+  users/
+    <google-user-id>/
+      settings.json
+      portfolios.json
+      simulations.json
+  market/
+    fundamentals/
+    dividends/
+    quotes/
+    valuations/
+    comparisons/
+  reports/
+    <google-user-id>/
+```
 
-## Validação
-- Conectar duas contas diferentes e confirmar isolamento completo dos arquivos.
-- Migrar carteira com compras, vendas e simulações; recarregar e conferir os mesmos totais.
-- Validar criação, edição, venda, proventos, linha do tempo, simulação e exportação após a migração.
-- Testar reconexão, popup bloqueado, permissão negada, Drive indisponível e conflito entre abas.
-- Verificar desktop, smartphone e tablet, além da compilação e dos erros de execução.
+- Arquivos terão versão de formato, data de atualização, revisão e checksum.
+- Dados financeiros pessoais serão separados pelo identificador Google estável, não pelo e-mail.
+- Logs serão particionados por mês para evitar arquivos excessivamente grandes.
+- Caches serão divididos por categoria e ticker para reduzir conflitos e chamadas desnecessárias.
 
-## Pré-requisitos e bloqueios
-1. Um administrador do workspace precisa criar/vincular o cliente OAuth do Google Drive quando o cartão de conexão for aberto.
-2. O Lovable Cloud precisa ser reativado para login, armazenamento criptografado do vínculo e migração dos dados atuais.
+## 4. Camada de armazenamento confiável
+- Criar um módulo único de leitura, gravação, busca e exclusão no Drive.
+- Validar todo conteúdo com esquemas antes de usar.
+- Implementar gravação com revisão/ETag para impedir que duas abas sobrescrevam mudanças silenciosamente.
+- Usar tentativas limitadas e fila para gravações concorrentes.
+- Manter cópia temporária em memória apenas durante a requisição; o Drive seguirá como fonte persistente.
+- Não armazenar tokens, segredos ou sessões completas dentro dos arquivos do Drive.
+
+## 5. Migrar todas as funções existentes
+
+### Usuários e administração
+- Migrar perfis, papéis, bloqueios e configurações administrativas.
+- Recriar painel de usuários sobre os arquivos centrais.
+- Substituir presença em tempo real por heartbeat no servidor e índice de sessões no Drive, aceitando atualização periódica em vez de presença instantânea.
+
+### Logs
+- Registrar login, logout, última atividade e duração em arquivos mensais.
+- Manter o painel INFO e a retenção de 12 meses.
+- Evitar registrar tokens, conteúdo financeiro detalhado ou respostas privadas de IA.
+
+### Carteiras e simulações
+- Migrar carteiras, compras, vendas, proventos, linha do tempo, simulações e comparações.
+- Preservar cálculos de custódia, realizado, yield on cost, bonificações e desdobramentos.
+- Manter exportações e relatórios no Drive central, separados por usuário.
+
+### Preferências e configurações
+- Migrar token brapi.dev por usuário, setores visíveis, filtros, Bazin, liquidez e demais ajustes.
+- Proteger valores sensíveis com criptografia no servidor antes de gravá-los no Drive.
+- Manter o prompt administrativo global e sua invalidação de cache.
+
+### Caches e dados de mercado
+- Migrar fundamentos, proventos, cotações, valuations, históricos, consenso e comparações setoriais.
+- Preservar TTLs atuais e atualização ao expandir ativos.
+- Adaptar atualizações automáticas para execução pelo servidor publicado; o Drive armazena o resultado, mas não executa tarefas sozinho.
+
+## 6. Migração segura dos dados atuais
+- Criar uma rotina administrativa de migração antes de desligar as leituras antigas.
+- Ler os dados existentes, transformar para os novos formatos e mostrar uma prévia com contagens.
+- Gravar tudo no Drive, reler, validar checksums e comparar totais.
+- Trocar cada área para o novo armazenamento somente após validação.
+- Manter uma janela de recuperação sem gravações no sistema antigo; remover a dependência do Lovable Cloud apenas após a conferência final.
+
+## 7. Estados de falha e recuperação
+- Mostrar aviso claro se o Drive estiver indisponível ou a conexão for revogada.
+- Bloquear gravações quando não for possível confirmar a versão mais recente, evitando perda silenciosa.
+- Oferecer reconexão administrativa sem apagar arquivos.
+- Fazer backup versionado diário dos arquivos críticos dentro da própria conta e permitir exportação manual compactada.
+
+## 8. Validação
+- Confirmar login Google de administrador e usuário comum.
+- Verificar isolamento, papéis, suspensão, sessões e histórico de acessos.
+- Executar os fluxos completos de Carteira, venda, proventos, Simulador, filtros, IA e ajustes.
+- Simular duas abas gravando o mesmo dado e confirmar tratamento de conflito.
+- Simular Drive indisponível, permissão revogada, arquivo corrompido e cache vencido.
+- Conferir desktop, smartphone e tablet, além da compilação e erros de execução.
+
+## Limitações aceitas
+- O Drive não é um banco transacional; algumas operações serão mais lentas e exigirão controle explícito de concorrência.
+- “Usuários online” terá atualização periódica, não presença instantânea garantida.
+- Tarefas automáticas dependem do servidor publicado estar operacional; o Drive sozinho não executa rotinas.
+- Uma única conta central cria um ponto único de falha e de capacidade. Revogar ou perder acesso a ela interrompe o app.
+
+## Pré-requisitos
+1. Conectar a conta **evenos.jacoborges@gmail.com** no cartão do Google Drive que será aberto durante a implementação.
+2. Configurar credenciais OAuth do Google para o novo **Entrar com Google** sem usar a autenticação do Lovable Cloud.
+3. Reativar temporariamente o Lovable Cloud apenas para exportar os dados atuais; sem isso, a migração preservará somente os dados acessíveis no código ou no navegador.
