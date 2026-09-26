@@ -40,6 +40,7 @@ function AuthPage() {
     staleTime: 0,
   });
   const needsSetup = adminState?.exists === false;
+  const serviceError = adminState?.error ?? null;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -56,14 +57,22 @@ function AuthPage() {
         if (password.length < 8) {
           throw new Error("A senha do administrador precisa ter ao menos 8 caracteres.");
         }
-        await setupAdmin({ data: { email, password } });
+        const setupResult = await setupAdmin({ data: { email, password } });
+        if (!setupResult.ok) throw new Error(setupResult.error);
         await refetch();
       }
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
       });
-      if (signInError) throw new Error("E-mail ou senha inválidos.");
+      if (signInError) {
+        if (/fetch|network/i.test(signInError.message)) {
+          throw new Error(
+            "O serviço de acesso está temporariamente indisponível. Reative o Lovable Cloud e tente novamente.",
+          );
+        }
+        throw new Error("E-mail ou senha inválidos.");
+      }
       navigate({ to: "/", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível entrar.");
@@ -82,6 +91,12 @@ function AuthPage() {
         {needsSetup && (
           <p className="mt-4 rounded-lg border border-border bg-card px-3 py-2 text-center text-xs text-muted-foreground">
             Primeiro acesso: defina o e-mail e a senha do administrador.
+          </p>
+        )}
+
+        {serviceError && (
+          <p className="mt-4 rounded-lg border border-destructive/40 bg-card px-3 py-2 text-center text-sm text-destructive">
+            {serviceError}
           </p>
         )}
 
@@ -111,7 +126,7 @@ function AuthPage() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={busy}>
+          <Button type="submit" className="w-full" disabled={busy || Boolean(serviceError)}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {needsSetup ? "Criar administrador e entrar" : "Entrar"}
           </Button>

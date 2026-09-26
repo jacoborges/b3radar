@@ -43,6 +43,26 @@ function assertId(value: unknown): string {
   return id;
 }
 
+function isConnectionFailure(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = `${error.name} ${error.message}`.toLowerCase();
+  return (
+    message.includes("fetch failed") ||
+    message.includes("failed to fetch") ||
+    message.includes("network") ||
+    message.includes("econnrefused") ||
+    message.includes("enotfound")
+  );
+}
+
+function unavailableMessage(error: unknown): string {
+  return isConnectionFailure(error)
+    ? "O serviço de dados está temporariamente indisponível. Reative o Lovable Cloud e tente novamente."
+    : error instanceof Error
+      ? error.message
+      : "Não foi possível acessar o serviço de dados.";
+}
+
 /** Reads the caller's own role + status through RLS (no admin client). */
 async function readAccess(
   supabase: { from: (t: string) => any },
@@ -246,40 +266,60 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
     password: assertPassword(input.password),
   }))
   .handler(async ({ data }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count } = await supabaseAdmin
-      .from("user_roles")
-      .select("id", { count: "exact", head: true })
-      .eq("role", "admin");
-    if ((count ?? 0) > 0) {
-      throw new Error("O administrador já foi configurado.");
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { count, error: countError } = await supabaseAdmin
+        .from("user_roles")
+        .select("id", { count: "exact", head: true })
+        .eq("role", "admin");
+      if (countError) throw countError;
+      if ((count ?? 0) > 0) {
+        return { ok: false as const, error: "O administrador já foi configurado." };
+      }
+
+      const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+        email: data.email,
+        password: data.password,
+        email_confirm: true,
+      });
+      if (error || !created?.user) {
+        throw new Error(error?.message ?? "Não foi possível criar o administrador.");
+      }
+
+      const userId = created.user.id;
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .upsert({ id: userId, email: data.email, suspended: false });
+      if (profileError) throw profileError;
+      const { error: deleteRoleError } = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
+      if (deleteRoleError) throw deleteRoleError;
+      const { error: roleError } = await supabaseAdmin
+        .from("user_roles")
+        .insert({ user_id: userId, role: "admin" });
+      if (roleError) throw roleError;
+
+      return { ok: true as const, error: null };
+    } catch (error) {
+      console.error("[bootstrap-first-admin]", error);
+      return { ok: false as const, error: unavailableMessage(error) };
     }
-
-    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
-      email: data.email,
-      password: data.password,
-      email_confirm: true,
-    });
-    if (error || !created?.user) {
-      throw new Error(error?.message ?? "Não foi possível criar o administrador.");
-    }
-
-    const userId = created.user.id;
-    await supabaseAdmin
-      .from("profiles")
-      .upsert({ id: userId, email: data.email, suspended: false });
-    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
-    await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: "admin" });
-
-    return { ok: true as const };
   });
 
 /** Public: tells the login screen whether first-run setup is still needed. */
 export const adminExists = createServerFn({ method: "GET" }).handler(async () => {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { count } = await supabaseAdmin
-    .from("user_roles")
-    .select("id", { count: "exact", head: true })
-    .eq("role", "admin");
-  return { exists: (count ?? 0) > 0 };
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count, error } = await supabaseAdmin
+      .from("user_roles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "admin");
+    if (error) throw error;
+    return { exists: (count ?? 0) > 0, error: null };
+  } catch (error) {
+    console.error("[admin-exists]", error);
+    return { exists: null, error: unavailableMessage(error) };
+  }
 });
