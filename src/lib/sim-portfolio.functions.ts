@@ -38,62 +38,26 @@ const updateLotSchema = z.object({
   boughtAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
+async function mutateSimulations(
+  userId: string,
+  mutate: (portfolios: SimPortfolio[]) => SimPortfolio[] | Promise<SimPortfolio[]>,
+) {
+  const { updateUserDocument } = await import("./drive-storage.server");
+  return updateUserDocument(userId, "simulations.json", [] as SimPortfolio[], mutate);
+}
+
 export const listSimPortfolios = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<SimPortfolio[]> => {
-    const { supabase, userId } = context;
-
-    const { data: portfolios, error } = await supabase
-      .from("sim_portfolios")
-      .select("id, name, created_at")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: true });
-    if (error) throw new Error(error.message);
-
-    const ids = (portfolios ?? []).map((p) => p.id);
-    let lots: Array<{
-      id: string;
-      portfolio_id: string;
-      ticker: string;
-      price: number | string;
-      quantity: number | string;
-      bought_at: string;
-    }> = [];
-
-    if (ids.length > 0) {
-      const { data, error: lotsError } = await supabase
-        .from("sim_portfolio_lots")
-        .select("id, portfolio_id, ticker, price, quantity, bought_at")
-        .in("portfolio_id", ids)
-        .order("bought_at", { ascending: true });
-      if (lotsError) throw new Error(lotsError.message);
-      lots = data ?? [];
-    }
-
-    return (portfolios ?? []).map((p) => ({
-      id: p.id,
-      name: p.name,
-      createdAt: p.created_at,
-      lots: lots
-        .filter((l) => l.portfolio_id === p.id)
-        .map((l) => ({
-          id: l.id,
-          ticker: l.ticker,
-          price: Number(l.price),
-          quantity: Number(l.quantity),
-          boughtAt: l.bought_at,
-        })),
-    }));
+    const { readUserDocument } = await import("./drive-storage.server");
+    return readUserDocument(context.userId, "simulations.json", [] as SimPortfolio[]);
   });
 
 export const createSimPortfolio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => createSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("sim_portfolios")
-      .insert({ name: data.name, user_id: context.userId });
-    if (error) throw new Error(error.message);
+    await mutateSimulations(context.userId, (items) => [...items, { id: crypto.randomUUID(), name: data.name, createdAt: new Date().toISOString(), lots: [] }]);
     return { ok: true };
   });
 
@@ -101,12 +65,7 @@ export const renameSimPortfolio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => renameSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("sim_portfolios")
-      .update({ name: data.name })
-      .eq("id", data.id)
-      .eq("user_id", context.userId);
-    if (error) throw new Error(error.message);
+    await mutateSimulations(context.userId, (items) => items.map((item) => item.id === data.id ? { ...item, name: data.name } : item));
     return { ok: true };
   });
 
@@ -114,12 +73,7 @@ export const deleteSimPortfolio = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("sim_portfolios")
-      .delete()
-      .eq("id", data.id)
-      .eq("user_id", context.userId);
-    if (error) throw new Error(error.message);
+    await mutateSimulations(context.userId, (items) => items.filter((item) => item.id !== data.id));
     return { ok: true };
   });
 
@@ -127,14 +81,7 @@ export const addSimLot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => lotSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("sim_portfolio_lots").insert({
-      portfolio_id: data.portfolioId,
-      ticker: data.ticker,
-      price: data.price,
-      quantity: data.quantity,
-      bought_at: data.boughtAt,
-    });
-    if (error) throw new Error(error.message);
+    await mutateSimulations(context.userId, (items) => items.map((item) => item.id === data.portfolioId ? { ...item, lots: [...item.lots, { id: crypto.randomUUID(), ticker: data.ticker, price: data.price, quantity: data.quantity, boughtAt: data.boughtAt }] } : item));
     return { ok: true };
   });
 
@@ -142,15 +89,7 @@ export const updateSimLot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => updateLotSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("sim_portfolio_lots")
-      .update({
-        price: data.price,
-        quantity: data.quantity,
-        bought_at: data.boughtAt,
-      })
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await mutateSimulations(context.userId, (items) => items.map((item) => ({ ...item, lots: item.lots.map((lot) => lot.id === data.id ? { ...lot, price: data.price, quantity: data.quantity, boughtAt: data.boughtAt } : lot) })));
     return { ok: true };
   });
 
@@ -158,10 +97,6 @@ export const deleteSimLot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
-      .from("sim_portfolio_lots")
-      .delete()
-      .eq("id", data.id);
-    if (error) throw new Error(error.message);
+    await mutateSimulations(context.userId, (items) => items.map((item) => ({ ...item, lots: item.lots.filter((lot) => lot.id !== data.id) })));
     return { ok: true };
   });

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { UserSettingsDocument } from "./drive-documents.server";
 
 export interface SectorPreference {
   selected: string[];
@@ -20,16 +21,33 @@ function parseSectorPreference(value: unknown): SectorPreference | null {
   };
 }
 
-/** Token brapi.dev salvo na conta do usuário (RLS: só o próprio dono lê/grava). */
+async function readSettings(userId: string): Promise<UserSettingsDocument> {
+  const { readUserDocument } = await import("./drive-storage.server");
+  return readUserDocument(userId, "settings.json", {
+    brapiTokenCiphertext: null,
+    sectorPreference: null,
+  });
+}
+
+async function updateSettings(
+  userId: string,
+  mutate: (settings: UserSettingsDocument) => UserSettingsDocument | Promise<UserSettingsDocument>,
+) {
+  const { updateUserDocument } = await import("./drive-storage.server");
+  return updateUserDocument(userId, "settings.json", {
+    brapiTokenCiphertext: null,
+    sectorPreference: null,
+  } satisfies UserSettingsDocument, mutate);
+}
+
+/** Token brapi.dev protegido no arquivo privado do usuário no Google Drive central. */
 export const getMyBrapiToken = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ token: string }> => {
-    const { data } = await context.supabase
-      .from("user_settings")
-      .select("brapi_token")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    return { token: (data?.brapi_token ?? "").trim() };
+    const settings = await readSettings(context.userId);
+    if (!settings.brapiTokenCiphertext) return { token: "" };
+    const { decryptPrivateValue } = await import("./data-crypto.server");
+    return { token: decryptPrivateValue(settings.brapiTokenCiphertext) };
   });
 
 export const setMyBrapiToken = createServerFn({ method: "POST" })
@@ -40,27 +58,19 @@ export const setMyBrapiToken = createServerFn({ method: "POST" })
     return { token };
   })
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("user_settings").upsert(
-      {
-        user_id: context.userId,
-        brapi_token: data.token === "" ? null : data.token,
-      },
-      { onConflict: "user_id" },
-    );
-    if (error) throw error;
+    const { encryptPrivateValue } = await import("./data-crypto.server");
+    await updateSettings(context.userId, (settings) => ({
+      ...settings,
+      brapiTokenCiphertext: data.token ? encryptPrivateValue(data.token) : null,
+    }));
     return { ok: true as const };
   });
 
 export const getMySectorPreference = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ preference: SectorPreference | null }> => {
-    const { data, error } = await context.supabase
-      .from("user_settings")
-      .select("selected_sectors")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    if (error) throw error;
-    return { preference: parseSectorPreference(data?.selected_sectors) };
+    const settings = await readSettings(context.userId);
+    return { preference: parseSectorPreference(settings.sectorPreference) };
   });
 
 export const setMySectorPreference = createServerFn({ method: "POST" })
@@ -70,13 +80,6 @@ export const setMySectorPreference = createServerFn({ method: "POST" })
     known: cleanSectorList(input?.known),
   }))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("user_settings").upsert(
-      {
-        user_id: context.userId,
-        selected_sectors: data,
-      },
-      { onConflict: "user_id" },
-    );
-    if (error) throw error;
+    await updateSettings(context.userId, (settings) => ({ ...settings, sectorPreference: data }));
     return { ok: true as const };
   });
