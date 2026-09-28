@@ -73,12 +73,11 @@ export async function readSession(request = getRequest()): Promise<SessionUser |
 
 export async function upsertGoogleUser(profile: { sub: string; email: string; name?: string; picture?: string }) {
   const { updateSystemDocument } = await import("./drive-storage.server");
-  let signedIn: DriveUser | null = null;
-  await updateSystemDocument<DriveUser[]>("users.json", [], (users) => {
+  const updatedUsers = await updateSystemDocument<DriveUser[]>("users.json", [], (users) => {
     const now = new Date().toISOString();
     const existing = users.find((user) => user.id === profile.sub);
     const role: AppRole = profile.email.toLowerCase() === "b3radar@gmail.com" ? "admin" : existing?.role ?? "usuario";
-    signedIn = {
+    const signedIn: DriveUser = {
       id: profile.sub,
       email: profile.email.toLowerCase(),
       name: profile.name?.trim() || profile.email,
@@ -90,6 +89,7 @@ export async function upsertGoogleUser(profile: { sub: string; email: string; na
     };
     return [...users.filter((user) => user.id !== profile.sub), signedIn];
   });
+  const signedIn = updatedUsers.find((user) => user.id === profile.sub);
   if (!signedIn) throw new Error("Não foi possível registrar o usuário.");
   return signedIn;
 }
