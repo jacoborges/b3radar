@@ -59,6 +59,11 @@ async function userFolder(userId: string) {
   return ensureFolder(createHash("sha256").update(userId).digest("hex"), users);
 }
 
+async function systemFolder() {
+  const root = await ensureFolder(ROOT_NAME);
+  return ensureFolder("system", root);
+}
+
 function envelope<T>(data: T, revision: number): Envelope<T> {
   const serialized = JSON.stringify(data);
   return { schemaVersion: 1, revision, updatedAt: new Date().toISOString(), checksum: createHash("sha256").update(serialized).digest("hex"), data };
@@ -106,4 +111,31 @@ export async function updateUserDocument<T>(userId: string, name: string, fallba
     }
   }
   throw new Error("Não foi possível concluir a gravação no Google Drive.");
+}
+
+export async function readSystemDocument<T>(name: string, fallback: T): Promise<T> {
+  const folder = await systemFolder();
+  const file = await findChild(name, folder);
+  if (!file) return fallback;
+  return (await download<T>(file.id)).value.data;
+}
+
+export async function updateSystemDocument<T>(name: string, fallback: T, mutate: (value: T) => T | Promise<T>): Promise<T> {
+  const folder = await systemFolder();
+  let file = await findChild(name, folder);
+  if (!file) {
+    file = await createMetadata(name, "application/json", folder);
+    await upload(file.id, envelope(fallback, 0));
+  }
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const current = await download<T>(file.id);
+    const next = await mutate(structuredClone(current.value.data));
+    try {
+      await upload(file.id, envelope(next, current.value.revision + 1), current.etag);
+      return next;
+    } catch (error) {
+      if (attempt === 2) throw error;
+    }
+  }
+  throw new Error("Não foi possível concluir a gravação administrativa no Google Drive.");
 }
