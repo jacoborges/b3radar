@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
+import { getDriveSession } from "@/lib/drive-auth.functions";
 import {
   closeAccessSession,
   touchAccessSession,
@@ -33,6 +33,7 @@ function writeStored(userId: string, value: StoredSession) {
 
 export function useAccessSessionTracker() {
   const touch = useServerFn(touchAccessSession);
+  const getSession = useServerFn(getDriveSession);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,8 +47,7 @@ export function useAccessSessionTracker() {
     };
 
     const start = async () => {
-      const { data } = await supabase.auth.getUser();
-      const user = data.user;
+      const { user } = await getSession();
       if (!user || cancelled || trackedUserId === user.id) return;
       stop();
       trackedUserId = user.id;
@@ -74,24 +74,18 @@ export function useAccessSessionTracker() {
     };
 
     void start();
-    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") void start();
-      if (event === "SIGNED_OUT") stop();
-    });
-
     return () => {
       cancelled = true;
       stop();
-      authListener.subscription.unsubscribe();
     };
-  }, [touch]);
+  }, [getSession, touch]);
 }
 
 export function useCloseAccessSession() {
   const close = useServerFn(closeAccessSession);
+  const getSession = useServerFn(getDriveSession);
   return useCallback(async () => {
-    const { data } = await supabase.auth.getUser();
-    const user = data.user;
+    const { user } = await getSession();
     if (!user) return;
     const key = `${STORAGE_PREFIX}${user.id}`;
     const stored = readStored(user.id);
@@ -102,5 +96,5 @@ export function useCloseAccessSession() {
     } finally {
       window.localStorage.removeItem(key);
     }
-  }, [close]);
+  }, [close, getSession]);
 }

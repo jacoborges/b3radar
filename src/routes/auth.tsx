@@ -3,11 +3,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { adminExists, bootstrapFirstAdmin } from "@/lib/admin-users.functions";
+import { getDriveSession, signInToDrive } from "@/lib/drive-auth.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -29,11 +29,14 @@ function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [bootstrapKey, setBootstrapKey] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const checkAdmin = useServerFn(adminExists);
   const setupAdmin = useServerFn(bootstrapFirstAdmin);
+  const getSession = useServerFn(getDriveSession);
+  const signIn = useServerFn(signInToDrive);
   const { data: adminState, refetch } = useQuery({
     queryKey: ["admin-exists"],
     queryFn: () => checkAdmin(),
@@ -43,10 +46,10 @@ function AuthPage() {
   const serviceError = adminState?.error ?? null;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/", replace: true });
-    });
-  }, [navigate]);
+    getSession().then(({ user }) => {
+      if (user) navigate({ to: "/", replace: true });
+    }).catch(() => {});
+  }, [getSession, navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,22 +60,11 @@ function AuthPage() {
         if (password.length < 8) {
           throw new Error("A senha do administrador precisa ter ao menos 8 caracteres.");
         }
-        const setupResult = await setupAdmin({ data: { email, password } });
+        const setupResult = await setupAdmin({ data: { email: "b3radar@gmail.com", password, bootstrapKey } });
         if (!setupResult.ok) throw new Error(setupResult.error);
         await refetch();
       }
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-      if (signInError) {
-        if (/fetch|network/i.test(signInError.message)) {
-          throw new Error(
-            "O serviço de acesso está temporariamente indisponível. Reative o Lovable Cloud e tente novamente.",
-          );
-        }
-        throw new Error("E-mail ou senha inválidos.");
-      }
+      await signIn({ data: { email: needsSetup ? "b3radar@gmail.com" : email.trim(), password } });
       navigate({ to: "/", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível entrar.");
@@ -108,10 +100,17 @@ function AuthPage() {
               type="email"
               autoComplete="username"
               required
-              value={email}
+            value={needsSetup ? "b3radar@gmail.com" : email}
+            readOnly={needsSetup}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
+          {needsSetup && (
+            <div className="space-y-2">
+              <Label htmlFor="bootstrap-key">Chave de primeiro acesso</Label>
+              <Input id="bootstrap-key" type="password" autoComplete="one-time-code" required value={bootstrapKey} onChange={(e) => setBootstrapKey(e.target.value)} />
+            </div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
             <Input

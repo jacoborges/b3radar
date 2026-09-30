@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireDriveAuth } from "@/integrations/drive-auth-middleware";
 
 export interface PortfolioLot {
   id: string;
@@ -71,14 +71,14 @@ async function mutatePortfolios(
 }
 
 export const listPortfolios = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .handler(async ({ context }): Promise<Portfolio[]> => {
     const { readUserDocument } = await import("./drive-storage.server");
     return readUserDocument(context.userId, "portfolios.json", [] as Portfolio[]);
   });
 
 export const createPortfolio = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => createPortfolioSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => [...items, {
@@ -88,7 +88,7 @@ export const createPortfolio = createServerFn({ method: "POST" })
   });
 
 export const renamePortfolio = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => renamePortfolioSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.map((item) => item.id === data.id ? { ...item, name: data.name } : item));
@@ -96,7 +96,7 @@ export const renamePortfolio = createServerFn({ method: "POST" })
   });
 
 export const deletePortfolio = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.filter((item) => item.id !== data.id));
@@ -104,7 +104,7 @@ export const deletePortfolio = createServerFn({ method: "POST" })
   });
 
 export const addLot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => lotSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.map((item) => item.id === data.portfolioId ? {
@@ -114,7 +114,7 @@ export const addLot = createServerFn({ method: "POST" })
   });
 
 export const updateLot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => updateLotSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.map((item) => ({ ...item, lots: item.lots.map((lot) => lot.id === data.id ? { ...lot, price: data.price, quantity: data.quantity, boughtAt: data.boughtAt } : lot) })));
@@ -122,7 +122,7 @@ export const updateLot = createServerFn({ method: "POST" })
   });
 
 export const deleteLot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.map((item) => ({ ...item, lots: item.lots.filter((lot) => lot.id !== data.id) })));
@@ -136,7 +136,7 @@ function availableForSale(portfolio: Portfolio, ticker: string, date: string, ig
 }
 
 export const addSale = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => saleSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.map((item) => {
@@ -149,7 +149,7 @@ export const addSale = createServerFn({ method: "POST" })
   });
 
 export const updateSale = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => updateSaleSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.map((item) => {
@@ -163,7 +163,7 @@ export const updateSale = createServerFn({ method: "POST" })
   });
 
 export const deleteSale = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutatePortfolios(context.userId, (items) => items.map((item) => ({ ...item, sales: item.sales.filter((sale) => sale.id !== data.id) })));

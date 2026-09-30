@@ -1,6 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { getDriveSession } from "@/lib/drive-auth.functions";
 import {
   getMySectorPreference,
   setMySectorPreference,
@@ -64,6 +64,7 @@ export function useSectorVisibility(availableSectors: string[]) {
   const [userId, setUserId] = useState<string | null>(null);
   const loadRemote = useServerFn(getMySectorPreference);
   const saveRemote = useServerFn(setMySectorPreference);
+  const getSession = useServerFn(getDriveSession);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,9 +78,9 @@ export function useSectorVisibility(availableSectors: string[]) {
 
     void (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) return;
-        currentUserId = data.session.user.id;
+        const { user } = await getSession();
+        if (!user) return;
+        currentUserId = user.id;
         if (!cancelled) {
           setUserId(currentUserId);
           applyLocal();
@@ -102,7 +103,7 @@ export function useSectorVisibility(availableSectors: string[]) {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener(EVENT, applyLocal);
     };
-  }, [availableKey, loadRemote, saveRemote]);
+  }, [availableKey, getSession, loadRemote, saveRemote]);
 
   const selectedSectors = preference?.selected ?? available;
   const selectedSet = useMemo(() => new Set(selectedSectors), [selectedSectors]);

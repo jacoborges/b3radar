@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireDriveAuth } from "@/integrations/drive-auth-middleware";
 
 export interface SimLot {
   id: string;
@@ -47,14 +47,14 @@ async function mutateSimulations(
 }
 
 export const listSimPortfolios = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .handler(async ({ context }): Promise<SimPortfolio[]> => {
     const { readUserDocument } = await import("./drive-storage.server");
     return readUserDocument(context.userId, "simulations.json", [] as SimPortfolio[]);
   });
 
 export const createSimPortfolio = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => createSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutateSimulations(context.userId, (items) => [...items, { id: crypto.randomUUID(), name: data.name, createdAt: new Date().toISOString(), lots: [] }]);
@@ -62,7 +62,7 @@ export const createSimPortfolio = createServerFn({ method: "POST" })
   });
 
 export const renameSimPortfolio = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => renameSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutateSimulations(context.userId, (items) => items.map((item) => item.id === data.id ? { ...item, name: data.name } : item));
@@ -70,7 +70,7 @@ export const renameSimPortfolio = createServerFn({ method: "POST" })
   });
 
 export const deleteSimPortfolio = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutateSimulations(context.userId, (items) => items.filter((item) => item.id !== data.id));
@@ -78,7 +78,7 @@ export const deleteSimPortfolio = createServerFn({ method: "POST" })
   });
 
 export const addSimLot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => lotSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutateSimulations(context.userId, (items) => items.map((item) => item.id === data.portfolioId ? { ...item, lots: [...item.lots, { id: crypto.randomUUID(), ticker: data.ticker, price: data.price, quantity: data.quantity, boughtAt: data.boughtAt }] } : item));
@@ -86,7 +86,7 @@ export const addSimLot = createServerFn({ method: "POST" })
   });
 
 export const updateSimLot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => updateLotSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutateSimulations(context.userId, (items) => items.map((item) => ({ ...item, lots: item.lots.map((lot) => lot.id === data.id ? { ...lot, price: data.price, quantity: data.quantity, boughtAt: data.boughtAt } : lot) })));
@@ -94,7 +94,7 @@ export const updateSimLot = createServerFn({ method: "POST" })
   });
 
 export const deleteSimLot = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
     await mutateSimulations(context.userId, (items) => items.map((item) => ({ ...item, lots: item.lots.filter((lot) => lot.id !== data.id) })));
