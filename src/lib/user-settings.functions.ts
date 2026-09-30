@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireDriveAuth } from "@/integrations/drive-auth-middleware";
 import type { UserSettingsDocument } from "./drive-documents.server";
 
 export interface SectorPreference {
@@ -42,7 +42,7 @@ async function updateSettings(
 
 /** Token brapi.dev protegido no arquivo privado do usuário no Google Drive central. */
 export const getMyBrapiToken = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .handler(async ({ context }): Promise<{ token: string }> => {
     const settings = await readSettings(context.userId);
     if (!settings.brapiTokenCiphertext) return { token: "" };
@@ -51,7 +51,7 @@ export const getMyBrapiToken = createServerFn({ method: "GET" })
   });
 
 export const setMyBrapiToken = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((input: { token: string }) => {
     const token = String(input?.token ?? "").trim();
     if (token.length > 200) throw new Error("Token inválido.");
@@ -67,14 +67,14 @@ export const setMyBrapiToken = createServerFn({ method: "POST" })
   });
 
 export const getMySectorPreference = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .handler(async ({ context }): Promise<{ preference: SectorPreference | null }> => {
     const settings = await readSettings(context.userId);
     return { preference: parseSectorPreference(settings.sectorPreference) };
   });
 
 export const setMySectorPreference = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((input: SectorPreference) => ({
     selected: cleanSectorList(input?.selected),
     known: cleanSectorList(input?.known),
