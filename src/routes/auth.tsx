@@ -60,11 +60,11 @@ function AuthPage() {
         if (password.length < 8) {
           throw new Error("A senha do administrador precisa ter ao menos 8 caracteres.");
         }
-        const setupResult = await setupAdmin({ data: { email, password, bootstrapKey } });
+        const setupResult = await setupAdmin({ data: { email: "b3radar@gmail.com", password, bootstrapKey } });
         if (!setupResult.ok) throw new Error(setupResult.error);
         await refetch();
       }
-      await signIn({ data: { email: email.trim(), password } });
+      await signIn({ data: { email: needsSetup ? "b3radar@gmail.com" : email.trim(), password } });
       navigate({ to: "/", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível entrar.");

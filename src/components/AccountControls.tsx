@@ -3,8 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { LogOut, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/admin-users.functions";
+import { signOutFromDrive } from "@/lib/drive-auth.functions";
 import { useOnlineUsers } from "@/hooks/use-online-users";
 import { ActionTip } from "@/components/ActionTip";
 import { useCloseAccessSession } from "@/hooks/use-access-session";
@@ -44,6 +44,7 @@ export function AccountControls() {
   const queryClient = useQueryClient();
   const fetchAccess = useServerFn(getMyAccess);
   const closeAccessSession = useCloseAccessSession();
+  const signOutDrive = useServerFn(signOutFromDrive);
 
   const { data } = useQuery({
     queryKey: ["my-access"],
@@ -57,7 +58,7 @@ export function AccountControls() {
     await closeAccessSession();
     await queryClient.cancelQueries();
     queryClient.clear();
-    await supabase.auth.signOut();
+    await signOutDrive();
     navigate({ to: "/auth", replace: true });
   }
 

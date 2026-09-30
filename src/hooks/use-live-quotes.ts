@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { fetchLiveQuotes, type LiveQuote } from "@/lib/quotes.functions";
 import { getMyBrapiToken, setMyBrapiToken } from "@/lib/user-settings.functions";
-import { supabase } from "@/integrations/supabase/client";
+import { getDriveSession } from "@/lib/drive-auth.functions";
 
 // Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
 // ativos e com menos frequência para não estourar a cota.
@@ -40,6 +40,7 @@ export function useBrapiToken(): [string, (v: string) => void, boolean] {
   const [ready, setReady] = useState<boolean>(false);
   const loadRemote = useServerFn(getMyBrapiToken);
   const saveRemote = useServerFn(setMyBrapiToken);
+  const getSession = useServerFn(getDriveSession);
 
   useEffect(() => {
     setTokenState(readStoredToken());
@@ -53,8 +54,8 @@ export function useBrapiToken(): [string, (v: string) => void, boolean] {
     let cancelled = false;
     void (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session) {
+        const { user } = await getSession();
+        if (!user) {
           // Sem sessão: não mantemos token de outra conta neste navegador.
           if (!cancelled && readStoredToken()) writeStoredToken("");
           return;
@@ -78,7 +79,7 @@ export function useBrapiToken(): [string, (v: string) => void, boolean] {
       window.removeEventListener("storage", onStorage);
       window.removeEventListener(TOKEN_EVENT, onCustom);
     };
-  }, [loadRemote, saveRemote]);
+  }, [getSession, loadRemote, saveRemote]);
 
   const setToken = (v: string) => {
     const trimmed = v.trim();
