@@ -19,8 +19,6 @@ import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authen
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 import { Route as ApiPublicRefreshProventosRouteImport } from './routes/api/public/refresh-proventos'
 import { Route as ApiPublicAuthSessionRouteImport } from './routes/api/public/auth/session'
-import { Route as ApiPublicAuthGoogleRouteImport } from './routes/api/public/auth/google'
-import { Route as ApiPublicAuthGoogleCallbackRouteImport } from './routes/api/public/auth/google.callback'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -73,17 +71,6 @@ const ApiPublicAuthSessionRoute = ApiPublicAuthSessionRouteImport.update({
   path: '/api/public/auth/session',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAuthGoogleRoute = ApiPublicAuthGoogleRouteImport.update({
-  id: '/api/public/auth/google',
-  path: '/api/public/auth/google',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiPublicAuthGoogleCallbackRoute =
-  ApiPublicAuthGoogleCallbackRouteImport.update({
-    id: '/callback',
-    path: '/callback',
-    getParentRoute: () => ApiPublicAuthGoogleRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -94,9 +81,7 @@ export interface FileRoutesByFullPath {
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
-  '/api/public/auth/google': typeof ApiPublicAuthGoogleRouteWithChildren
   '/api/public/auth/session': typeof ApiPublicAuthSessionRoute
-  '/api/public/auth/google/callback': typeof ApiPublicAuthGoogleCallbackRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -107,9 +92,7 @@ export interface FileRoutesByTo {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
-  '/api/public/auth/google': typeof ApiPublicAuthGoogleRouteWithChildren
   '/api/public/auth/session': typeof ApiPublicAuthSessionRoute
-  '/api/public/auth/google/callback': typeof ApiPublicAuthGoogleCallbackRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,9 +105,7 @@ export interface FileRoutesById {
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
-  '/api/public/auth/google': typeof ApiPublicAuthGoogleRouteWithChildren
   '/api/public/auth/session': typeof ApiPublicAuthSessionRoute
-  '/api/public/auth/google/callback': typeof ApiPublicAuthGoogleCallbackRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,9 +118,7 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/usuarios'
     | '/api/public/refresh-proventos'
-    | '/api/public/auth/google'
     | '/api/public/auth/session'
-    | '/api/public/auth/google/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -150,9 +129,7 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/'
     | '/api/public/refresh-proventos'
-    | '/api/public/auth/google'
     | '/api/public/auth/session'
-    | '/api/public/auth/google/callback'
   id:
     | '__root__'
     | '/_authenticated'
@@ -164,16 +141,13 @@ export interface FileRouteTypes {
     | '/_authenticated/usuarios'
     | '/_authenticated/'
     | '/api/public/refresh-proventos'
-    | '/api/public/auth/google'
     | '/api/public/auth/session'
-    | '/api/public/auth/google/callback'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicRefreshProventosRoute: typeof ApiPublicRefreshProventosRoute
-  ApiPublicAuthGoogleRoute: typeof ApiPublicAuthGoogleRouteWithChildren
   ApiPublicAuthSessionRoute: typeof ApiPublicAuthSessionRoute
 }
 
@@ -249,20 +223,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAuthSessionRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/auth/google': {
-      id: '/api/public/auth/google'
-      path: '/api/public/auth/google'
-      fullPath: '/api/public/auth/google'
-      preLoaderRoute: typeof ApiPublicAuthGoogleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/auth/google/callback': {
-      id: '/api/public/auth/google/callback'
-      path: '/callback'
-      fullPath: '/api/public/auth/google/callback'
-      preLoaderRoute: typeof ApiPublicAuthGoogleCallbackRouteImport
-      parentRoute: typeof ApiPublicAuthGoogleRoute
-    }
   }
 }
 
@@ -287,22 +247,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface ApiPublicAuthGoogleRouteChildren {
-  ApiPublicAuthGoogleCallbackRoute: typeof ApiPublicAuthGoogleCallbackRoute
-}
-
-const ApiPublicAuthGoogleRouteChildren: ApiPublicAuthGoogleRouteChildren = {
-  ApiPublicAuthGoogleCallbackRoute: ApiPublicAuthGoogleCallbackRoute,
-}
-
-const ApiPublicAuthGoogleRouteWithChildren =
-  ApiPublicAuthGoogleRoute._addFileChildren(ApiPublicAuthGoogleRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicRefreshProventosRoute: ApiPublicRefreshProventosRoute,
-  ApiPublicAuthGoogleRoute: ApiPublicAuthGoogleRouteWithChildren,
   ApiPublicAuthSessionRoute: ApiPublicAuthSessionRoute,
 }
 export const routeTree = rootRouteImport
