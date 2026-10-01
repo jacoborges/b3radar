@@ -4,7 +4,6 @@ import { z } from "zod";
 import { requireDriveAuth } from "@/integrations/drive-auth-middleware";
 import {
   MARKET_ANALYSIS_PROMPT_DEFAULT,
-  MARKET_ANALYSIS_PROMPT_KEY,
   readMarketPromptSetting,
 } from "@/lib/market-analysis-settings.functions";
 
