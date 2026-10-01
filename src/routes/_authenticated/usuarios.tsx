@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { signOutFromDrive } from "@/lib/drive-auth.functions";
 import {
   createManagedUser,
   deleteManagedUser,
@@ -84,6 +84,7 @@ function UsersPage() {
   const deleteFn = useServerFn(deleteManagedUser);
   const fetchAccessSessions = useServerFn(listUserAccessSessions);
   const closeAccessSession = useCloseAccessSession();
+  const signOutDrive = useServerFn(signOutFromDrive);
   const [logUser, setLogUser] = useState<{ id: string; email: string } | null>(null);
 
   const { data: access } = useQuery({
@@ -143,7 +144,7 @@ function UsersPage() {
     await closeAccessSession();
     await queryClient.cancelQueries();
     queryClient.clear();
-    await supabase.auth.signOut();
+    await signOutDrive();
     navigate({ to: "/auth", replace: true });
   }
 
