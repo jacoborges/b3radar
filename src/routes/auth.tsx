@@ -100,15 +100,22 @@ function AuthPage() {
               type="email"
               autoComplete="username"
               required
-            value={needsSetup ? "b3radar@gmail.com" : email}
-            readOnly={needsSetup}
+              value={needsSetup ? "b3radar@gmail.com" : email}
+              readOnly={needsSetup}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
           {needsSetup && (
             <div className="space-y-2">
               <Label htmlFor="bootstrap-key">Chave de primeiro acesso</Label>
-              <Input id="bootstrap-key" type="password" autoComplete="one-time-code" required value={bootstrapKey} onChange={(e) => setBootstrapKey(e.target.value)} />
+              <Input
+                id="bootstrap-key"
+                type="password"
+                autoComplete="one-time-code"
+                required
+                value={bootstrapKey}
+                onChange={(e) => setBootstrapKey(e.target.value)}
+              />
             </div>
           )}
           <div className="space-y-2">

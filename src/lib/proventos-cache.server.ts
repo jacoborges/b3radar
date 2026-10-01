@@ -109,7 +109,7 @@ export interface RefreshResult {
   comDados: number;
 }
 
-/** Coleta na B3 e grava no banco. Concorrência limitada para não estourar a B3. */
+/** Coleta na B3 e grava no Drive. Concorrência limitada para não estourar a B3. */
 export async function refreshTickers(
   tickers: string[],
   concurrency = 6,
