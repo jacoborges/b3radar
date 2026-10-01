@@ -1,9 +1,8 @@
 /**
- * Camada de persistência dos proventos (Lovable Cloud).
+ * Camada de persistência dos proventos no Google Drive.
  * Guarda o resultado da coleta na B3 para que a página abra instantaneamente
  * com TODOS os ativos, sem depender da B3 no momento do acesso.
  */
-import { createClient } from "@supabase/supabase-js";
 import type { EventoSocietario } from "./dividend-intelligence";
 import type { ProventoProvisionado } from "./stocks-data";
 import {
@@ -12,7 +11,7 @@ import {
   type TickerProventosResult,
 } from "./proventos.server";
 
-const TABLE = "dividend_cache";
+const DOCUMENT = "dividend-cache.json";
 
 /** Evento em dinheiro compacto: t = tipo (D/J), v = valor, c = data com. */
 export interface CompactCash {
@@ -29,34 +28,13 @@ export interface CachedProventoRow {
   fetchedAt: string;
 }
 
-function isNewKey(v: string) {
-  return v.startsWith("sb_publishable_") || v.startsWith("sb_secret_");
+interface StoredTicker extends CachedProventoRow {
+  historico: TickerProventosResult["historico"];
+  historicoCompleto: EventoSocietario[] | null;
+  provisionados: ProventoProvisionado[] | null;
 }
 
-function supabaseFetch(key: string): typeof fetch {
-  return (input, init) => {
-    const headers = new Headers(init?.headers);
-    if (isNewKey(key) && headers.get("Authorization") === `Bearer ${key}`) {
-      headers.delete("Authorization");
-    }
-    headers.set("apikey", key);
-    return fetch(input, { ...init, headers });
-  };
-}
-
-function publicClient() {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-  return createClient(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-    global: { fetch: supabaseFetch(key) },
-  });
-}
-
-async function adminClient() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
-}
+type StoredDividendCache = Record<string, StoredTicker>;
 
 export function toCompact(eventos: EventoSocietario[] | null): CompactCash[] {
   if (!eventos) return [];
@@ -83,29 +61,9 @@ export function fromCompact(rows: CompactCash[]): EventoSocietario[] {
 
 /** Lista compacta de todos os ativos já coletados. */
 export async function listCachedProventos(): Promise<CachedProventoRow[]> {
-  const supabase = publicClient();
-  const out: CachedProventoRow[] = [];
-  const pageSize = 1000;
-  for (let page = 0; page < 5; page++) {
-    const { data, error } = await supabase
-      .from(TABLE)
-      .select("ticker, eventos_cash, fonte, error, fetched_at")
-      .order("ticker")
-      .range(page * pageSize, page * pageSize + pageSize - 1);
-    if (error) throw new Error(error.message);
-    if (!data?.length) break;
-    for (const r of data as Array<Record<string, unknown>>) {
-      out.push({
-        ticker: String(r.ticker),
-        eventosCash: (r.eventos_cash as CompactCash[]) ?? [],
-        fonte: (r.fonte as "B3" | null) ?? null,
-        error: (r.error as string | null) ?? null,
-        fetchedAt: String(r.fetched_at),
-      });
-    }
-    if (data.length < pageSize) break;
-  }
-  return out;
+  const { readSystemDocument } = await import("./drive-storage.server");
+  const stored = await readSystemDocument<StoredDividendCache>(DOCUMENT, {});
+  return Object.values(stored).map(({ ticker, eventosCash, fonte, error, fetchedAt }) => ({ ticker, eventosCash, fonte, error, fetchedAt })).sort((a, b) => a.ticker.localeCompare(b.ticker));
 }
 
 /** Resultado completo de um ticker, se presente no cache e ainda válido. */
@@ -113,43 +71,37 @@ export async function readCachedTicker(
   ticker: string,
   maxAgeMs: number,
 ): Promise<TickerProventosResult | null> {
-  const supabase = publicClient();
-  const { data, error } = await supabase
-    .from(TABLE)
-    .select("historico, historico_completo, provisionados, fonte, error, fetched_at")
-    .eq("ticker", ticker)
-    .maybeSingle();
-  if (error || !data) return null;
-  const row = data as Record<string, unknown>;
-  if (row.fonte !== "B3") return null;
-  const age = Date.now() - new Date(String(row.fetched_at)).getTime();
+  const { readSystemDocument } = await import("./drive-storage.server");
+  const stored = await readSystemDocument<StoredDividendCache>(DOCUMENT, {});
+  const row = stored[ticker.toUpperCase()];
+  if (!row || row.fonte !== "B3") return null;
+  const age = Date.now() - new Date(row.fetchedAt).getTime();
   if (age > maxAgeMs) return null;
   return {
-    historico: (row.historico as TickerProventosResult["historico"]) ?? null,
-    historicoCompleto:
-      (row.historico_completo as EventoSocietario[] | null) ?? null,
-    provisionados: (row.provisionados as ProventoProvisionado[] | null) ?? null,
+    historico: row.historico ?? null,
+    historicoCompleto: row.historicoCompleto ?? null,
+    provisionados: row.provisionados ?? null,
     fonte: "B3",
     error: null,
   };
 }
 
 async function writeTicker(ticker: string, value: TickerProventosResult) {
-  const supabase = await adminClient();
-  const { error } = await supabase.from(TABLE).upsert(
-    {
-      ticker,
-      eventos_cash: toCompact(value.historicoCompleto) as unknown as never,
-      historico_completo: (value.historicoCompleto ?? []) as unknown as never,
-      provisionados: (value.provisionados ?? []) as unknown as never,
-      historico: (value.historico ?? []) as unknown as never,
+  const { updateSystemDocument } = await import("./drive-storage.server");
+  const key = ticker.toUpperCase();
+  await updateSystemDocument<StoredDividendCache>(DOCUMENT, {}, (stored) => ({
+    ...stored,
+    [key]: {
+      ticker: key,
+      eventosCash: toCompact(value.historicoCompleto),
+      historicoCompleto: value.historicoCompleto,
+      provisionados: value.provisionados,
+      historico: value.historico,
       fonte: value.fonte,
       error: value.error,
-      fetched_at: new Date().toISOString(),
+      fetchedAt: new Date().toISOString(),
     },
-    { onConflict: "ticker" },
-  );
-  if (error) console.error("[dividend_cache] upsert falhou", ticker, error.message);
+  }));
 }
 
 export interface RefreshResult {
