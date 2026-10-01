@@ -1,60 +1,60 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireDriveAuth } from "@/integrations/drive-auth-middleware";
 
 export const MARKET_ANALYSIS_PROMPT_KEY = "market_analysis_prompt";
 export const MARKET_ANALYSIS_PROMPT_DEFAULT =
   "Dê preferência a informações recentes e verificáveis, destaque vantagens competitivas, riscos relevantes e mudanças recentes no consenso do mercado.";
 
-async function requireAdmin(context: { supabase: any; userId: string }) {
-  const { data, error } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (error || !data) throw new Error("Apenas administradores podem alterar este prompt.");
+export interface MarketPromptSetting {
+  value: string;
+  version: number;
+  updatedAt: string | null;
 }
 
-function cleanPrompt(value: unknown): string {
+const fallback: MarketPromptSetting = { value: "", version: 1, updatedAt: null };
+
+function cleanPrompt(value: unknown) {
   const prompt = String(value ?? "").trim();
   if (prompt.length > 4000) throw new Error("O prompt deve ter no máximo 4.000 caracteres.");
   return prompt;
 }
 
+function requireAdmin(role: string) {
+  if (role !== "admin") throw new Error("Apenas administradores podem alterar este prompt.");
+}
+
+export async function readMarketPromptSetting() {
+  const { readSystemDocument } = await import("./drive-storage.server");
+  return readSystemDocument<MarketPromptSetting>("market-analysis-prompt.json", fallback);
+}
+
 export const getMarketAnalysisPrompt = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .handler(async ({ context }) => {
-    await requireAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("app_settings")
-      .select("value, version, updated_at")
-      .eq("key", MARKET_ANALYSIS_PROMPT_KEY)
-      .maybeSingle();
-    if (error) throw error;
+    requireAdmin(context.user.role);
+    const setting = await readMarketPromptSetting();
     return {
-      prompt: data?.value || MARKET_ANALYSIS_PROMPT_DEFAULT,
-      version: data?.version ?? 1,
-      updatedAt: data?.updated_at ?? null,
-      isDefault: !data?.value,
+      prompt: setting.value || MARKET_ANALYSIS_PROMPT_DEFAULT,
+      version: setting.version,
+      updatedAt: setting.updatedAt,
+      isDefault: !setting.value,
     };
   });
 
 export const setMarketAnalysisPrompt = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((input: { prompt: string }) => ({ prompt: cleanPrompt(input.prompt) }))
   .handler(async ({ data, context }) => {
-    await requireAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: current, error: readError } = await supabaseAdmin
-      .from("app_settings")
-      .select("version")
-      .eq("key", MARKET_ANALYSIS_PROMPT_KEY)
-      .maybeSingle();
-    if (readError) throw readError;
-    const { error } = await supabaseAdmin.from("app_settings").upsert({
-      key: MARKET_ANALYSIS_PROMPT_KEY,
-      value: data.prompt,
-      version: (current?.version ?? 0) + 1,
-    });
-    if (error) throw error;
+    requireAdmin(context.user.role);
+    const { updateSystemDocument } = await import("./drive-storage.server");
+    await updateSystemDocument<MarketPromptSetting>(
+      "market-analysis-prompt.json",
+      fallback,
+      (current) => ({
+        value: data.prompt,
+        version: current.version + 1,
+        updatedAt: new Date().toISOString(),
+      }),
+    );
     return { ok: true as const };
   });
