@@ -1,10 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireDriveAuth } from "@/integrations/drive-auth-middleware";
 import {
   MARKET_ANALYSIS_PROMPT_DEFAULT,
   MARKET_ANALYSIS_PROMPT_KEY,
+  readMarketPromptSetting,
 } from "@/lib/market-analysis-settings.functions";
 
 const inputSchema = z.object({
@@ -76,7 +77,7 @@ async function readGatewayStream(response: Response): Promise<string> {
 }
 
 export const analyzeMarketView = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireDriveAuth])
   .inputValidator((data) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<MarketAnalysisResult> => {
     setResponseHeader("cache-control", "no-store");
@@ -93,14 +94,9 @@ export const analyzeMarketView = createServerFn({ method: "POST" })
       };
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: promptSetting } = await supabaseAdmin
-      .from("app_settings")
-      .select("value, version")
-      .eq("key", MARKET_ANALYSIS_PROMPT_KEY)
-      .maybeSingle();
-    const customPrompt = promptSetting?.value?.trim() || MARKET_ANALYSIS_PROMPT_DEFAULT;
-    const promptVersion = promptSetting?.version ?? 1;
+    const promptSetting = await readMarketPromptSetting();
+    const customPrompt = promptSetting.value.trim() || MARKET_ANALYSIS_PROMPT_DEFAULT;
+    const promptVersion = promptSetting.version;
     const cacheKey = `${data.ticker}:v${promptVersion}`;
     const cached = CACHE.get(cacheKey);
     if (!data.force && cached && Date.now() - cached.ts < TTL_MS) {
