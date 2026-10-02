@@ -22,8 +22,6 @@ export interface ProventoCarteira {
   dataPagamento: string;
   /** true quando a data com já passou (direito garantido) */
   direitoGarantido: boolean;
-  /** true quando o ativo já não está mais em carteira (saldo zero) */
-  posicaoEncerrada: boolean;
 }
 
 export interface UsePortfolioProventosResult {
@@ -48,9 +46,6 @@ function hojeISO() {
 export interface PosicaoProventos {
   ticker: string;
   lots: Array<{ quantity: number; boughtAt: string }>;
-  sales?: Array<{ quantity: number; soldAt: string }>;
-  /** true quando o saldo atual do ativo é zero (posição encerrada) */
-  encerrada?: boolean;
 }
 
 export function usePortfolioProventos(
@@ -82,29 +77,22 @@ export function usePortfolioProventos(
 
   const eventos = useMemo(() => {
     const hoje = hojeISO();
-    const byTicker = new Map(posicoes.map((p) => [p.ticker, p]));
+    const lotsByTicker = new Map(posicoes.map((p) => [p.ticker, p.lots]));
     const out: ProventoCarteira[] = [];
 
     results.forEach((r, i) => {
       const ticker = tickers[i]!;
       const data = r.data as TickerProventosResult | undefined;
-      const pos = byTicker.get(ticker);
-      const lots = pos?.lots ?? [];
-      const sales = pos?.sales ?? [];
+      const lots = lotsByTicker.get(ticker) ?? [];
       if (!data?.provisionados || lots.length === 0) return;
       for (const p of data.provisionados) {
         if (!(p.valorPorAcao > 0)) continue;
         const pagamento = p.dataPagamento || p.dataEx;
         if (pagamento < hoje) continue;
-        // Direito = quantidade que estava em carteira na data com:
-        // comprada antes da data com, menos a vendida antes da data com.
-        const comprada = lots
+        // Só dá direito ao provento o lote comprado ANTES da data com.
+        const quantidade = lots
           .filter((l) => l.boughtAt < p.dataCom)
           .reduce((s, l) => s + l.quantity, 0);
-        const vendida = sales
-          .filter((s) => s.soldAt < p.dataCom)
-          .reduce((s, v) => s + v.quantity, 0);
-        const quantidade = comprada - vendida;
         if (quantidade <= 0) continue;
         out.push({
           ticker,
@@ -116,7 +104,6 @@ export function usePortfolioProventos(
           dataEx: p.dataEx,
           dataPagamento: pagamento,
           direitoGarantido: p.dataCom <= hoje,
-          posicaoEncerrada: pos?.encerrada === true,
         });
       }
     });

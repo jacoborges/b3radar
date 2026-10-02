@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, RefreshCw, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ActionTip } from "@/components/ActionTip";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -170,18 +169,16 @@ export function SectorCompare({ stocks }: { stocks: Stock[] }) {
           >
             Comparar {tickers.length > 0 ? `(${tickers.length} ativos)` : ""}
           </Button>
-          <ActionTip tip="atualizarComparacao">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="gap-2 text-xs"
-              disabled={!rodando || sim.isFetching}
-              onClick={() => sim.refetch()}
-            >
-              <RefreshCw className={`h-3.5 w-3.5 ${sim.isFetching ? "animate-spin" : ""}`} />
-              Atualizar comparação
-            </Button>
-          </ActionTip>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="gap-2 text-xs"
+            disabled={!rodando || sim.isFetching}
+            onClick={() => sim.refetch()}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${sim.isFetching ? "animate-spin" : ""}`} />
+            Atualizar comparação
+          </Button>
           {sim.computedAt && (
             <span className="text-xs text-muted-foreground">
               Resultado de{" "}

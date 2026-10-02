@@ -14,30 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      app_settings: {
-        Row: {
-          created_at: string
-          key: string
-          updated_at: string
-          value: string
-          version: number
-        }
-        Insert: {
-          created_at?: string
-          key: string
-          updated_at?: string
-          value?: string
-          version?: number
-        }
-        Update: {
-          created_at?: string
-          key?: string
-          updated_at?: string
-          value?: string
-          version?: number
-        }
-        Relationships: []
-      }
       dividend_cache: {
         Row: {
           error: string | null
@@ -129,47 +105,6 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "portfolio_lots_portfolio_id_fkey"
-            columns: ["portfolio_id"]
-            isOneToOne: false
-            referencedRelation: "portfolios"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      portfolio_sales: {
-        Row: {
-          created_at: string
-          id: string
-          portfolio_id: string
-          price: number
-          quantity: number
-          sold_at: string
-          ticker: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          portfolio_id: string
-          price: number
-          quantity: number
-          sold_at?: string
-          ticker: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          portfolio_id?: string
-          price?: number
-          quantity?: number
-          sold_at?: string
-          ticker?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "portfolio_sales_portfolio_id_fkey"
             columns: ["portfolio_id"]
             isOneToOne: false
             referencedRelation: "portfolios"
@@ -290,44 +225,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_access_sessions: {
-        Row: {
-          client_session_id: string
-          created_at: string
-          id: string
-          last_seen_at: string
-          signed_in_at: string
-          signed_out_at: string | null
-          user_id: string
-        }
-        Insert: {
-          client_session_id: string
-          created_at?: string
-          id?: string
-          last_seen_at?: string
-          signed_in_at?: string
-          signed_out_at?: string | null
-          user_id: string
-        }
-        Update: {
-          client_session_id?: string
-          created_at?: string
-          id?: string
-          last_seen_at?: string
-          signed_in_at?: string
-          signed_out_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_access_sessions_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -353,21 +250,18 @@ export type Database = {
         Row: {
           brapi_token: string | null
           created_at: string
-          selected_sectors: Json | null
           updated_at: string
           user_id: string
         }
         Insert: {
           brapi_token?: string | null
           created_at?: string
-          selected_sectors?: Json | null
           updated_at?: string
           user_id: string
         }
         Update: {
           brapi_token?: string | null
           created_at?: string
-          selected_sectors?: Json | null
           updated_at?: string
           user_id?: string
         }

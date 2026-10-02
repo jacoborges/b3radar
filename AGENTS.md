@@ -8,9 +8,3 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
-
-- Google Drive is the target persistent store; all provider calls stay server-side so connector credentials never reach browsers.
-- Personal documents are keyed by a stable authenticated user ID, versioned, checksummed, and updated with ETag conflict protection because Drive is not transactional.
-- Sensitive values stored in Drive are encrypted with B3_RADAR_DATA_ENCRYPTION_KEY because workspace files are readable by the central account owner.
-- Authentication uses administrator-provisioned email/password accounts stored in Drive; there is no public signup or Google sign-in.
-- The first administrator is b3radar@gmail.com and can only be created once with B3_RADAR_BOOTSTRAP_KEY.

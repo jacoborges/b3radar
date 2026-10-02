@@ -13,8 +13,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { startQueryPersistence } from "../lib/query-persist";
 import { useOnlinePresence } from "../hooks/use-online-users";
-import { useAccessSessionTracker } from "../hooks/use-access-session";
-import { TooltipProvider } from "../components/ui/tooltip";
 
 function NotFoundComponent() {
   return (
@@ -38,13 +36,12 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
-  const normalizedError = error instanceof Error ? error : new Error(String(error));
-  console.error(normalizedError);
+function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+  console.error(error);
   const router = useRouter();
   useEffect(() => {
-    reportLovableError(normalizedError, { boundary: "tanstack_root_error_component" });
-  }, [normalizedError]);
+    reportLovableError(error, { boundary: "tanstack_root_error_component" });
+  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -125,7 +122,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   useOnlinePresence();
-  useAccessSessionTracker();
 
   useEffect(() => {
     startQueryPersistence(queryClient);
@@ -134,10 +130,8 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={200} skipDelayDuration={300}>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-      </TooltipProvider>
+      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+      <Outlet />
     </QueryClientProvider>
   );
 }

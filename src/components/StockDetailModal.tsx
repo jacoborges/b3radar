@@ -48,7 +48,6 @@ import {
 import { DividendIntelligencePanel } from "./DividendIntelligencePanel";
 import { MacroSensitivityPanel } from "./MacroSensitivityPanel";
 import { TrendingDown, TrendingUp } from "lucide-react";
-import { ActionTip } from "./ActionTip";
 
 interface Props {
   stock: Stock | null;
@@ -247,19 +246,17 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 <span>{stock.nome}</span>
                 <span className="flex items-center gap-2 text-xs text-muted-foreground">
                   {cachedAtLabel && <span>Atualizado em {cachedAtLabel}</span>}
-                  <ActionTip tip="atualizarDados">
-                    <button
-                      type="button"
-                      onClick={refreshTicker}
-                      disabled={isFetching || fundFetching}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1 text-xs font-medium hover:bg-muted/50 disabled:opacity-60"
-                    >
-                      <RefreshCw
-                        className={`h-3.5 w-3.5 ${isFetching || fundFetching ? "animate-spin" : ""}`}
-                      />
-                      Atualizar
-                    </button>
-                  </ActionTip>
+                  <button
+                    type="button"
+                    onClick={refreshTicker}
+                    disabled={isFetching || fundFetching}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border/60 px-2 py-1 text-xs font-medium hover:bg-muted/50 disabled:opacity-60"
+                  >
+                    <RefreshCw
+                      className={`h-3.5 w-3.5 ${isFetching || fundFetching ? "animate-spin" : ""}`}
+                    />
+                    Atualizar
+                  </button>
                 </span>
               </DialogDescription>
             </DialogHeader>

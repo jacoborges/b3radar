@@ -2,18 +2,10 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ActionTip } from "@/components/ActionTip";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { InfoTip, ClassificationInfoTip } from "@/components/InfoTip";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import {
@@ -33,8 +25,6 @@ import {
 } from "@/lib/dividend-intelligence";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import type { Stock } from "@/lib/stocks-data";
-import { SectorVisibilityDialog } from "@/components/SectorVisibilityDialog";
-import { useSectorVisibility } from "@/hooks/use-sector-visibility";
 
 export const Route = createFileRoute("/_authenticated/dividendos")({
   head: () => ({
@@ -108,11 +98,8 @@ const FREQ_OPTS: Array<"ALL" | Frequencia> = [
   "Irregular",
 ];
 
-type SortMode = "score" | "yield";
-
 function DividendosPage() {
-  const { stocks, sectors } = useAllStocks();
-  const { selectedSectors, selectedSet, setSelectedSectors } = useSectorVisibility(sectors);
+  const { stocks } = useAllStocks();
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
     useDividendBatch(stocks);
   const [q, setQ] = useState("");
@@ -134,7 +121,6 @@ function DividendosPage() {
   const [freq, setFreq] = useState<Frequencia[]>([]);
   const [comEmDias, setComEmDias] = useState(0); // 0 = sem restrição
   const [somenteComDados, setSomenteComDados] = useState(false);
-  const [sortMode, setSortMode] = useState<SortMode>("score");
 
   const toggleCls = (v: DividendClass) =>
     setCls((prev) =>
@@ -179,13 +165,11 @@ function DividendosPage() {
     (debtColors.length > 0 && debtColors.length < 3 ? 1 : 0) +
     (recFilter !== "ALL" ? 1 : 0) +
     (minAnosAcimaSelic > 0 ? 1 : 0) +
-    (minAnosPrecoAcimaSelic > 0 ? 1 : 0) +
-    (selectedSectors.length < sectors.length ? 1 : 0);
+    (minAnosPrecoAcimaSelic > 0 ? 1 : 0);
 
   const ranked = useMemo(() => {
     const hoje = new Date();
     const filtered = rows.filter((r) => {
-      if (!selectedSet.has(r.stock.setor)) return false;
       if (
         cls.length > 0 &&
         !(r.intel && cls.includes(r.intel.classification))
@@ -240,24 +224,11 @@ function DividendosPage() {
     return filtered.sort((a, b) => {
       const sa = a.intel?.score ?? -1;
       const sb = b.intel?.score ?? -1;
-      const dya = a.intel?.dyUltimos12m;
-      const dyb = b.intel?.dyUltimos12m;
-      if (sortMode === "yield") {
-        if (dya == null && dyb != null) return 1;
-        if (dya != null && dyb == null) return -1;
-        if (dya !== dyb) return (dyb ?? -1) - (dya ?? -1);
-        if (sb !== sa) return sb - sa;
-        return a.stock.ticker.localeCompare(b.stock.ticker, "pt-BR");
-      }
       if (sb !== sa) return sb - sa;
-      if (dya == null && dyb != null) return 1;
-      if (dya != null && dyb == null) return -1;
-      if (dya !== dyb) return (dyb ?? -1) - (dya ?? -1);
-      return a.stock.ticker.localeCompare(b.stock.ticker, "pt-BR");
+      return (b.intel?.dyUltimos12m ?? 0) - (a.intel?.dyUltimos12m ?? 0);
     });
   }, [
     rows,
-    selectedSet,
     q,
     cls,
     ranges,
@@ -271,22 +242,7 @@ function DividendosPage() {
     freq,
     comEmDias,
     somenteComDados,
-    sortMode,
   ]);
-
-  const rankedBySector = useMemo(() => {
-    const groups = new Map<string, typeof ranked>();
-    for (const row of ranked) {
-      const sector = row.stock.setor || "Setor não informado";
-      const sectorRows = groups.get(sector);
-      if (sectorRows) sectorRows.push(row);
-      else groups.set(sector, [row]);
-    }
-
-    return [...groups.entries()].sort(([sectorA], [sectorB]) =>
-      sectorA.localeCompare(sectorB, "pt-BR"),
-    );
-  }, [ranked]);
 
   const intelSection = (
     <div className="space-y-4 rounded-lg border border-border/60 bg-background/40 p-4">
@@ -447,13 +403,11 @@ function DividendosPage() {
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
         <div className="mb-4 flex items-center gap-3">
-          <ActionTip tip="voltar">
-            <Button asChild variant="outline" size="icon" className="border-border/60">
-              <Link to="/" aria-label="Voltar">
-                <ArrowLeft className="h-4 w-4" />
-              </Link>
-            </Button>
-          </ActionTip>
+          <Button asChild variant="outline" size="icon" className="border-border/60">
+            <Link to="/" aria-label="Voltar">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
           <div>
             <h1 className="text-xl font-semibold">Inteligência de proventos</h1>
             <p className="text-xs text-muted-foreground">
@@ -493,25 +447,6 @@ function DividendosPage() {
             extraSection={intelSection}
             onClearExtra={clearIntel}
           />
-
-          <SectorVisibilityDialog
-            sectors={sectors}
-            selected={selectedSectors}
-            onChange={setSelectedSectors}
-          />
-
-          <Select value={sortMode} onValueChange={(value) => setSortMode(value as SortMode)}>
-            <SelectTrigger
-              className="w-full border-border/60 bg-input/60 sm:w-[190px]"
-              aria-label="Ordenar inteligência de proventos"
-            >
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="score">Maior Score</SelectItem>
-              <SelectItem value="yield">Maior Yield (DY 12m)</SelectItem>
-            </SelectContent>
-          </Select>
 
           <div className="flex flex-wrap gap-1">
             {CLASS_FILTERS.map((f) => {
@@ -581,97 +516,91 @@ function DividendosPage() {
           })}
         </div>
 
-        <div className="space-y-5">
-          {rankedBySector.map(([sector, sectorRows]) => (
-            <section key={sector} aria-labelledby={`sector-${sector}`}>
-              <div className="mb-2 flex items-baseline justify-between gap-3">
-                <h2
-                  id={`sector-${sector}`}
-                  className="text-sm font-semibold text-foreground"
-                >
-                  {sector}
-                </h2>
-                <span className="shrink-0 text-xs text-muted-foreground">
-                  {sectorRows.length} {sectorRows.length === 1 ? "ativo" : "ativos"}
-                </span>
-              </div>
-              <div className="overflow-x-auto rounded-lg border border-border/60 bg-card">
-                <table className="w-full text-sm">
-                  <thead className="border-b border-border/60 text-xs uppercase text-muted-foreground">
-                    <tr>
-                      <th className="p-3 text-left">Ticker</th>
-                      <th className="p-3 text-left">Classe</th>
-                      <th className="p-3 text-right">Score</th>
-                      <th className="p-3 text-left">Frequência</th>
-                      <th className="p-3 text-right">DY 12m</th>
-                      <th className="p-3 text-right">Consecutivos</th>
-                      <th className="p-3 text-left">Próxima COM</th>
-                      <th className="p-3 text-right">Faixa esperada</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sectorRows.map((r) => {
-                      const intel = r.intel;
-                      const meta = intel ? classMeta(intel.classification) : null;
-                      return (
-                        <tr
-                          key={r.stock.ticker}
-                          className="cursor-pointer border-b border-border/40 transition-colors hover:bg-secondary/30"
-                          onClick={() => setSelected(r.stock)}
+        <div className="overflow-x-auto rounded-lg border border-border/60 bg-card">
+          <table className="w-full text-sm">
+            <thead className="border-b border-border/60 text-xs uppercase text-muted-foreground">
+              <tr>
+                <th className="p-3 text-left">Ticker</th>
+                <th className="p-3 text-left">Classe</th>
+                <th className="p-3 text-right">Score</th>
+                <th className="p-3 text-left">Frequência</th>
+                <th className="p-3 text-right">DY 12m</th>
+                <th className="p-3 text-right">Consecutivos</th>
+                <th className="p-3 text-left">Próxima COM</th>
+                <th className="p-3 text-right">Faixa esperada</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ranked.map((r) => {
+                const intel = r.intel;
+                const meta = intel ? classMeta(intel.classification) : null;
+                return (
+                  <tr
+                    key={r.stock.ticker}
+                    className="cursor-pointer border-b border-border/40 transition-colors hover:bg-secondary/30"
+                    onClick={() => setSelected(r.stock)}
+                  >
+                    <td className="p-3">
+                      <div className="font-mono font-semibold">
+                        {r.stock.ticker}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {r.stock.nome}
+                      </div>
+                    </td>
+                    <td className="p-3">
+                      {meta ? (
+                        <Badge
+                          variant="outline"
+                          className="border-border/60"
+                          style={{ color: meta.color, borderColor: meta.color }}
                         >
-                          <td className="p-3">
-                            <div className="font-mono font-semibold">{r.stock.ticker}</div>
-                            <div className="text-xs text-muted-foreground">{r.stock.nome}</div>
-                          </td>
-                          <td className="p-3">
-                            {meta ? (
-                              <Badge
-                                variant="outline"
-                                className="border-border/60"
-                                style={{ color: meta.color, borderColor: meta.color }}
-                              >
-                                {meta.label}
-                              </Badge>
-                            ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-right font-mono">{intel ? intel.score : "—"}</td>
-                          <td className="p-3 text-xs text-muted-foreground">
-                            {intel?.next.frequencia ?? "—"}
-                          </td>
-                          <td className="p-3 text-right font-mono">
-                            {intel?.dyUltimos12m != null
-                              ? `${intel.dyUltimos12m.toFixed(2)}%`
-                              : "—"}
-                          </td>
-                          <td className="p-3 text-right font-mono">
-                            {intel ? intel.anosConsecutivosPagando : "—"}
-                          </td>
-                          <td className="p-3 font-mono text-xs">
-                            {fmtDate(intel?.next.proximaDataComEstimada ?? null)}
-                            {intel?.next.janelaDias ? ` ± ${intel.next.janelaDias}d` : ""}
-                          </td>
-                          <td className="p-3 text-right font-mono text-xs">
-                            {intel?.next.faixaValor
-                              ? `R$ ${intel.next.faixaValor.min.toFixed(3)}–${intel.next.faixaValor.max.toFixed(3)}`
-                              : "—"}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ))}
-          {!isLoading && ranked.length === 0 && (
-            <div className="rounded-lg border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
-              {selectedSectors.length === 0
-                ? "Selecione ao menos um setor em “Visualizar somente”."
-                : "Nenhum ativo encontrado para este filtro."}
-            </div>
-          )}
+                          {meta.label}
+                        </Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                    <td className="p-3 text-right font-mono">
+                      {intel ? intel.score : "—"}
+                    </td>
+                    <td className="p-3 text-xs text-muted-foreground">
+                      {intel?.next.frequencia ?? "—"}
+                    </td>
+                    <td className="p-3 text-right font-mono">
+                      {intel?.dyUltimos12m != null
+                        ? `${intel.dyUltimos12m.toFixed(2)}%`
+                        : "—"}
+                    </td>
+                    <td className="p-3 text-right font-mono">
+                      {intel ? intel.anosConsecutivosPagando : "—"}
+                    </td>
+                    <td className="p-3 font-mono text-xs">
+                      {fmtDate(intel?.next.proximaDataComEstimada ?? null)}
+                      {intel?.next.janelaDias
+                        ? ` ± ${intel.next.janelaDias}d`
+                        : ""}
+                    </td>
+                    <td className="p-3 text-right font-mono text-xs">
+                      {intel?.next.faixaValor
+                        ? `R$ ${intel.next.faixaValor.min.toFixed(3)}–${intel.next.faixaValor.max.toFixed(3)}`
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+              {!isLoading && ranked.length === 0 && (
+                <tr>
+                  <td
+                    colSpan={8}
+                    className="p-8 text-center text-sm text-muted-foreground"
+                  >
+                    Nenhum ativo encontrado para este filtro.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
 
         <p className="mt-3 text-xs text-muted-foreground">

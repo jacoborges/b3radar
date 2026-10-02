@@ -3,11 +3,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { LogOut, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/admin-users.functions";
-import { signOutFromDrive } from "@/lib/drive-auth.functions";
 import { useOnlineUsers } from "@/hooks/use-online-users";
-import { ActionTip } from "@/components/ActionTip";
-import { useCloseAccessSession } from "@/hooks/use-access-session";
 
 /** Realtime count of signed-in users — admin only. */
 function OnlineBadge() {
@@ -15,15 +13,12 @@ function OnlineBadge() {
   const total = users.length;
 
   return (
-    <ActionTip
-      tip="online"
-      how={
-        total
-          ? `Online agora: ${users.map((u) => u.email).join(", ")}`
-          : "Nenhum usuário conectado neste momento."
-      }
-    >
     <span
+      title={
+        total
+          ? `Online agora:\n${users.map((u) => u.email).join("\n")}`
+          : "Nenhum usuário online"
+      }
       className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-input/60 px-2 py-1.5 text-xs font-medium text-muted-foreground"
     >
       <span className="relative flex h-2 w-2">
@@ -32,8 +27,7 @@ function OnlineBadge() {
       </span>
       <span className="tabular-nums text-foreground">{total}</span>
       <span className="hidden sm:inline">online</span>
-      </span>
-    </ActionTip>
+    </span>
   );
 }
 
@@ -43,8 +37,6 @@ export function AccountControls() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const fetchAccess = useServerFn(getMyAccess);
-  const closeAccessSession = useCloseAccessSession();
-  const signOutDrive = useServerFn(signOutFromDrive);
 
   const { data } = useQuery({
     queryKey: ["my-access"],
@@ -55,10 +47,9 @@ export function AccountControls() {
   const canManage = data?.role === "admin" || data?.role === "gestor";
 
   async function signOut() {
-    await closeAccessSession();
     await queryClient.cancelQueries();
     queryClient.clear();
-    await signOutDrive();
+    await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
 
@@ -67,31 +58,29 @@ export function AccountControls() {
       {data?.role === "admin" && <OnlineBadge />}
 
       {canManage && (
-        <ActionTip tip="usuarios">
-          <Button
-            asChild
-            variant="outline"
-            size="icon"
-            className="shrink-0 border-border/60 bg-input/60"
-          >
-            <Link to="/usuarios" aria-label="Usuários">
-              <Users className="h-4 w-4" />
-            </Link>
-          </Button>
-        </ActionTip>
-      )}
-
-      <ActionTip tip="sair">
         <Button
+          asChild
           variant="outline"
           size="icon"
           className="shrink-0 border-border/60 bg-input/60"
-          aria-label="Sair"
-          onClick={signOut}
+          title="Usuários"
         >
-          <LogOut className="h-4 w-4" />
+          <Link to="/usuarios" aria-label="Usuários">
+            <Users className="h-4 w-4" />
+          </Link>
         </Button>
-      </ActionTip>
+      )}
+
+      <Button
+        variant="outline"
+        size="icon"
+        className="shrink-0 border-border/60 bg-input/60"
+        title="Sair"
+        aria-label="Sair"
+        onClick={signOut}
+      >
+        <LogOut className="h-4 w-4" />
+      </Button>
     </>
   );
 }

@@ -23,7 +23,6 @@ import {
 import { SELIC, type DividendYear } from "@/lib/stocks-data";
 import { usePriceHistory } from "@/hooks/use-price-history";
 import type { PriceYear } from "@/lib/price-history.functions";
-import { ActionTip } from "@/components/ActionTip";
 
 export type HistoryKind = "preco" | "valorizacao" | "dy" | "proventos" | "selic";
 
@@ -340,19 +339,17 @@ export function HistoryChartButton({ ticker, kind, historico, label }: Props) {
 
   return (
     <>
-      <ActionTip tip="historicoIndicador">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setOpen(true);
-          }}
-          className="inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:text-primary"
-          aria-label={`Histórico de 10 anos de ${label ?? kind}`}
-        >
-          <LineChartIcon className="h-3.5 w-3.5" />
-        </button>
-      </ActionTip>
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(true);
+        }}
+        className="inline-flex h-4 w-4 items-center justify-center rounded text-muted-foreground/70 transition-colors hover:text-primary"
+        aria-label={`Histórico de 10 anos de ${label ?? kind}`}
+      >
+        <LineChartIcon className="h-3.5 w-3.5" />
+      </button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent

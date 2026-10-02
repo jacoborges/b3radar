@@ -105,15 +105,6 @@ function seed(str: string): () => number {
 }
 
 // Deterministic "variação do dia" and dividend series based on real DY
-/** Renomeia setores para rótulos mais claros na interface */
-const SECTOR_LABELS: Record<string, string> = {
-  "Intermediários Financeiros": "Bancos e Intermediários Financeiros",
-};
-
-export function sectorLabel(setor: string): string {
-  return SECTOR_LABELS[setor] ?? setor;
-}
-
 export function buildStock(r: RawRow): Stock {
   const rand = seed(r.t);
   const variacaoDia = Number(((rand() - 0.5) * 6).toFixed(2)); // -3% .. +3%
@@ -214,7 +205,7 @@ export function buildStock(r: RawRow): Stock {
   return {
     ticker: r.t,
     nome: r.n,
-    setor: sectorLabel(r.s),
+    setor: r.s,
     tipo: (r.tp as ShareType),
     preco: r.p,
     variacaoDia,

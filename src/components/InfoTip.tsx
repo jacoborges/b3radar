@@ -9,7 +9,6 @@ import {
   classMeta,
   type DividendClass,
 } from "@/lib/dividend-intelligence";
-import { ActionTip } from "@/components/ActionTip";
 
 interface Props {
   title: string;
@@ -20,20 +19,18 @@ interface Props {
 export function InfoTip({ title, fundamentalista, tecnica }: Props) {
   return (
     <Popover>
-      <ActionTip tip="explicacaoIndicador" label={title}>
-        <PopoverTrigger
-          asChild
-          onClick={(e) => e.stopPropagation()}
+      <PopoverTrigger
+        asChild
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-primary"
+          aria-label={`Explicação de ${title}`}
         >
-          <button
-            type="button"
-            className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-primary"
-            aria-label={`Explicação de ${title}`}
-          >
-            <HelpCircle className="h-3.5 w-3.5" />
-          </button>
-        </PopoverTrigger>
-      </ActionTip>
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
       <PopoverContent
         side="top"
         className="border-border/60 bg-popover/95 backdrop-blur"
@@ -84,20 +81,18 @@ export function ClassificationInfoTip({
 }) {
   return (
     <Popover>
-      <ActionTip tip="explicacaoClasses">
-        <PopoverTrigger
-          asChild
-          onClick={(e) => e.stopPropagation()}
+      <PopoverTrigger
+        asChild
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-primary"
+          aria-label={`Explicação das classes de provento`}
         >
-          <button
-            type="button"
-            className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/70 transition-colors hover:text-primary"
-            aria-label={`Explicação das classes de provento`}
-          >
-            <HelpCircle className="h-3.5 w-3.5" />
-          </button>
-        </PopoverTrigger>
-      </ActionTip>
+          <HelpCircle className="h-3.5 w-3.5" />
+        </button>
+      </PopoverTrigger>
       <PopoverContent
         side="top"
         className="w-96 border-border/60 bg-popover/95 backdrop-blur"

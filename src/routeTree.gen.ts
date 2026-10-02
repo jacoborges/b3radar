@@ -18,7 +18,6 @@ import { Route as AuthenticatedDividendosRouteImport } from './routes/_authentic
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 import { Route as ApiPublicRefreshProventosRouteImport } from './routes/api/public/refresh-proventos'
-import { Route as ApiPublicAuthSessionRouteImport } from './routes/api/public/auth/session'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -66,11 +65,6 @@ const ApiPublicRefreshProventosRoute =
     path: '/api/public/refresh-proventos',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicAuthSessionRoute = ApiPublicAuthSessionRouteImport.update({
-  id: '/api/public/auth/session',
-  path: '/api/public/auth/session',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -81,7 +75,6 @@ export interface FileRoutesByFullPath {
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
-  '/api/public/auth/session': typeof ApiPublicAuthSessionRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -92,7 +85,6 @@ export interface FileRoutesByTo {
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
-  '/api/public/auth/session': typeof ApiPublicAuthSessionRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,7 +97,6 @@ export interface FileRoutesById {
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
-  '/api/public/auth/session': typeof ApiPublicAuthSessionRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,7 +109,6 @@ export interface FileRouteTypes {
     | '/simulador'
     | '/usuarios'
     | '/api/public/refresh-proventos'
-    | '/api/public/auth/session'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -129,7 +119,6 @@ export interface FileRouteTypes {
     | '/usuarios'
     | '/'
     | '/api/public/refresh-proventos'
-    | '/api/public/auth/session'
   id:
     | '__root__'
     | '/_authenticated'
@@ -141,14 +130,12 @@ export interface FileRouteTypes {
     | '/_authenticated/usuarios'
     | '/_authenticated/'
     | '/api/public/refresh-proventos'
-    | '/api/public/auth/session'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ApiPublicRefreshProventosRoute: typeof ApiPublicRefreshProventosRoute
-  ApiPublicAuthSessionRoute: typeof ApiPublicAuthSessionRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -216,13 +203,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicRefreshProventosRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/auth/session': {
-      id: '/api/public/auth/session'
-      path: '/api/public/auth/session'
-      fullPath: '/api/public/auth/session'
-      preLoaderRoute: typeof ApiPublicAuthSessionRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -251,7 +231,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ApiPublicRefreshProventosRoute: ApiPublicRefreshProventosRoute,
-  ApiPublicAuthSessionRoute: ApiPublicAuthSessionRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

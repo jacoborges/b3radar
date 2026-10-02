@@ -6,7 +6,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ActionTip } from "@/components/ActionTip";
 import { Badge } from "@/components/ui/badge";
 import {
   Collapsible,
@@ -77,7 +76,6 @@ export function PortfolioProventos({
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <section className="rounded-xl border border-border/60 bg-card">
-        <ActionTip tip="proximosProventos" side="bottom">
         <CollapsibleTrigger asChild>
           <header className="flex cursor-pointer flex-wrap items-center gap-2 border-b border-border/60 px-4 py-3 transition-colors hover:bg-muted/20">
             <CalendarClock className="h-4 w-4 text-primary" />
@@ -115,7 +113,6 @@ export function PortfolioProventos({
             </div>
           </header>
         </CollapsibleTrigger>
-        </ActionTip>
 
         <CollapsibleContent>
           {posicoes.length === 0 ? (
@@ -170,14 +167,7 @@ export function PortfolioProventos({
                             key={`${e.ticker}-${e.dataPagamento}-${i}`}
                             className="border-b border-border/40 last:border-0"
                           >
-                            <td className="px-4 py-2 font-semibold">
-                              {e.ticker}
-                              {e.posicaoEncerrada && (
-                                <span className="ml-1 text-[10px] font-normal text-muted-foreground">
-                                  (vendida)
-                                </span>
-                              )}
-                            </td>
+                            <td className="px-4 py-2 font-semibold">{e.ticker}</td>
                             <td className="px-3 py-2">
                               <Badge
                                 variant="outline"

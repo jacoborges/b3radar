@@ -11,7 +11,6 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { InfoTip } from "@/components/InfoTip";
-import { ActionTip } from "@/components/ActionTip";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import {
   FILTER_BOUNDS,
@@ -69,19 +68,17 @@ export function StockFilterSheet({
 
   return (
     <Sheet>
-      <ActionTip tip="filtros">
-        <SheetTrigger asChild>
-          <Button variant="secondary" className="gap-2 border border-border/60">
-            <SlidersHorizontal className="h-4 w-4" />
-            Filtros
-            {activeCount > 0 && (
-              <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
-                {activeCount}
-              </span>
-            )}
-          </Button>
-        </SheetTrigger>
-      </ActionTip>
+      <SheetTrigger asChild>
+        <Button variant="secondary" className="gap-2 border border-border/60">
+          <SlidersHorizontal className="h-4 w-4" />
+          Filtros
+          {activeCount > 0 && (
+            <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+              {activeCount}
+            </span>
+          )}
+        </Button>
+      </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-md">
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>

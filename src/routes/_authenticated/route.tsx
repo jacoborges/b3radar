@@ -2,17 +2,16 @@ import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ShieldAlert, LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { getMyAccess } from "@/lib/admin-users.functions";
-import { useCloseAccessSession } from "@/hooks/use-access-session";
-import { getDriveSession, signOutFromDrive } from "@/lib/drive-auth.functions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { user } = await getDriveSession();
-    if (!user) throw redirect({ to: "/auth" });
-    return { user };
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) throw redirect({ to: "/auth" });
+    return { user: data.user };
   },
   component: AuthenticatedLayout,
 });
@@ -21,8 +20,6 @@ function AuthenticatedLayout() {
   const fetchAccess = useServerFn(getMyAccess);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const closeAccessSession = useCloseAccessSession();
-  const signOutDrive = useServerFn(signOutFromDrive);
 
   const { data, isLoading } = useQuery({
     queryKey: ["my-access"],
@@ -31,10 +28,9 @@ function AuthenticatedLayout() {
   });
 
   async function signOut() {
-    await closeAccessSession();
     await queryClient.cancelQueries();
     queryClient.clear();
-    await signOutDrive();
+    await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   }
 

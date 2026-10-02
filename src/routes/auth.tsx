@@ -3,11 +3,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { adminExists, bootstrapFirstAdmin } from "@/lib/admin-users.functions";
-import { getDriveSession, signInToDrive } from "@/lib/drive-auth.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -29,27 +29,23 @@ function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [bootstrapKey, setBootstrapKey] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const checkAdmin = useServerFn(adminExists);
   const setupAdmin = useServerFn(bootstrapFirstAdmin);
-  const getSession = useServerFn(getDriveSession);
-  const signIn = useServerFn(signInToDrive);
   const { data: adminState, refetch } = useQuery({
     queryKey: ["admin-exists"],
     queryFn: () => checkAdmin(),
     staleTime: 0,
   });
   const needsSetup = adminState?.exists === false;
-  const serviceError = adminState?.error ?? null;
 
   useEffect(() => {
-    getSession().then(({ user }) => {
-      if (user) navigate({ to: "/", replace: true });
-    }).catch(() => {});
-  }, [getSession, navigate]);
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) navigate({ to: "/", replace: true });
+    });
+  }, [navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -60,11 +56,14 @@ function AuthPage() {
         if (password.length < 8) {
           throw new Error("A senha do administrador precisa ter ao menos 8 caracteres.");
         }
-        const setupResult = await setupAdmin({ data: { email: "b3radar@gmail.com", password, bootstrapKey } });
-        if (!setupResult.ok) throw new Error(setupResult.error);
+        await setupAdmin({ data: { email, password } });
         await refetch();
       }
-      await signIn({ data: { email: needsSetup ? "b3radar@gmail.com" : email.trim(), password } });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+      if (signInError) throw new Error("E-mail ou senha inválidos.");
       navigate({ to: "/", replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível entrar.");
@@ -86,12 +85,6 @@ function AuthPage() {
           </p>
         )}
 
-        {serviceError && (
-          <p className="mt-4 rounded-lg border border-destructive/40 bg-card px-3 py-2 text-center text-sm text-destructive">
-            {serviceError}
-          </p>
-        )}
-
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">E-mail</Label>
@@ -100,24 +93,10 @@ function AuthPage() {
               type="email"
               autoComplete="username"
               required
-              value={needsSetup ? "b3radar@gmail.com" : email}
-              readOnly={needsSetup}
+              value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
-          {needsSetup && (
-            <div className="space-y-2">
-              <Label htmlFor="bootstrap-key">Chave de primeiro acesso</Label>
-              <Input
-                id="bootstrap-key"
-                type="password"
-                autoComplete="one-time-code"
-                required
-                value={bootstrapKey}
-                onChange={(e) => setBootstrapKey(e.target.value)}
-              />
-            </div>
-          )}
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
             <Input
@@ -132,7 +111,7 @@ function AuthPage() {
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={busy || Boolean(serviceError)}>
+          <Button type="submit" className="w-full" disabled={busy}>
             {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {needsSetup ? "Criar administrador e entrar" : "Entrar"}
           </Button>

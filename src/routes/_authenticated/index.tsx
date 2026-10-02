@@ -44,13 +44,10 @@ import {
 import { type Stock } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
-import { ActionTip } from "@/components/ActionTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { AccountControls } from "@/components/AccountControls";
-import { SectorVisibilityDialog } from "@/components/SectorVisibilityDialog";
-import { useSectorVisibility } from "@/hooks/use-sector-visibility";
 
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
@@ -111,7 +108,6 @@ function HomePage() {
   const [selected, setSelected] = useState<Stock | null>(null);
 
   const [openSectors, setOpenSectors] = useState<string[]>([]);
-  const { selectedSectors, selectedSet, setSelectedSectors } = useSectorVisibility(SECTORS);
 
   const [divisor] = useBazinDivisor();
   const dividendos = useDividendBatch(STOCKS, { enabled: precoTetoOnly });
@@ -142,7 +138,6 @@ function HomePage() {
     (minAnosPrecoAcimaSelic > 0 ? 1 : 0) +
     (precoTetoOnly ? 1 : 0) +
     (ddmOnly ? 1 : 0);
-  const sectorFilterActive = selectedSectors.length < SECTORS.length;
 
   /** true quando o preço teto é o único filtro ativo → ranqueia por desconto */
   const rankByDesconto =
@@ -151,7 +146,6 @@ function HomePage() {
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
     return STOCKS.filter((s) => {
-      if (!selectedSet.has(s.setor)) return false;
       if (q && !s.ticker.includes(q) && !s.nome.toUpperCase().includes(q))
         return false;
       if (tipo !== "ALL" && s.tipo !== tipo) return false;
@@ -176,7 +170,7 @@ function HomePage() {
       }
       return true;
     });
-  }, [STOCKS, selectedSet, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
+  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
 
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
@@ -309,7 +303,7 @@ function HomePage() {
               <StockFilterSheet
                 filters={filters}
                 setFilters={setFilters}
-                activeCount={activeFilters.length + extraActiveCount + (sectorFilterActive ? 1 : 0)}
+                activeCount={activeFilters.length + extraActiveCount}
                 debtColors={debtColors}
                 setDebtColors={setDebtColors}
                 recFilter={recFilter}
@@ -326,66 +320,56 @@ function HomePage() {
                 setDdmOnly={setDdmOnly}
               />
 
-              <SectorVisibilityDialog
-                sectors={SECTORS}
-                selected={selectedSectors}
-                onChange={setSelectedSectors}
-              />
 
 
 
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-border/60 bg-input/60"
+                title="Carteira"
+              >
+                <Link to="/carteira" aria-label="Carteira">
+                  <Wallet className="h-4 w-4" />
+                </Link>
+              </Button>
 
-              <ActionTip tip="carteira">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 border-border/60 bg-input/60"
-                >
-                  <Link to="/carteira" aria-label="Carteira">
-                    <Wallet className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </ActionTip>
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-border/60 bg-input/60"
+                title="Simulador de Carteira"
+              >
+                <Link to="/simulador" aria-label="Simulador de Carteira">
+                  <LineChart className="h-4 w-4" />
+                </Link>
+              </Button>
 
-              <ActionTip tip="simulador">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 border-border/60 bg-input/60"
-                >
-                  <Link to="/simulador" aria-label="Simulador de Carteira">
-                    <LineChart className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </ActionTip>
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-border/60 bg-input/60"
+                title="Proventos"
+              >
+                <Link to="/dividendos" aria-label="Proventos">
+                  <Coins className="h-4 w-4" />
+                </Link>
+              </Button>
 
-              <ActionTip tip="dividendos">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 border-border/60 bg-input/60"
-                >
-                  <Link to="/dividendos" aria-label="Proventos">
-                    <Coins className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </ActionTip>
-
-              <ActionTip tip="configuracoes">
-                <Button
-                  asChild
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 border-border/60 bg-input/60"
-                >
-                  <Link to="/configuracoes" aria-label="Configurações">
-                    <Settings className="h-4 w-4" />
-                  </Link>
-                </Button>
-              </ActionTip>
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-border/60 bg-input/60"
+                title="Configurações"
+              >
+                <Link to="/configuracoes" aria-label="Configurações">
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </Button>
 
               <AccountControls />
 
@@ -453,15 +437,13 @@ function HomePage() {
         </div>
         {total === 0 ? (
           <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
-            {selectedSectors.length === 0
-              ? "Selecione ao menos um setor em “Visualizar somente”."
-              : "Nenhum ativo encontrado com esses filtros."}
+            Nenhum ativo encontrado com esses filtros.
           </div>
         ) : (
           <Accordion
             type="multiple"
             value={
-              search.trim() || activeFilters.length > 0 || extraActiveCount > 0 || sectorFilterActive
+              search.trim() || activeFilters.length > 0 || extraActiveCount > 0
                 ? SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0)
                 : openSectors
             }
