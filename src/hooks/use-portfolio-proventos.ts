@@ -8,8 +8,6 @@ import {
 import type { ProventoProvisionado } from "@/lib/stocks-data";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
-/** Novos anúncios da B3 aparecem durante o dia: revalidar a cada 6h. */
-const SIX_HOURS = 6 * 60 * 60 * 1000;
 
 export interface ProventoCarteira {
   ticker: string;
@@ -63,11 +61,11 @@ export function usePortfolioProventos(
     queries: tickers.map((ticker) => ({
       queryKey: ["proventos", ticker],
       queryFn: () => callProventos({ data: { ticker } }),
-      staleTime: SIX_HOURS,
+      staleTime: ONE_DAY,
       gcTime: ONE_DAY * 7,
-      refetchOnMount: true,
-      refetchOnWindowFocus: true,
-      refetchOnReconnect: true,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       retry: 1,
     })),
   });

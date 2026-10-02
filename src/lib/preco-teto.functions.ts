@@ -103,29 +103,6 @@ export const analyzePrecoTeto = createServerFn({ method: "POST" })
       };
     }
 
-    type StoredTeto = {
-      content: string;
-      media: number | null;
-      minimo: number | null;
-      maximo: number | null;
-      citations: string[];
-    };
-    const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
-    const stored = await readCache<StoredTeto>("ai-preco-teto", data.ticker, CACHE_TTL.ai);
-    if (stored) {
-      CACHE.set(cacheKey, { ...stored.payload, ts: new Date(stored.fetchedAt).getTime() });
-      return {
-        content: stored.payload.content,
-        media: stored.payload.media,
-        minimo: stored.payload.minimo,
-        maximo: stored.payload.maximo,
-        cached: true,
-        updatedAt: stored.fetchedAt,
-        error: null,
-        citations: stored.payload.citations ?? [],
-      };
-    }
-
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
     const anoAtual = new Date().getFullYear();
     const anoIni = anoAtual - 5;
@@ -213,13 +190,6 @@ SOMA_MAXIMO: <somatório máximo em caso de divergência entre as três fontes, 
         maximo,
         citations,
         ts: Date.now(),
-      });
-      await writeCache("ai-preco-teto", data.ticker, {
-        content: visible,
-        media,
-        minimo,
-        maximo,
-        citations,
       });
 
       return {

@@ -99,34 +99,24 @@ function parseRow(ticker: string, row: ScanRow | undefined, updatedAt: string): 
 }
 
 export const getTradingViewTechnical = createServerFn({ method: "GET" })
-  .inputValidator((data: { ticker: string; force?: boolean }) => {
+  .inputValidator((data: { ticker: string }) => {
     if (!data?.ticker || typeof data.ticker !== "string") throw new Error("ticker required");
-    return { ticker: data.ticker, force: !!data.force };
+    return { ticker: data.ticker };
   })
   .handler(async ({ data }) => {
     setResponseHeader("cache-control", "public, max-age=60, s-maxage=60");
     const t = normalize(data.ticker);
-    const { withCache, CACHE_TTL } = await import("./market-cache.server");
-    return withCache<TvResult>({
-      kind: "tv-technical",
-      ticker: t,
-      ttlMs: CACHE_TTL.tradingview,
-      force: data.force,
-      fetcher: async () => {
-        try {
-          const rows = await callScanner([t]);
-          const row = rows.find((r) => r.s.endsWith(`:${t}`)) ?? rows[0];
-          return parseRow(t, row, new Date().toISOString());
-        } catch (err) {
-          return {
-            ticker: t,
-            available: false,
-            reason: err instanceof Error ? err.message : "erro desconhecido",
-          } as TvResult;
-        }
-      },
-      shouldStore: (v) => (v as { available?: boolean }).available !== false,
-    });
+    try {
+      const rows = await callScanner([t]);
+      const row = rows.find((r) => r.s.endsWith(`:${t}`)) ?? rows[0];
+      return parseRow(t, row, new Date().toISOString());
+    } catch (err) {
+      return {
+        ticker: t,
+        available: false,
+        reason: err instanceof Error ? err.message : "erro desconhecido",
+      } as TvResult;
+    }
   });
 
 export const getTradingViewBatch = createServerFn({ method: "POST" })

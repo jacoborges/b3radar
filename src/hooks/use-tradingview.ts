@@ -4,7 +4,6 @@ import {
   getTradingViewBatch,
 } from "@/lib/tradingview.functions";
 import type { TvResult } from "@/lib/tradingview-rating";
-import { isForced } from "@/lib/force-refresh";
 
 const FIVE_MIN = 5 * 60 * 1000;
 const ONE_MIN = 60 * 1000;
@@ -14,7 +13,7 @@ const SIX_HOURS = 6 * 60 * 60 * 1000;
 export function useTradingViewTechnical(ticker: string | null) {
   return useQuery({
     queryKey: ["tv-technical", ticker],
-    queryFn: () => getTradingViewTechnical({ data: { ticker: ticker!, force: isForced(ticker) } }),
+    queryFn: () => getTradingViewTechnical({ data: { ticker: ticker! } }),
     enabled: !!ticker,
     staleTime: SIX_HOURS,
     gcTime: SIX_HOURS * 4,

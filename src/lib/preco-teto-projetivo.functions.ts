@@ -90,27 +90,6 @@ export const projetarLucro = createServerFn({ method: "POST" })
       };
     }
 
-    type StoredProj = {
-      lucroProjetado: number | null;
-      ano: number | null;
-      payout: number | null;
-      content: string | null;
-      citations: string[];
-    };
-    const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
-    const stored = data.force
-      ? null
-      : await readCache<StoredProj>("ai-preco-teto-projetivo", data.ticker, CACHE_TTL.ai);
-    if (stored) {
-      return {
-        ...stored.payload,
-        citations: stored.payload.citations ?? [],
-        cached: true,
-        updatedAt: stored.fetchedAt,
-        error: null,
-      };
-    }
-
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
     const anoAlvo = new Date().getFullYear() + 1;
 
@@ -183,13 +162,6 @@ PAYOUT_PCT: <payout em porcentagem, ex.: 40, ou vazio>`;
         content: visible,
         citations,
         ts: Date.now(),
-      });
-      await writeCache("ai-preco-teto-projetivo", data.ticker, {
-        lucroProjetado: lucro,
-        ano,
-        payout,
-        content: visible,
-        citations,
       });
 
       return {

@@ -5,32 +5,6 @@ import { LogOut, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { getMyAccess } from "@/lib/admin-users.functions";
-import { useOnlineUsers } from "@/hooks/use-online-users";
-
-/** Realtime count of signed-in users — admin only. */
-function OnlineBadge() {
-  const users = useOnlineUsers();
-  const total = users.length;
-
-  return (
-    <span
-      title={
-        total
-          ? `Online agora:\n${users.map((u) => u.email).join("\n")}`
-          : "Nenhum usuário online"
-      }
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border/60 bg-input/60 px-2 py-1.5 text-xs font-medium text-muted-foreground"
-    >
-      <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success opacity-60" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
-      </span>
-      <span className="tabular-nums text-foreground">{total}</span>
-      <span className="hidden sm:inline">online</span>
-    </span>
-  );
-}
-
 
 /** Header controls for the signed-in session: users panel (admin/gestor) + sign out. */
 export function AccountControls() {
@@ -55,8 +29,6 @@ export function AccountControls() {
 
   return (
     <>
-      {data?.role === "admin" && <OnlineBadge />}
-
       {canManage && (
         <Button
           asChild

@@ -76,19 +76,6 @@ export const buscarDadosDdm = createServerFn({ method: "POST" })
       return { ...hit.value, cached: true, updatedAt: new Date(hit.ts).toISOString() };
     }
 
-    const { readCache, writeCache, CACHE_TTL } = await import("./market-cache.server");
-    const stored = data.force
-      ? null
-      : await readCache<Omit<DadosDdmResult, "cached" | "updatedAt">>(
-          "ai-valuation-ddm",
-          data.ticker,
-          CACHE_TTL.ai,
-        );
-    if (stored) {
-      CACHE.set(cacheKey, { value: stored.payload, ts: new Date(stored.fetchedAt).getTime() });
-      return { ...stored.payload, cached: true, updatedAt: stored.fetchedAt };
-    }
-
     const nomeCurto = (data.nome ?? data.ticker).split(" ").slice(0, 3).join(" ");
     const anoAlvo = new Date().getFullYear() + 1;
 
@@ -169,7 +156,6 @@ ANO: ${anoAlvo}`;
       };
 
       CACHE.set(cacheKey, { value, ts: Date.now() });
-      await writeCache("ai-valuation-ddm", data.ticker, value);
       return { ...value, cached: false, updatedAt: now };
     } catch (err) {
       console.error("[buscarDadosDdm] failed", data.ticker, err);

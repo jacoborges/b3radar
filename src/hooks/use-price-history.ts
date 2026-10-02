@@ -1,4 +1,3 @@
-import { isForced } from "@/lib/force-refresh";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPriceHistory, type PriceHistoryResult } from "@/lib/price-history.functions";
@@ -11,7 +10,7 @@ export function usePriceHistory(ticker: string | null, enabled = true) {
 
   const q = useQuery<PriceHistoryResult>({
     queryKey: ["price-history", t],
-    queryFn: () => call({ data: { ticker: t, force: isForced(t) } }),
+    queryFn: () => call({ data: { ticker: t } }),
     enabled: !!ticker && enabled,
     staleTime: ONE_WEEK,
     gcTime: ONE_WEEK * 4,

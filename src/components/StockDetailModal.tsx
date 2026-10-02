@@ -1,4 +1,3 @@
-import { markForceRefresh } from "@/lib/force-refresh";
 import { useMemo, useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
@@ -176,7 +175,6 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
 
   const refreshTicker = () => {
     if (!ticker) return;
-    markForceRefresh(ticker);
     void queryClient.invalidateQueries({
       predicate: (q) => q.queryKey.some((part) => part === ticker),
       refetchType: "active",

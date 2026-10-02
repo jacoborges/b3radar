@@ -129,28 +129,6 @@ async function fetchFundamentusHtml(): Promise<string> {
   }
 }
 
-async function buildAllStocks(): Promise<StocksPayload> {
-  try {
-    const html = await fetchFundamentusHtml();
-    const rows = parseFundamentus(html);
-    return {
-      rows,
-      fonte: "fundamentus",
-      updatedAt: new Date().toISOString(),
-      error: null,
-    };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error("[getAllStocks] fallback para snapshot:", msg);
-    return {
-      rows: SNAPSHOT,
-      fonte: "snapshot",
-      updatedAt: new Date().toISOString(),
-      error: msg,
-    };
-  }
-}
-
 export const getAllStocks = createServerFn({ method: "GET" }).handler(
   async (): Promise<StocksPayload> => {
     // Cache HTTP: 1h fresco, 24h stale-while-revalidate.
@@ -158,14 +136,26 @@ export const getAllStocks = createServerFn({ method: "GET" }).handler(
       "cache-control",
       "public, s-maxage=3600, stale-while-revalidate=86400",
     );
-    const { withCache, CACHE_TTL } = await import("./market-cache.server");
-    return withCache<StocksPayload>({
-      kind: "fundamentus-list",
-      ticker: "_ALL_",
-      ttlMs: CACHE_TTL.fundamentusList,
-      fetcher: buildAllStocks,
-      shouldStore: (v) => v.fonte === "fundamentus" && v.rows.length > 0,
-    });
+
+    try {
+      const html = await fetchFundamentusHtml();
+      const rows = parseFundamentus(html);
+      return {
+        rows,
+        fonte: "fundamentus",
+        updatedAt: new Date().toISOString(),
+        error: null,
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[getAllStocks] fallback para snapshot:", msg);
+      return {
+        rows: SNAPSHOT,
+        fonte: "snapshot",
+        updatedAt: new Date().toISOString(),
+        error: msg,
+      };
+    }
   },
 );
 
@@ -200,7 +190,6 @@ export interface TickerFundamentusPayload {
 
 const tickerSchema = z.object({
   ticker: z.string().trim().min(4).max(7).toUpperCase(),
-  force: z.boolean().optional(),
 });
 
 async function fetchFundamentusDetail(ticker: string): Promise<string> {
@@ -258,9 +247,15 @@ function numOrNull(s: string | undefined): number | null {
   return n === 0 && !/^-?0[.,]?0*%?$/.test(s.trim()) ? null : n;
 }
 
-async function buildTickerFundamentus(
-  ticker: string,
-): Promise<TickerFundamentusPayload> {
+export const getTickerFundamentus = createServerFn({ method: "POST" })
+  .inputValidator((data) => tickerSchema.parse(data))
+  .handler(async ({ data }): Promise<TickerFundamentusPayload> => {
+    const ticker = data.ticker;
+    setResponseHeader(
+      "cache-control",
+      "public, s-maxage=900, stale-while-revalidate=3600",
+    );
+
     try {
       const html = await fetchFundamentusDetail(ticker);
       const kv = parseFundamentusDetail(html);
@@ -308,24 +303,5 @@ async function buildTickerFundamentus(
         error: msg,
       };
     }
-}
-
-export const getTickerFundamentus = createServerFn({ method: "POST" })
-  .inputValidator((data) => tickerSchema.parse(data))
-  .handler(async ({ data }): Promise<TickerFundamentusPayload> => {
-    setResponseHeader(
-      "cache-control",
-      "public, s-maxage=900, stale-while-revalidate=3600",
-    );
-    const { withCache, CACHE_TTL } = await import("./market-cache.server");
-    return withCache<TickerFundamentusPayload>({
-      kind: "fundamentus-ticker",
-      ticker: data.ticker,
-      ttlMs: CACHE_TTL.fundamentusTicker,
-      force: data.force,
-      fetcher: () => buildTickerFundamentus(data.ticker),
-      shouldStore: (v) => !v.error && v.fields != null,
-    });
   });
-
 

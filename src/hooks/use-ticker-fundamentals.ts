@@ -1,4 +1,3 @@
-import { isForced } from "@/lib/force-refresh";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -23,7 +22,7 @@ export function useTickerFundamentals(
 
   const q = useQuery({
     queryKey: ["fundamentus-ticker", t],
-    queryFn: () => call({ data: { ticker: t, force: isForced(t) } }),
+    queryFn: () => call({ data: { ticker: t } }),
     enabled: !!ticker,
     staleTime: TWELVE_HOURS,
     gcTime: TWELVE_HOURS * 4,
