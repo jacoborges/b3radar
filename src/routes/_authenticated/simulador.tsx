@@ -27,7 +27,6 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
 import { SimReturnChart } from "@/components/SimReturnChart";
-import { SectorCompare } from "@/components/SectorCompare";
 import {
   proventosPorAno,
   simularTicker,
@@ -210,7 +209,6 @@ function SimuladorPage() {
   const totals = useMemo(() => somarPosicoes(posicoes), [posicoes]);
   const porAno = useMemo(() => proventosPorAno(posicoes), [posicoes]);
   const tickerList = useMemo(() => stocks.map((s) => s.ticker), [stocks]);
-  const [aba, setAba] = useState<"carteiras" | "setor">("carteiras");
 
   return (
     <div className="min-h-screen bg-background">
@@ -245,34 +243,7 @@ function SimuladorPage() {
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-6xl gap-2 px-3 pt-4 sm:px-6 md:px-8">
-        <Button
-          size="sm"
-          variant={aba === "carteiras" ? "secondary" : "ghost"}
-          onClick={() => setAba("carteiras")}
-        >
-          Carteiras simuladas
-        </Button>
-        <Button
-          size="sm"
-          variant={aba === "setor" ? "secondary" : "ghost"}
-          onClick={() => setAba("setor")}
-        >
-          Comparar setor
-        </Button>
-      </div>
-
-      {aba === "setor" && (
-        <main className="mx-auto w-full max-w-6xl px-3 py-6 sm:px-6 md:px-8">
-          <SectorCompare stocks={stocks} />
-        </main>
-      )}
-
-      <main
-        className={`mx-auto w-full max-w-6xl gap-6 px-3 py-6 sm:px-6 md:grid-cols-[260px_1fr] md:px-8 ${
-          aba === "carteiras" ? "grid" : "hidden"
-        }`}
-      >
+      <main className="mx-auto grid w-full max-w-6xl gap-6 px-3 py-6 sm:px-6 md:grid-cols-[260px_1fr] md:px-8">
         <aside className="space-y-3">
           <div className="rounded-xl border border-border/60 bg-card p-3">
             <Label className="text-xs text-muted-foreground">
