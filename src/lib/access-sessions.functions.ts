@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireDriveAuth } from "@/integrations/drive-auth-middleware";
+import { readSession } from "./drive-auth.server";
 
 const ACTIVE_WINDOW_MS = 90_000;
 const RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
@@ -68,9 +69,9 @@ export const listUserAccessSessions = createServerFn({ method: "GET" })
   });
 
 export const listOnlineUsers = createServerFn({ method: "GET" })
-  .middleware([requireDriveAuth])
-  .handler(async ({ context }) => {
-    if (context.user.role !== "admin") return [];
+  .handler(async () => {
+    const user = await readSession();
+    if (user?.role !== "admin") return [];
     const { readSystemDocument } = await import("./drive-storage.server");
     const logs = await readSystemDocument<StoredAccessSession[]>("access-sessions.json", []);
     const cutoff = Date.now() - ACTIVE_WINDOW_MS;

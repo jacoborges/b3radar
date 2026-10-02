@@ -145,8 +145,8 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
       if (!timingSafeEqual(suppliedDigest, expectedDigest)) return { ok: false as const, error: "Chave de primeiro acesso inválida." };
       const now = new Date().toISOString();
       await updateUsers((users) => {
-        if (users.some((user) => user.role === "admin")) throw new Error("O administrador já foi configurado.");
-        return [...users, { id: crypto.randomUUID(), email: PRIMARY_ADMIN, role: "admin", suspended: false, createdAt: now, lastSignInAt: null, passwordHash: hashPassword(data.password), sessionVersion: 1, failedAttempts: 0, lockedUntil: null }];
+        if (users.some((user) => user.role === "admin" && Boolean(user.passwordHash))) throw new Error("O administrador já foi configurado.");
+        return [...users.filter((user) => user.email !== PRIMARY_ADMIN && Boolean(user.passwordHash)), { id: crypto.randomUUID(), email: PRIMARY_ADMIN, role: "admin", suspended: false, createdAt: now, lastSignInAt: null, passwordHash: hashPassword(data.password), sessionVersion: 1, failedAttempts: 0, lockedUntil: null }];
       });
       return { ok: true as const, error: null };
     } catch (error) {
@@ -157,7 +157,7 @@ export const bootstrapFirstAdmin = createServerFn({ method: "POST" })
 
 export const adminExists = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    return { exists: (await readUsers()).some((user) => user.role === "admin"), error: null };
+    return { exists: (await readUsers()).some((user) => user.role === "admin" && Boolean(user.passwordHash)), error: null };
   } catch (error) {
     console.error("[admin-exists]", error);
     return { exists: null, error: error instanceof Error ? error.message : "Não foi possível acessar o Google Drive." };

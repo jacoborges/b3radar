@@ -64,7 +64,8 @@ export function hashPassword(password: string) {
   return `scrypt:${salt.toString("base64url")}:${digest.toString("base64url")}`;
 }
 
-function passwordMatches(password: string, stored: string) {
+function passwordMatches(password: string, stored?: string) {
+  if (!stored) return false;
   const [scheme, saltValue, digestValue] = stored.split(":");
   if (scheme !== "scrypt" || !saltValue || !digestValue) return false;
   const expected = Buffer.from(digestValue, "base64url");
