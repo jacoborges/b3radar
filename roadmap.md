@@ -7,3 +7,8 @@
 # Simulador: fechamento automático
 - [x] Buscar fechamento histórico para compras sem preço manual e exibir falhas sem gravar preço incorreto.
 - [x] Testar prioridade manual e fechamento por data; validar compra autenticada.
+
+# Atualização manual de cotações
+- [x] Adicionar Atualizar na tela principal e buscar carteiras antes dos ativos filtrados, sem o limite total do polling.
+- [x] Propagar preços pelo cache compartilhado e testar prioridade e cobertura dos lotes.
+- [ ] Validar o botão na tela principal autenticada e sincronização com a Carteira.
