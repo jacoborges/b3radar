@@ -96,6 +96,18 @@ interface Position {
   proceeds: number;
   dividends: ReturnType<typeof portfolioLedger>["dividends"];
   adjustments: ReturnType<typeof portfolioLedger>["adjustments"];
+  result: number | null;
+  resultPct: number | null;
+}
+
+interface AddSaleInput {
+  portfolioId: string;
+  ticker: string;
+  price: number;
+  quantity: number;
+  soldAt: string;
+  expectedLots: Array<{ id: string; ticker: string; price: number; quantity: number; bought_at: string }>;
+  expectedSales: Array<{ id: string; ticker: string; price: number; quantity: number; sold_at: string }>;
 }
 
 function toneClass(v: number | null | undefined) {
@@ -164,7 +176,7 @@ function CarteiraPage() {
     onSuccess: invalidate,
   });
   const mAddSale = useMutation({
-    mutationFn: (v: Parameters<typeof callAddSale>[0]["data"]) => callAddSale({ data: v }),
+    mutationFn: (v: AddSaleInput) => callAddSale({ data: v }),
     onSuccess: invalidate,
   });
   const mUpdateSale = useMutation({
@@ -214,7 +226,10 @@ function CarteiraPage() {
         const pl = current != null ? current - invested : null;
         const plPct =
           current != null && invested > 0 ? (current / invested - 1) * 100 : null;
-        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots: transactions.lots, sales: transactions.sales, realized: ledger.realized, proceeds: ledger.proceeds, dividends: ledger.dividends, adjustments: ledger.adjustments };
+        const result = pl != null ? pl + ledger.realized : ledger.realized;
+        const historicalCost = transactions.lots.reduce((sum, lot) => sum + lot.price * lot.quantity, 0);
+        const resultPct = historicalCost > 0 ? result / historicalCost * 100 : null;
+        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots: transactions.lots, sales: transactions.sales, realized: ledger.realized, proceeds: ledger.proceeds, dividends: ledger.dividends, adjustments: ledger.adjustments, result, resultPct };
       })
       .sort((a, b) => a.ticker.localeCompare(b.ticker));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -235,11 +250,12 @@ function CarteiraPage() {
     const invested = positions.reduce((s, p) => s + p.invested, 0);
     const current = positions.reduce((s, p) => s + (p.current ?? p.invested), 0);
     const realized = positions.reduce((s, p) => s + p.realized, 0);
+    const historicalCost = positions.reduce((s, p) => s + p.lots.reduce((sum, lot) => sum + lot.price * lot.quantity, 0), 0);
     return {
       invested,
       current,
       pl: current - invested + realized,
-      plPct: invested > 0 ? (current / invested - 1) * 100 : 0,
+      plPct: historicalCost > 0 ? (current - invested + realized) / historicalCost * 100 : 0,
       realized,
     };
   }, [positions]);
@@ -372,7 +388,7 @@ function CarteiraPage() {
                       >
                         {p.name}
                         <span className="ml-2 text-xs text-muted-foreground">
-                          {p.lots.length} lanç.
+                          {p.lots.length + p.sales.length} lanç.
                         </span>
                       </button>
                       <Button
@@ -450,6 +466,7 @@ function CarteiraPage() {
               <AddSaleForm
                 positions={positions}
                 pending={mAddSale.isPending}
+                serverError={mAddSale.error instanceof Error ? mAddSale.error.message : null}
                 onSubmit={(v) => {
                   const position = positions.find((p) => p.ticker === v.ticker);
                   if (!position) return;
@@ -619,9 +636,10 @@ function AddLotForm({
   );
 }
 
-function AddSaleForm({ positions, pending, onSubmit }: {
+function AddSaleForm({ positions, pending, serverError, onSubmit }: {
   positions: Position[];
   pending: boolean;
+  serverError: string | null;
   onSubmit: (v: { ticker: string; price: number; quantity: number; soldAt: string }) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -654,7 +672,7 @@ function AddSaleForm({ positions, pending, onSubmit }: {
           <div><Label className="text-xs text-muted-foreground">Quantidade</Label><Input aria-label="Quantidade vendida" value={quantity} onChange={e => setQuantity(e.target.value)} inputMode="decimal" placeholder={selected ? qty(selected.totalQty) : "100"} className="mt-1" /></div>
           <div><Label className="text-xs text-muted-foreground">Data</Label><Input aria-label="Data da venda" type="date" max={new Date().toISOString().slice(0, 10)} value={soldAt} onChange={e => setSoldAt(e.target.value)} className="mt-1" /></div>
         </div>
-        {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+        {(error || serverError) && <p className="mt-2 text-xs text-destructive">{error || serverError}</p>}
         <div className="mt-3 flex justify-end"><Button size="sm" variant="destructive" disabled={pending || active.length === 0} onClick={submit}>Registrar venda</Button></div>
       </div>}
     </div>
@@ -708,11 +726,11 @@ function PositionRow({
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
         </span>
         <span className="ml-auto text-right">
-          <span className={`block text-sm font-semibold ${toneClass(pos.pl)}`}>
-            {pos.pl != null ? brl(pos.pl) : "—"}
+          <span className={`block text-sm font-semibold ${toneClass(pos.result)}`}>
+            {pos.result != null ? brl(pos.result) : "—"}
           </span>
-          <span className={`block text-xs ${toneClass(pos.plPct)}`}>
-            {pos.plPct != null ? pct(pos.plPct) : "—"}
+          <span className={`block text-xs ${toneClass(pos.resultPct)}`}>
+            {pos.resultPct != null ? pct(pos.resultPct) : "—"}
           </span>
         </span>
       </button>
