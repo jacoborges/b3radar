@@ -6,6 +6,7 @@ import {
   type TickerProventosResult,
 } from "@/lib/proventos.functions";
 import type { ProventoProvisionado } from "@/lib/stocks-data";
+import { dividendQuantity, type LedgerLot, type LedgerSale } from "@/lib/portfolio-ledger";
 
 const ONE_DAY = 24 * 60 * 60 * 1000;
 
@@ -43,7 +44,8 @@ function hojeISO() {
  */
 export interface PosicaoProventos {
   ticker: string;
-  lots: Array<{ quantity: number; boughtAt: string }>;
+  lots: LedgerLot[];
+  sales: LedgerSale[];
 }
 
 export function usePortfolioProventos(
@@ -75,22 +77,21 @@ export function usePortfolioProventos(
 
   const eventos = useMemo(() => {
     const hoje = hojeISO();
-    const lotsByTicker = new Map(posicoes.map((p) => [p.ticker, p.lots]));
+    const positionsByTicker = new Map(posicoes.map((p) => [p.ticker, p]));
     const out: ProventoCarteira[] = [];
 
     results.forEach((r, i) => {
       const ticker = tickers[i]!;
       const data = r.data as TickerProventosResult | undefined;
-      const lots = lotsByTicker.get(ticker) ?? [];
+      const position = positionsByTicker.get(ticker);
+      const lots = position?.lots ?? [];
       if (!data?.provisionados || lots.length === 0) return;
       for (const p of data.provisionados) {
         if (!(p.valorPorAcao > 0)) continue;
         const pagamento = p.dataPagamento || p.dataEx;
         if (pagamento < hoje) continue;
         // Só dá direito ao provento o lote comprado ANTES da data com.
-        const quantidade = lots
-          .filter((l) => l.boughtAt < p.dataCom)
-          .reduce((s, l) => s + l.quantity, 0);
+        const quantidade = dividendQuantity(lots, position?.sales ?? [], data.historicoCompleto ?? [], p.dataCom);
         if (quantidade <= 0) continue;
         out.push({
           ticker,
