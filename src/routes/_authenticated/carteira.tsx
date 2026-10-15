@@ -478,8 +478,9 @@ function CarteiraPage() {
               />
 
               <PortfolioProventos posicoes={posicoesResumo} />
-
-
+              {corporateEvents.isLoading && <p className="text-xs text-muted-foreground">Carregando histórico oficial de proventos e eventos…</p>}
+              {corporateEvents.errors.map(error => <p key={error} className="text-xs text-destructive">{error}</p>)}
+              {[mAddLot.error, mUpdateLot.error, mDeleteLot.error, mUpdateSale.error, mDeleteSale.error].filter((error): error is Error => error instanceof Error).map((error, i) => <p key={i} role="alert" className="text-xs text-destructive">{error.message}</p>)}
 
               {positions.length === 0 ? (
                 <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
@@ -796,6 +797,7 @@ function PositionRow({
                       variant="ghost"
                       className="h-7 w-7"
                       aria-label="Editar lançamento"
+                      disabled={pos.sales.length > 0}
                       onClick={() => {
                         setEditingId(lot.id);
                         setEp(String(lot.price));
@@ -810,6 +812,7 @@ function PositionRow({
                       variant="ghost"
                       className="h-7 w-7 text-destructive"
                       aria-label="Excluir lançamento"
+                      disabled={pos.sales.length > 0}
                       onClick={() => onDeleteLot(lot.id)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />

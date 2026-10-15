@@ -5,6 +5,13 @@ const lots = [{ id: "a", ticker: "TEST3", quantity: 100, price: 10, boughtAt: "2
 const sale = { id: "b", ticker: "TEST3", quantity: 40, price: 15, soldAt: "2026-03-01" };
 const event = (tipo: EventoSocietario["tipo"], date: string, valor = 1, ratio: string | null = null): EventoSocietario => ({ tipo, dataCom: date, dataEx: date, dataPagamento: "2026-05-01", dataAprovacao: null, valor, ratio });
 describe("Carteira: vendas e histórico", () => {
+  it("não inclui ações vendidas na própria Data Com no histórico", () => {
+    expect(portfolioLedger(lots, [{ ...sale, soldAt: "2026-02-01" }], [event("Dividendo", "2026-02-01")], "2026-12-31").dividends[0]?.quantity).toBe(60);
+  });
+  it("só disponibiliza desdobramento na Data Ex", () => {
+    const split = { ...event("Desdobramento", "2026-02-01", 0, "1:2"), dataEx: "2026-02-03" };
+    expect(portfolioLedger(lots, [], [split], "2026-02-02").quantity).toBe(100);
+  });
   it("apura venda parcial pelo custo médio", () => {
     const p = portfolioLedger(lots, [sale], [], "2026-12-31");
     expect(p.quantity).toBe(60); expect(p.cost).toBe(600); expect(p.realized).toBe(200);

@@ -10,8 +10,8 @@ export interface LedgerAdjustment { tipo: string; date: string; before: number; 
 export function portfolioLedger(lots: LedgerLot[], sales: LedgerSale[], events: EventoSocietario[], until: string) {
   const timeline = [
     ...lots.map(lot => ({ date: lot.boughtAt, rank: 0, lot })),
-    ...sales.map(sale => ({ date: sale.soldAt, rank: 2, sale })),
-    ...events.filter(e => e.dataCom).map(event => ({ date: event.dataCom ?? "", rank: 1, event })),
+    ...sales.map(sale => ({ date: sale.soldAt, rank: 1, sale })),
+    ...events.filter(e => e.dataCom).map(event => ({ date: event.tipo === "Dividendo" || event.tipo === "JCP" ? event.dataCom ?? "" : event.dataEx || event.dataCom || "", rank: 2, event })),
   ].filter(t => t.date <= until).sort((a, b) => a.date.localeCompare(b.date) || a.rank - b.rank);
   const holdings: Array<{ date: string; quantity: number }> = [];
   const dividends: LedgerDividend[] = [];
@@ -43,7 +43,7 @@ export function portfolioLedger(lots: LedgerLot[], sales: LedgerSale[], events: 
       if (quantity < 1e-8) { quantity = 0; cost = 0; }
     } else if ("event" in item) {
       const event = item.event;
-      const eligible = holdings.filter(h => h.date < item.date);
+      const eligible = holdings.filter(h => h.date < (event.dataCom ?? item.date));
       const eligibleQty = eligible.reduce((s, h) => s + h.quantity, 0);
       if (eligibleQty <= 0) continue;
       if (event.tipo === "Dividendo" || event.tipo === "JCP") {

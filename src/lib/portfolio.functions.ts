@@ -219,6 +219,11 @@ export const addSale = createServerFn({ method: "POST" })
       data.soldAt,
     );
     if (data.quantity > before.quantity + 1e-8) throw new Error(`Saldo insuficiente na data da venda: ${before.quantity.toLocaleString("pt-BR")} ações disponíveis.`);
+    portfolioLedger(
+      data.expectedLots.map(l => ({ ...l, boughtAt: l.bought_at })),
+      [...data.expectedSales.map(s => ({ ...s, soldAt: s.sold_at })), { id: "new", ticker: data.ticker, price: data.price, quantity: data.quantity, soldAt: data.soldAt }],
+      eventsResult.historicoCompleto ?? [], new Date().toISOString().slice(0, 10),
+    );
     const { error } = await context.supabase.rpc("record_portfolio_sale", {
       _portfolio_id: data.portfolioId,
       _ticker: data.ticker,
@@ -236,6 +241,17 @@ export const updateSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => updateSaleSchema.parse(data))
   .handler(async ({ data, context }) => {
+    if (data.soldAt > new Date().toISOString().slice(0, 10)) throw new Error("A venda não pode ter data futura.");
+    const { data: target, error: targetError } = await context.supabase.from("portfolio_sales").select("portfolio_id, ticker").eq("id", data.id).single();
+    if (targetError || !target) throw new Error("Venda não encontrada.");
+    const [{ data: lots, error: lotsError }, { data: sales, error: salesError }, { portfolioLedger }, cache] = await Promise.all([
+      context.supabase.from("portfolio_lots").select("id,ticker,price,quantity,bought_at").eq("portfolio_id", target.portfolio_id).eq("ticker", target.ticker),
+      context.supabase.from("portfolio_sales").select("id,ticker,price,quantity,sold_at").eq("portfolio_id", target.portfolio_id).eq("ticker", target.ticker),
+      import("./portfolio-ledger"), import("./proventos-cache.server"),
+    ]);
+    if (lotsError || salesError) throw new Error("Não foi possível validar a posição.");
+    const events = await cache.readCachedTicker(target.ticker, 24 * 60 * 60 * 1000) ?? await cache.refreshOneTicker(target.ticker);
+    portfolioLedger((lots ?? []).map(l => ({ ...l, boughtAt: l.bought_at })), (sales ?? []).map(s => ({ ...s, soldAt: s.sold_at, ...(s.id === data.id ? { price: data.price, quantity: data.quantity, soldAt: data.soldAt } : {}) })), events.historicoCompleto ?? [], new Date().toISOString().slice(0, 10));
     const { error } = await context.supabase.from("portfolio_sales")
       .update({ price: data.price, quantity: data.quantity, sold_at: data.soldAt }).eq("id", data.id);
     if (error) throw new Error(error.message);
