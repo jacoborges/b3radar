@@ -46,7 +46,7 @@ export const Route = createFileRoute("/_authenticated/carteira")({
       {
         name: "description",
         content:
-          "Crie carteiras, registre suas compras de ações da B3 e acompanhe preço médio, quantidade total e lucro ou prejuízo em tempo real.",
+          "Registre compras e vendas de ações da B3, acompanhe resultados realizados e preserve o histórico de proventos e posições encerradas.",
       },
       {
         property: "og:title",
@@ -784,7 +784,7 @@ function PositionRow({
               ) : (
                 <div
                   key={lot.id}
-                  className="flex items-center gap-3 rounded-md bg-muted/30 px-3 py-1.5 text-xs"
+                  className="flex flex-wrap items-center gap-3 rounded-md bg-muted/30 px-3 py-1.5 text-xs"
                 >
                   <span className="text-muted-foreground">
                     {new Date(`${lot.boughtAt}T12:00:00`).toLocaleDateString("pt-BR")}
