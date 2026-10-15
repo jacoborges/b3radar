@@ -140,7 +140,7 @@ function SimuladorPage() {
     mutationFn: (v: {
       portfolioId: string;
       ticker: string;
-      price: number;
+      price?: number;
       quantity: number;
       boughtAt: string;
     }) => callAddLot({ data: v }),
@@ -383,7 +383,7 @@ function SimuladorPage() {
                 stocks={tickerList}
                 pending={mAddLot.isPending}
                 onSubmit={(v) =>
-                  mAddLot.mutate({ ...v, portfolioId: selected.id })
+                  mAddLot.mutateAsync({ ...v, portfolioId: selected.id })
                 }
               />
 
@@ -757,10 +757,10 @@ function AddLotForm({
   pending: boolean;
   onSubmit: (v: {
     ticker: string;
-    price: number;
+    price?: number;
     quantity: number;
     boughtAt: string;
-  }) => void;
+  }) => Promise<{ price: number; automatic: boolean }>;
 }) {
   const [open, setOpen] = useState(false);
   const [ticker, setTicker] = useState("");
@@ -768,6 +768,7 @@ function AddLotForm({
   const [quantity, setQuantity] = useState("");
   const [boughtAt, setBoughtAt] = useState(() => hojeISO());
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const suggestions = useMemo(() => {
     const q = ticker.trim().toUpperCase();
@@ -775,18 +776,28 @@ function AddLotForm({
     return stocks.filter((t) => t.startsWith(q)).slice(0, 8);
   }, [ticker, stocks]);
 
-  const submit = () => {
+  const submit = async () => {
     const t = ticker.trim().toUpperCase();
-    const p = Number(price.replace(",", "."));
+    const blankPrice = price.trim() === "";
+    const p = blankPrice ? undefined : Number(price.replace(",", "."));
     const q = Number(quantity.replace(",", "."));
     if (!stocks.includes(t)) return setError("Selecione um ativo válido da base.");
-    if (!(p > 0)) return setError("Informe um preço de compra válido.");
+    if (p !== undefined && !(p > 0))
+      return setError("Informe um preço válido ou deixe o campo em branco.");
     if (!(q > 0)) return setError("Informe uma quantidade válida.");
+    if (!boughtAt) return setError("Informe a data da compra.");
     setError(null);
-    onSubmit({ ticker: t, price: p, quantity: q, boughtAt });
-    setTicker("");
-    setPrice("");
-    setQuantity("");
+    setNotice(null);
+    try {
+      const result = await onSubmit({ ticker: t, price: p, quantity: q, boughtAt });
+      if (result.automatic)
+        setNotice(`Fechamento de ${t} em ${boughtAt}: ${brl(result.price)}`);
+      setTicker("");
+      setPrice("");
+      setQuantity("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Não foi possível registrar a compra.");
+    }
   };
 
   return (
@@ -838,7 +849,7 @@ function AddLotForm({
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
                 inputMode="decimal"
-                placeholder="32,50"
+                placeholder="Em branco: fechamento do dia"
                 className="mt-1"
               />
             </div>
@@ -863,9 +874,10 @@ function AddLotForm({
             </div>
           </div>
           {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+          {notice && <p className="mt-2 text-xs text-success">{notice}</p>}
           <div className="mt-3 flex justify-end">
-            <Button size="sm" disabled={pending} onClick={submit}>
-              Registrar compra
+            <Button size="sm" disabled={pending} onClick={() => void submit()}>
+              {pending && !price.trim() ? "Buscando fechamento…" : "Registrar compra"}
             </Button>
           </div>
         </div>

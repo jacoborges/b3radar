@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveSimPurchasePrice } from "./sim-purchase-price";
 
 export interface SimLot {
   id: string;
@@ -26,7 +27,7 @@ const renameSchema = z.object({ id: z.string().uuid(), name: nameSchema });
 const lotSchema = z.object({
   portfolioId: z.string().uuid(),
   ticker: z.string().trim().min(1).max(12).toUpperCase(),
-  price: z.number().positive().max(1_000_000),
+  price: z.number().positive().max(1_000_000).optional(),
   quantity: z.number().positive().max(1_000_000_000),
   boughtAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
@@ -127,15 +128,19 @@ export const addSimLot = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => lotSchema.parse(data))
   .handler(async ({ data, context }) => {
+    const price = await resolveSimPurchasePrice(data.price, async () => {
+      const { fetchHistoricalClose } = await import("./historical-close.server");
+      return fetchHistoricalClose(data.ticker, data.boughtAt);
+    });
     const { error } = await context.supabase.from("sim_portfolio_lots").insert({
       portfolio_id: data.portfolioId,
       ticker: data.ticker,
-      price: data.price,
+      price,
       quantity: data.quantity,
       bought_at: data.boughtAt,
     });
     if (error) throw new Error(error.message);
-    return { ok: true };
+    return { ok: true, price, automatic: data.price === undefined };
   });
 
 export const updateSimLot = createServerFn({ method: "POST" })
