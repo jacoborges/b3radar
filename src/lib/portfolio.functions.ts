@@ -207,6 +207,18 @@ export const addSale = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => saleSchema.parse(data))
   .handler(async ({ data, context }) => {
+    const [{ portfolioLedger }, cache] = await Promise.all([
+      import("./portfolio-ledger"),
+      import("./proventos-cache.server"),
+    ]);
+    const eventsResult = await cache.readCachedTicker(data.ticker, 24 * 60 * 60 * 1000) ?? await cache.refreshOneTicker(data.ticker);
+    const before = portfolioLedger(
+      data.expectedLots.map((l) => ({ id: l.id, ticker: l.ticker, price: l.price, quantity: l.quantity, boughtAt: l.bought_at })),
+      data.expectedSales.map((s) => ({ id: s.id, ticker: s.ticker, price: s.price, quantity: s.quantity, soldAt: s.sold_at })),
+      eventsResult.historicoCompleto ?? [],
+      data.soldAt,
+    );
+    if (data.quantity > before.quantity + 1e-8) throw new Error(`Saldo insuficiente na data da venda: ${before.quantity.toLocaleString("pt-BR")} ações disponíveis.`);
     const { error } = await context.supabase.rpc("record_portfolio_sale", {
       _portfolio_id: data.portfolioId,
       _ticker: data.ticker,

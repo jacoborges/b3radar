@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Pencil,
   Plus,
+  TrendingDown,
   Trash2,
   Wallet,
   X,
@@ -20,16 +21,22 @@ import { Badge } from "@/components/ui/badge";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
+import { useSimProventos } from "@/hooks/use-sim-proventos";
+import { portfolioLedger } from "@/lib/portfolio-ledger";
 import {
+  addSale,
   addLot,
   createPortfolio,
   deleteLot,
   deletePortfolio,
   listPortfolios,
   renamePortfolio,
+  deleteSale,
+  updateSale,
   updateLot,
   type Portfolio,
   type PortfolioLot,
+  type PortfolioSale,
 } from "@/lib/portfolio.functions";
 
 export const Route = createFileRoute("/_authenticated/carteira")({
@@ -84,6 +91,11 @@ interface Position {
   pl: number | null;
   plPct: number | null;
   lots: PortfolioLot[];
+  sales: PortfolioSale[];
+  realized: number;
+  proceeds: number;
+  dividends: ReturnType<typeof portfolioLedger>["dividends"];
+  adjustments: ReturnType<typeof portfolioLedger>["adjustments"];
 }
 
 function toneClass(v: number | null | undefined) {
@@ -104,6 +116,9 @@ function CarteiraPage() {
   const callAddLot = useServerFn(addLot);
   const callUpdateLot = useServerFn(updateLot);
   const callDeleteLot = useServerFn(deleteLot);
+  const callAddSale = useServerFn(addSale);
+  const callUpdateSale = useServerFn(updateSale);
+  const callDeleteSale = useServerFn(deleteSale);
 
   const { data: portfolios = [], isLoading } = useQuery({
     queryKey: ["portfolios"],
@@ -148,6 +163,15 @@ function CarteiraPage() {
     mutationFn: (id: string) => callDeleteLot({ data: { id } }),
     onSuccess: invalidate,
   });
+  const mAddSale = useMutation({
+    mutationFn: (v: Parameters<typeof callAddSale>[0]["data"]) => callAddSale({ data: v }),
+    onSuccess: invalidate,
+  });
+  const mUpdateSale = useMutation({
+    mutationFn: (v: { id: string; price: number; quantity: number; soldAt: string }) => callUpdateSale({ data: v }),
+    onSuccess: invalidate,
+  });
+  const mDeleteSale = useMutation({ mutationFn: (id: string) => callDeleteSale({ data: { id } }), onSuccess: invalidate });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [newName, setNewName] = useState("");
@@ -158,10 +182,11 @@ function CarteiraPage() {
     portfolios.find((p) => p.id === selectedId) ?? portfolios[0] ?? null;
 
   const tickers = useMemo(
-    () => Array.from(new Set(portfolios.flatMap((p) => p.lots.map((l) => l.ticker)))),
+    () => Array.from(new Set(portfolios.flatMap((p) => [...p.lots.map((l) => l.ticker), ...p.sales.map((s) => s.ticker)]))),
     [portfolios],
   );
   const quotes = useLiveQuotes(tickers);
+  const corporateEvents = useSimProventos(tickers);
 
   const priceOf = (ticker: string): number | null => {
     const live = quotes.map.get(ticker)?.price;
@@ -172,33 +197,35 @@ function CarteiraPage() {
 
   const positions: Position[] = useMemo(() => {
     if (!selected) return [];
-    const byTicker = new Map<string, PortfolioLot[]>();
+    const byTicker = new Map<string, { lots: PortfolioLot[]; sales: PortfolioSale[] }>();
     for (const lot of selected.lots) {
-      const arr = byTicker.get(lot.ticker) ?? [];
-      arr.push(lot);
-      byTicker.set(lot.ticker, arr);
+      const entry = byTicker.get(lot.ticker) ?? { lots: [], sales: [] };
+      entry.lots.push(lot); byTicker.set(lot.ticker, entry);
     }
+    for (const sale of selected.sales) { const entry = byTicker.get(sale.ticker) ?? { lots: [], sales: [] }; entry.sales.push(sale); byTicker.set(sale.ticker, entry); }
     return Array.from(byTicker.entries())
-      .map(([ticker, lots]) => {
-        const totalQty = lots.reduce((s, l) => s + l.quantity, 0);
-        const invested = lots.reduce((s, l) => s + l.quantity * l.price, 0);
-        const avgPrice = totalQty > 0 ? invested / totalQty : 0;
+      .map(([ticker, transactions]) => {
+        const ledger = portfolioLedger(transactions.lots, transactions.sales, corporateEvents.byTicker.get(ticker) ?? [], new Date().toISOString().slice(0, 10));
+        const totalQty = ledger.quantity;
+        const invested = ledger.cost;
+        const avgPrice = ledger.avgPrice;
         const price = priceOf(ticker);
         const current = price != null ? price * totalQty : null;
         const pl = current != null ? current - invested : null;
         const plPct =
           current != null && invested > 0 ? (current / invested - 1) * 100 : null;
-        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots };
+        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots: transactions.lots, sales: transactions.sales, realized: ledger.realized, proceeds: ledger.proceeds, dividends: ledger.dividends, adjustments: ledger.adjustments };
       })
       .sort((a, b) => a.ticker.localeCompare(b.ticker));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected, quotes.map, stocks]);
+  }, [selected, quotes.map, stocks, corporateEvents.byTicker]);
 
   const posicoesResumo = useMemo(
     () =>
       positions.map((p) => ({
         ticker: p.ticker,
-        lots: p.lots.map((l) => ({ quantity: l.quantity, boughtAt: l.boughtAt })),
+        lots: p.lots,
+        sales: p.sales,
       })),
     [positions],
   );
@@ -207,11 +234,13 @@ function CarteiraPage() {
 
     const invested = positions.reduce((s, p) => s + p.invested, 0);
     const current = positions.reduce((s, p) => s + (p.current ?? p.invested), 0);
+    const realized = positions.reduce((s, p) => s + p.realized, 0);
     return {
       invested,
       current,
-      pl: current - invested,
+      pl: current - invested + realized,
       plPct: invested > 0 ? (current / invested - 1) * 100 : 0,
+      realized,
     };
   }, [positions]);
 
@@ -398,6 +427,7 @@ function CarteiraPage() {
                   <p className="text-xs text-muted-foreground">
                     Investido {brl(totals.invested)} · Atual {brl(totals.current)}
                   </p>
+                  <p className="text-xs text-muted-foreground">Resultado realizado {brl(totals.realized)}</p>
                 </div>
                 <div className="text-right">
                   <p className={`text-lg font-bold ${toneClass(totals.pl)}`}>
@@ -415,6 +445,19 @@ function CarteiraPage() {
                 onSubmit={(v) =>
                   mAddLot.mutate({ portfolioId: selected.id, ...v })
                 }
+              />
+
+              <AddSaleForm
+                positions={positions}
+                pending={mAddSale.isPending}
+                onSubmit={(v) => {
+                  const position = positions.find((p) => p.ticker === v.ticker);
+                  if (!position) return;
+                  mAddSale.mutate({ portfolioId: selected.id, ...v,
+                    expectedLots: position.lots.map(l => ({ id: l.id, ticker: l.ticker, price: l.price, quantity: l.quantity, bought_at: l.boughtAt })).sort((a,b) => a.id.localeCompare(b.id)),
+                    expectedSales: position.sales.map(s => ({ id: s.id, ticker: s.ticker, price: s.price, quantity: s.quantity, sold_at: s.soldAt })).sort((a,b) => a.id.localeCompare(b.id)),
+                  });
+                }}
               />
 
               <PortfolioProventos posicoes={posicoesResumo} />
@@ -435,6 +478,8 @@ function CarteiraPage() {
                       price={priceOf(pos.ticker)}
                       onUpdateLot={(v) => mUpdateLot.mutate(v)}
                       onDeleteLot={(id) => mDeleteLot.mutate(id)}
+                      onUpdateSale={(v) => mUpdateSale.mutate(v)}
+                      onDeleteSale={(id) => mDeleteSale.mutate(id)}
                     />
                   ))}
                 </div>
