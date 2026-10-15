@@ -11,4 +11,5 @@
 # Atualização manual de cotações
 - [x] Adicionar Atualizar na tela principal e buscar carteiras antes dos ativos filtrados, sem o limite total do polling.
 - [x] Propagar preços pelo cache compartilhado e testar prioridade e cobertura dos lotes.
-- [ ] Validar o botão na tela principal autenticada e sincronização com a Carteira.
+- [x] Validar o botão na tela principal autenticada e navegação para a Carteira.
+- [ ] Confirmar novas cotações e sincronização real: bloqueado pela resposta da brapi de token inválido ou sem permissão.
