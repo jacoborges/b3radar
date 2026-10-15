@@ -128,7 +128,7 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
   const call = useServerFn(fetchLiveQuotes);
   const [token] = useBrapiToken();
   const queryClient = useQueryClient();
-  const [cacheRevision, setCacheRevision] = useState(0);
+  const [, setCacheRevision] = useState(0);
   const [manualFetching, setManualFetching] = useState(false);
   const [manualError, setManualError] = useState<string | null>(null);
 
