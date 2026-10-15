@@ -31,3 +31,30 @@ export const setMyBrapiToken = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const };
   });
+
+/** Setores do filtro "Visualizar somente" salvos na conta. */
+export const getMySelectedSectors = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ sectors: string[] }> => {
+    const { data } = await context.supabase
+      .from("user_settings")
+      .select("selected_sectors")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const v = data?.selected_sectors;
+    return { sectors: Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [] };
+  });
+
+export const setMySelectedSectors = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { sectors: string[] }) => {
+    const arr = Array.isArray(input?.sectors) ? input.sectors : [];
+    return { sectors: arr.filter((s) => typeof s === "string" && s.length < 120).slice(0, 100) };
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("user_settings")
+      .upsert({ user_id: context.userId, selected_sectors: data.sectors }, { onConflict: "user_id" });
+    if (error) throw error;
+    return { ok: true as const };
+  });

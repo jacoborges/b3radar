@@ -95,7 +95,7 @@ function toneClass(v: number | null | undefined) {
 
 function CarteiraPage() {
   const queryClient = useQueryClient();
-  const { stocks } = useAllStocks();
+  const { stocks } = useAllStocks({ allSectors: true });
 
   const fetchPortfolios = useServerFn(listPortfolios);
   const callCreate = useServerFn(createPortfolio);
