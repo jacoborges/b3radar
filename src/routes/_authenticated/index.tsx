@@ -1,7 +1,10 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { listPortfolios } from "@/lib/portfolio.functions";
 import {
   Search,
+  RefreshCw,
   
   Settings,
   TrendingUp,
@@ -178,6 +181,22 @@ function HomePage() {
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
   const requestedTickers = useMemo(() => filtered.map((s) => s.ticker), [filtered]);
   const live = useLiveQuotes(requestedTickers);
+  const loadPortfolios = useServerFn(listPortfolios);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const refreshPrices = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    setRefreshError(null);
+    try {
+      const portfolios = await loadPortfolios();
+      await live.refresh(portfolios.flatMap(p => p.lots.map(l => l.ticker)));
+    } catch {
+      setRefreshError("Não foi possível carregar suas carteiras para atualizar as cotações. Tente novamente.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const filteredLive = useMemo<Stock[]>(() => {
     if (live.map.size === 0) return filtered;
@@ -246,9 +265,9 @@ function HomePage() {
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · ON, PN e Units organizados por setor econômico
               </p>
-              {live.error && (
+              {(refreshError || live.error) && (
                 <p className="mt-1 text-xs text-destructive">
-                  {live.error}{" "}
+                  {refreshError || live.error}{" "}
                   <Link to="/configuracoes" className="underline">
                     Ajustar token brapi
                   </Link>
@@ -322,6 +341,17 @@ function HomePage() {
                 setDdmOnly={setDdmOnly}
               />
               <VisibleSectorsSheet />
+              <Button
+                variant="outline"
+                className="shrink-0 border-border/60 bg-input/60"
+                onClick={refreshPrices}
+                disabled={refreshing}
+                aria-busy={refreshing}
+                title="Atualizar cotações, priorizando os ativos das carteiras"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin motion-reduce:animate-none" : ""}`} />
+                {refreshing ? "Atualizando…" : "Atualizar"}
+              </Button>
 
 
 

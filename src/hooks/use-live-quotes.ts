@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchLiveQuotes, type LiveQuote } from "@/lib/quotes.functions";
 import { getMyBrapiToken, setMyBrapiToken } from "@/lib/user-settings.functions";
 import { supabase } from "@/integrations/supabase/client";
+import { quoteRefreshBatches } from "@/lib/quote-refresh";
 
 // Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
 // ativos e com menos frequência para não estourar a cota.
@@ -95,6 +96,7 @@ export interface LiveQuotesMap {
   updatedAt: Date | null;
   isFetching: boolean;
   error: string | null;
+  refresh: (priorityTickers?: string[]) => Promise<void>;
 }
 
 
@@ -126,6 +128,15 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
   const call = useServerFn(fetchLiveQuotes);
   const [token] = useBrapiToken();
   const queryClient = useQueryClient();
+  const [, setCacheRevision] = useState(0);
+  const [manualFetching, setManualFetching] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
+
+  useEffect(() => queryClient.getQueryCache().subscribe(event => {
+    if (event.type === "updated" && event.query.queryKey[0] === "quote") {
+      setCacheRevision(revision => revision + 1);
+    }
+  }), [queryClient]);
 
   const allRequested = useMemo(() => {
     const unique = Array.from(new Set(tickers.map((t) => t.toUpperCase())));
@@ -152,19 +163,39 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
     staleTime: REFRESH_MS - 1000,
   });
 
-  return useMemo(() => {
+  const refresh = async (priorityTickers: string[] = []) => {
+    if (manualFetching) return;
+    setManualFetching(true);
+    setManualError(null);
+    try {
+      for (const batch of quoteRefreshBatches(priorityTickers, allRequested)) {
+        const res = await call({ data: token ? { tickers: batch, token } : { tickers: batch } });
+        writeQuotesToCache(queryClient, res.quotes);
+        if (res.error) throw new Error(res.error);
+        if (res.quotes.length < batch.length) {
+          setManualError("Algumas cotações não foram retornadas pela fonte; mantido o último preço conhecido.");
+        }
+      }
+    } catch (error) {
+      setManualError(error instanceof Error ? error.message : "Falha ao atualizar cotações.");
+    } finally {
+      setManualFetching(false);
+    }
+  };
+
+  return (() => {
     const map = new Map<string, LiveQuote>();
     // Last known values from the shared cache (populated by any screen)…
     for (const q of readQuotesFromCache(queryClient, allRequested)) map.set(q.ticker, q);
-    // …then this query's fresh values.
-    for (const q of query.data?.quotes ?? []) map.set(q.ticker, q);
+    // Read the shared cache only: an older polling response must not mask a manual refresh.
+    const latest = Math.max(0, ...Array.from(map.values(), q => Date.parse(q.updatedAt)));
     return {
       map,
-      updatedAt: query.dataUpdatedAt ? new Date(query.dataUpdatedAt) : null,
-      isFetching: query.isFetching,
-      error: query.data?.error ?? (query.error ? "Falha ao atualizar cotações." : null),
+      updatedAt: latest ? new Date(latest) : null,
+      isFetching: query.isFetching || manualFetching,
+      error: manualError ?? query.data?.error ?? (query.error ? "Falha ao atualizar cotações." : null),
+      refresh,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query.data, query.dataUpdatedAt, query.isFetching, query.error, allRequested, queryClient]);
+  })();
 }
 
