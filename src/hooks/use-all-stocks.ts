@@ -3,6 +3,8 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getAllStocks } from "@/lib/stocks.functions";
 import { buildStocks, collectSectors, type Stock } from "@/lib/stocks-data";
 import { useMinLiquidez } from "@/hooks/use-min-liquidez";
+import { useVisibleSectors } from "@/hooks/use-visible-sectors";
+import { filterBySectors } from "@/lib/visible-sectors";
 
 const ONE_HOUR = 60 * 60 * 1000;
 
@@ -15,6 +17,7 @@ export const stocksQueryOptions = queryOptions({
 
 export interface UseAllStocksResult {
   stocks: Stock[];
+  /** todos os setores disponíveis (sem o filtro "Visualizar somente") */
   sectors: string[];
   fonte: "fundamentus" | "snapshot";
   updatedAt: Date;
@@ -22,19 +25,24 @@ export interface UseAllStocksResult {
   isFetching: boolean;
 }
 
-export function useAllStocks(): UseAllStocksResult {
+export function useAllStocks(opts?: { allSectors?: boolean }): UseAllStocksResult {
   const { data, isFetching } = useSuspenseQuery(stocksQueryOptions);
   const [minLiquidez] = useMinLiquidez();
-  // Mantém todos os ativos; filtra apenas pela liquidez mínima definida em Ajustes (padrão: 0 mi)
-  const stocks = useMemo(
+  const [visibleSectors] = useVisibleSectors();
+  const ignoreSectors = opts?.allSectors ?? false;
+
+  const base = useMemo(
     () =>
       minLiquidez > 0
         ? buildStocks(data.rows).filter((s) => (s.liquidezDiaria ?? 0) >= minLiquidez)
         : buildStocks(data.rows),
     [data.rows, minLiquidez],
   );
-
-  const sectors = useMemo(() => collectSectors(stocks), [stocks]);
+  const stocks = useMemo(
+    () => (ignoreSectors ? base : filterBySectors(base, visibleSectors)),
+    [base, visibleSectors, ignoreSectors],
+  );
+  const sectors = useMemo(() => collectSectors(base), [base]);
 
   return {
     stocks,

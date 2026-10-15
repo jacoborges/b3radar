@@ -5,6 +5,7 @@ import { ShieldAlert, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { getMyAccess } from "@/lib/admin-users.functions";
+import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -63,5 +64,10 @@ function AuthenticatedLayout() {
     );
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <Outlet />
+      <VisibleSectorsSheet />
+    </>
+  );
 }
