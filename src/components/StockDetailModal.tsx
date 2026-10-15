@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import type { Stock } from "@/lib/stocks-data";
+import { sectorLabel } from "@/lib/sector-label";
 import { computeDividendStats, SELIC } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
 import { useTickerData } from "@/hooks/use-ticker-data";
@@ -225,7 +226,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   variant="outline"
                   className="border-border/60 text-muted-foreground"
                 >
-                  {stock.setor}
+                  {sectorLabel(stock.setor)}
                 </Badge>
                 <Badge
                   variant="outline"

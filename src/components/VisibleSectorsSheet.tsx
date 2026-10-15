@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { stocksQueryOptions } from "@/hooks/use-all-stocks";
 import { useVisibleSectors } from "@/hooks/use-visible-sectors";
 import { buildStocks, collectSectors } from "@/lib/stocks-data";
+import { sectorLabel } from "@/lib/sector-label";
 
 function SectorList() {
   const { data } = useSuspenseQuery(stocksQueryOptions);
@@ -32,7 +33,7 @@ function SectorList() {
                 on ? "border-primary/70 bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/40"
               }`}
             >
-              {on ? "✓ " : ""}{s}
+              {on ? "✓ " : ""}{sectorLabel(s)}
             </button>
           );
         })}
@@ -47,7 +48,7 @@ export function VisibleSectorsSheet() {
     <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
       {sel.length > 0 && (
         <div className="max-w-[80vw] rounded-md border border-border/60 bg-card/95 px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg">
-          Exibindo somente: {sel.slice(0, 3).join(", ")}{sel.length > 3 ? "…" : ""}{" "}
+          Exibindo somente: {sel.slice(0, 3).map(sectorLabel).join(", ")}{sel.length > 3 ? "…" : ""}{" "}
           <button className="text-primary underline" onClick={() => setSel([])}>limpar</button>
         </div>
       )}
