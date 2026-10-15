@@ -43,18 +43,11 @@ function SectorList() {
 }
 
 export function VisibleSectorsSheet() {
-  const [sel, setSel] = useVisibleSectors();
+  const [sel] = useVisibleSectors();
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-2">
-      {sel.length > 0 && (
-        <div className="max-w-[80vw] rounded-md border border-border/60 bg-card/95 px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg">
-          Exibindo somente: {sel.slice(0, 3).map(sectorLabel).join(", ")}{sel.length > 3 ? "…" : ""}{" "}
-          <button className="text-primary underline" onClick={() => setSel([])}>limpar</button>
-        </div>
-      )}
       <Sheet>
         <SheetTrigger asChild>
-          <Button className="gap-2 shadow-lg">
+          <Button variant="outline" className="shrink-0 gap-2 border-border/60 bg-input/60" title="Visualizar somente">
             <Eye className="h-4 w-4" />
             Visualizar somente
             {sel.length > 0 && (
@@ -73,6 +66,5 @@ export function VisibleSectorsSheet() {
           </Suspense>
         </SheetContent>
       </Sheet>
-    </div>
   );
 }

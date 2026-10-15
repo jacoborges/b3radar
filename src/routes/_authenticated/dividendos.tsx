@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { InfoTip, ClassificationInfoTip } from "@/components/InfoTip";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
+import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
 import {
   activeRanges,
   initialFilters,
@@ -447,6 +448,7 @@ function DividendosPage() {
             extraSection={intelSection}
             onClearExtra={clearIntel}
           />
+          <VisibleSectorsSheet />
 
           <div className="flex flex-wrap gap-1">
             {CLASS_FILTERS.map((f) => {
