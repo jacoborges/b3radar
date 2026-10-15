@@ -42,6 +42,7 @@ import {
   type RecOpt,
 } from "@/lib/stock-filters";
 import { type Stock } from "@/lib/stocks-data";
+import { sectorLabel } from "@/lib/sector-label";
 import { INDICATORS, FUNDAMENTAL_KEYS, debtLevel } from "@/lib/indicators";
 import { InfoTip } from "@/components/InfoTip";
 import { DebtSemaphore } from "@/components/DebtSemaphore";
@@ -466,7 +467,7 @@ function HomePage() {
                         className="h-6 w-1 rounded-full"
                         style={{ backgroundColor: "var(--color-primary)" }}
                       />
-                      <span className="text-base font-semibold">{sec}</span>
+                      <span className="text-base font-semibold">{sectorLabel(sec)}</span>
                       <Badge
                         variant="outline"
                         className="border-border/60 text-muted-foreground"

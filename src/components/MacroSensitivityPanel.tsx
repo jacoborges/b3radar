@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { Globe2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { InfoTip } from "./InfoTip";
+import { sectorLabel } from "@/lib/sector-label";
 import {
   analyzeMacroSensitivity,
   type MacroSensitivityResult,
@@ -93,7 +94,7 @@ export function MacroSensitivityPanel({ ticker, nome, setor }: Props) {
             Clique em "Analisar impacto macro" para uma explicação didática de como a alta ou a
             queda do dólar, da inflação e da taxa Selic tendem a afetar {ticker}
             {nome ? ` (${nome.split(" ").slice(0, 3).join(" ")})` : ""}
-            {setor ? `, do setor de ${setor}` : ""}.
+            {setor ? `, do setor de ${sectorLabel(setor)}` : ""}.
           </p>
         )}
 
