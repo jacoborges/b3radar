@@ -385,6 +385,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_portfolio_sale: {
+        Args: {
+          _expected_lots: Json
+          _expected_sales: Json
+          _portfolio_id: string
+          _price: number
+          _quantity: number
+          _sold_at: string
+          _ticker: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "admin" | "gestor" | "usuario"
