@@ -619,11 +619,55 @@ function AddLotForm({
   );
 }
 
+function AddSaleForm({ positions, pending, onSubmit }: {
+  positions: Position[];
+  pending: boolean;
+  onSubmit: (v: { ticker: string; price: number; quantity: number; soldAt: string }) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [ticker, setTicker] = useState("");
+  const [price, setPrice] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [soldAt, setSoldAt] = useState(() => new Date().toISOString().slice(0, 10));
+  const [error, setError] = useState<string | null>(null);
+  const active = positions.filter(p => p.totalQty > 1e-8);
+  const selected = active.find(p => p.ticker === ticker);
+  const submit = () => {
+    const p = Number(price.replace(",", "."));
+    const q = Number(quantity.replace(",", "."));
+    if (!selected) return setError("Selecione um ativo com posição aberta.");
+    if (!(p > 0)) return setError("Informe um preço de venda válido.");
+    if (!(q > 0) || q > selected.totalQty + 1e-8) return setError(`Informe até ${qty(selected.totalQty)} ações disponíveis.`);
+    if (!soldAt || soldAt > new Date().toISOString().slice(0, 10)) return setError("Informe uma data de venda válida, sem data futura.");
+    setError(null); onSubmit({ ticker, price: p, quantity: q, soldAt }); setPrice(""); setQuantity("");
+  };
+  return (
+    <div className="rounded-xl border border-border/60 bg-card">
+      <Button variant="ghost" className="h-auto w-full justify-start gap-2 rounded-xl px-4 py-3 text-sm font-medium" onClick={() => setOpen(v => !v)}>
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/15 text-destructive"><TrendingDown className="h-4 w-4" /></span>
+        Adicionar venda
+      </Button>
+      {open && <div className="border-t border-border/50 px-4 py-4">
+        <div className="grid gap-3 sm:grid-cols-4">
+          <div><Label className="text-xs text-muted-foreground">Ativo</Label><select aria-label="Ativo da venda" value={ticker} onChange={e => setTicker(e.target.value)} className="mt-1 h-9 w-full rounded-md border border-input bg-background px-3 font-mono text-sm"><option value="">Selecione</option>{active.map(p => <option key={p.ticker} value={p.ticker}>{p.ticker} · {qty(p.totalQty)} un.</option>)}</select></div>
+          <div><Label className="text-xs text-muted-foreground">Preço de venda</Label><Input aria-label="Preço de venda" value={price} onChange={e => setPrice(e.target.value)} inputMode="decimal" placeholder="32,50" className="mt-1" /></div>
+          <div><Label className="text-xs text-muted-foreground">Quantidade</Label><Input aria-label="Quantidade vendida" value={quantity} onChange={e => setQuantity(e.target.value)} inputMode="decimal" placeholder={selected ? qty(selected.totalQty) : "100"} className="mt-1" /></div>
+          <div><Label className="text-xs text-muted-foreground">Data</Label><Input aria-label="Data da venda" type="date" max={new Date().toISOString().slice(0, 10)} value={soldAt} onChange={e => setSoldAt(e.target.value)} className="mt-1" /></div>
+        </div>
+        {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+        <div className="mt-3 flex justify-end"><Button size="sm" variant="destructive" disabled={pending || active.length === 0} onClick={submit}>Registrar venda</Button></div>
+      </div>}
+    </div>
+  );
+}
+
 function PositionRow({
   pos,
   price,
   onUpdateLot,
   onDeleteLot,
+  onUpdateSale,
+  onDeleteSale,
 }: {
   pos: Position;
   price: number | null;
@@ -634,12 +678,15 @@ function PositionRow({
     boughtAt: string;
   }) => void;
   onDeleteLot: (id: string) => void;
+  onUpdateSale: (v: { id: string; price: number; quantity: number; soldAt: string }) => void;
+  onDeleteSale: (id: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [ep, setEp] = useState("");
   const [eq, setEq] = useState("");
   const [ed, setEd] = useState("");
+  const closed = pos.totalQty <= 1e-8;
 
   return (
     <div className="rounded-xl border border-border/60 bg-card">
@@ -653,9 +700,9 @@ function PositionRow({
         ) : (
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         )}
-        <span className="font-mono font-semibold">{pos.ticker}</span>
+        <span className={`font-mono font-semibold ${closed ? "text-muted-foreground/50" : "text-foreground"}`}>{pos.ticker}</span>
         <Badge variant="outline" className="font-mono text-xs">
-          {qty(pos.totalQty)} un.
+          {closed ? "Encerrada" : `${qty(pos.totalQty)} un.`}
         </Badge>
         <span className="text-xs text-muted-foreground">
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
@@ -675,8 +722,9 @@ function PositionRow({
           <p className="mb-2 text-xs text-muted-foreground">
             Investido {brl(pos.invested)} · Valor atual{" "}
             {pos.current != null ? brl(pos.current) : "—"}
+            {" · "}Realizado <span className={toneClass(pos.realized)}>{brl(pos.realized)}</span>
           </p>
-          <div className="space-y-1">
+          <h4 className="mb-1 text-xs font-semibold">Compras</h4><div className="space-y-1">
             {pos.lots.map((lot) =>
               editingId === lot.id ? (
                 <div key={lot.id} className="flex flex-wrap items-end gap-2">
@@ -753,6 +801,10 @@ function PositionRow({
               ),
             )}
           </div>
+          <h4 className="mb-1 mt-4 text-xs font-semibold">Vendas realizadas</h4>
+          <div className="space-y-1">{pos.sales.length === 0 ? <p className="text-xs text-muted-foreground">Nenhuma venda registrada.</p> : pos.sales.map(sale => <div key={sale.id} className="flex items-center gap-3 rounded-md bg-muted/30 px-3 py-1.5 text-xs"><span className="text-muted-foreground">{new Date(`${sale.soldAt}T12:00:00`).toLocaleDateString("pt-BR")}</span><span className="font-mono">{qty(sale.quantity)} un.</span><span className="font-mono">{brl(sale.price)}</span><span className="ml-auto flex gap-1"><Button size="icon" variant="ghost" className="h-7 w-7" aria-label="Editar venda" onClick={() => { const p = prompt("Preço da venda", String(sale.price)); const q = prompt("Quantidade vendida", String(sale.quantity)); const d = prompt("Data da venda (AAAA-MM-DD)", sale.soldAt); if (p && q && d) onUpdateSale({ id: sale.id, price: Number(p.replace(",", ".")), quantity: Number(q.replace(",", ".")), soldAt: d }); }}><Pencil className="h-3.5 w-3.5" /></Button><Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" aria-label="Excluir venda" onClick={() => onDeleteSale(sale.id)}><Trash2 className="h-3.5 w-3.5" /></Button></span></div>)}</div>
+          <h4 className="mb-1 mt-4 text-xs font-semibold">Proventos e eventos do período</h4>
+          <div className="space-y-1">{pos.dividends.length === 0 && pos.adjustments.length === 0 ? <p className="text-xs text-muted-foreground">Nenhum evento oficial encontrado no período.</p> : <>{pos.dividends.map((d, i) => <div key={`d-${d.dataCom}-${i}`} className="rounded-md bg-muted/30 px-3 py-1.5 text-xs">{d.tipo} · Data Com {new Date(`${d.dataCom}T12:00:00`).toLocaleDateString("pt-BR")} · {qty(d.quantity)} un. · <span className="text-success">{brl(d.total)}</span></div>)}{pos.adjustments.map((a, i) => <div key={`a-${a.date}-${i}`} className="rounded-md bg-muted/30 px-3 py-1.5 text-xs">{a.tipo} · {new Date(`${a.date}T12:00:00`).toLocaleDateString("pt-BR")} · {qty(a.before)} → {qty(a.after)} un.</div>)}</>}</div>
         </div>
       )}
     </div>
