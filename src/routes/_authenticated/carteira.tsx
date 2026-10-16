@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
+import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
 import { portfolioLedger } from "@/lib/portfolio-ledger";
 import {
@@ -96,6 +97,8 @@ interface Position {
   proceeds: number;
   dividends: ReturnType<typeof portfolioLedger>["dividends"];
   adjustments: ReturnType<typeof portfolioLedger>["adjustments"];
+  realizedSales: ReturnType<typeof portfolioLedger>["realizedSales"];
+  price: number | null;
   result: number | null;
   resultPct: number | null;
 }
@@ -229,7 +232,7 @@ function CarteiraPage() {
         const result = pl != null ? pl + ledger.realized : ledger.realized;
         const historicalCost = transactions.lots.reduce((sum, lot) => sum + lot.price * lot.quantity, 0);
         const resultPct = historicalCost > 0 ? result / historicalCost * 100 : null;
-        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots: transactions.lots, sales: transactions.sales, realized: ledger.realized, proceeds: ledger.proceeds, dividends: ledger.dividends, adjustments: ledger.adjustments, result, resultPct };
+        return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots: transactions.lots, sales: transactions.sales, realized: ledger.realized, proceeds: ledger.proceeds, dividends: ledger.dividends, adjustments: ledger.adjustments, realizedSales: ledger.realizedSales, price, result, resultPct };
       })
       .sort((a, b) => a.ticker.localeCompare(b.ticker));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -478,6 +481,7 @@ function CarteiraPage() {
               />
 
               <PortfolioProventos posicoes={posicoesResumo} />
+              <PortfolioTimeline name={selected.name} positions={positions} />
               {corporateEvents.isLoading && <p className="text-xs text-muted-foreground">Carregando histórico oficial de proventos e eventos…</p>}
               {corporateEvents.errors.map(error => <p key={error} className="text-xs text-destructive">{error}</p>)}
               {[mAddLot.error, mUpdateLot.error, mDeleteLot.error, mUpdateSale.error, mDeleteSale.error].filter((error): error is Error => error instanceof Error).map((error, i) => <p key={i} role="alert" className="text-xs text-destructive">{error.message}</p>)}
