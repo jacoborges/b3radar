@@ -24,6 +24,7 @@ import {
   type DividendClass,
   type Frequencia,
 } from "@/lib/dividend-intelligence";
+import { PayoutMonthsTimeline } from "@/components/PayoutMonthsTimeline";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import type { Stock } from "@/lib/stocks-data";
 
@@ -549,6 +550,7 @@ function DividendosPage() {
                       <div className="text-xs text-muted-foreground">
                         {r.stock.nome}
                       </div>
+                      <PayoutMonthsTimeline events={r.raw?.historicoCompleto ?? []} />
                     </td>
                     <td className="p-3">
                       {meta ? (
