@@ -248,6 +248,7 @@ function CarteiraPage() {
     [positions],
   );
 
+  const allPositions = positions;
   const totals = useMemo(() => {
     // Closed positions keep their result only in their own history.
     const positions = allPositions.filter((p) => p.totalQty > 1e-8);
