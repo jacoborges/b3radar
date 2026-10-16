@@ -234,7 +234,7 @@ function CarteiraPage() {
         const resultPct = historicalCost > 0 ? result / historicalCost * 100 : null;
         return { ticker, totalQty, avgPrice, invested, current, pl, plPct, lots: transactions.lots, sales: transactions.sales, realized: ledger.realized, proceeds: ledger.proceeds, dividends: ledger.dividends, adjustments: ledger.adjustments, realizedSales: ledger.realizedSales, price, result, resultPct };
       })
-      .sort((a, b) => a.ticker.localeCompare(b.ticker));
+      .sort((a, b) => Number(a.totalQty <= 1e-8) - Number(b.totalQty <= 1e-8) || a.ticker.localeCompare(b.ticker));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, quotes.map, stocks, corporateEvents.byTicker]);
 
@@ -248,7 +248,10 @@ function CarteiraPage() {
     [positions],
   );
 
+  const allPositions = positions;
   const totals = useMemo(() => {
+    // Closed positions keep their result only in their own history.
+    const positions = allPositions.filter((p) => p.totalQty > 1e-8);
 
     const invested = positions.reduce((s, p) => s + p.invested, 0);
     const current = positions.reduce((s, p) => s + (p.current ?? p.invested), 0);
@@ -261,7 +264,7 @@ function CarteiraPage() {
       plPct: historicalCost > 0 ? (current - invested + realized) / historicalCost * 100 : 0,
       realized,
     };
-  }, [positions]);
+  }, [allPositions]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -730,14 +733,16 @@ function PositionRow({
         <span className="text-xs text-muted-foreground">
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
         </span>
-        <span className="ml-auto text-right">
-          <span className={`block text-sm font-semibold ${toneClass(pos.result)}`}>
-            {pos.result != null ? brl(pos.result) : "—"}
+        {!closed && (
+          <span className="ml-auto text-right">
+            <span className={`block text-sm font-semibold ${toneClass(pos.result)}`}>
+              {pos.result != null ? brl(pos.result) : "—"}
+            </span>
+            <span className={`block text-xs ${toneClass(pos.resultPct)}`}>
+              {pos.resultPct != null ? pct(pos.resultPct) : "—"}
+            </span>
           </span>
-          <span className={`block text-xs ${toneClass(pos.resultPct)}`}>
-            {pos.resultPct != null ? pct(pos.resultPct) : "—"}
-          </span>
-        </span>
+        )}
       </button>
 
       {open && (
