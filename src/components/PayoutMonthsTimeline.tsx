@@ -11,7 +11,7 @@ export function PayoutMonthsTimeline({ events }: { events: PayoutEvent[] }) {
       {counts.map((c, i) => {
         const top = c > 0 && c === max;
         const cls = top
-          ? "bg-success border-success shadow-[0_0_6px_hsl(var(--success))]"
+          ? "bg-success border-success shadow-[0_0_6px_var(--success)]"
           : c > 0
             ? "bg-muted-foreground/50 border-muted-foreground/60"
             : "bg-background border-border";
