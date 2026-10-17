@@ -36,6 +36,10 @@ import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
+import { StockGroupsSheet } from "@/components/StockGroupsSheet";
+import { StockGroupMarker } from "@/components/StockGroupMarker";
+import { useStockGroups } from "@/hooks/use-stock-groups";
+import { filterByGroups } from "@/lib/stock-groups";
 import { useBazinDivisor } from "@/hooks/use-bazin-divisor";
 import { useDividendBatch } from "@/hooks/use-dividend-batch";
 import { calcPrecoTetoFromEventos, descontoTetoPct } from "@/lib/preco-teto";
@@ -99,6 +103,8 @@ type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
 function HomePage() {
   const { stocks: STOCKS, sectors: SECTORS, fonte, updatedAt, error: dataError } = useAllStocks();
   const [search, setSearch] = useState("");
+  const { groups: stockGroups } = useStockGroups();
+  const [groupFilter, setGroupFilter] = useState<string[]>([]);
   const [tipo, setTipo] = useState<Tipo>("ALL");
   const [sortKey, setSortKey] = useState<SortKey>("ticker");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -150,7 +156,7 @@ function HomePage() {
 
   const filtered = useMemo(() => {
     const q = search.trim().toUpperCase();
-    return STOCKS.filter((s) => {
+    const base = STOCKS.filter((s) => {
       if (q && !s.ticker.includes(q) && !s.nome.toUpperCase().includes(q))
         return false;
       if (tipo !== "ALL" && s.tipo !== tipo) return false;
@@ -175,7 +181,8 @@ function HomePage() {
       }
       return true;
     });
-  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly]);
+    return filterByGroups(base, stockGroups, groupFilter);
+  }, [STOCKS, search, tipo, activeFilters, debtColors, recFilter, minAnosAcimaSelic, minAnosPrecoAcimaSelic, precoTetoOnly, minDescontoTeto, descontoMap, ddmOnly, stockGroups, groupFilter]);
 
 
   // Live prices via brapi.dev (polled every 30s) for the currently filtered set.
@@ -341,6 +348,7 @@ function HomePage() {
                 setDdmOnly={setDdmOnly}
               />
               <VisibleSectorsSheet />
+              <StockGroupsSheet filter={groupFilter} onFilterChange={setGroupFilter} />
               <Button
                 variant="outline"
                 className="shrink-0 border-border/60 bg-input/60"
@@ -560,6 +568,7 @@ function StockTable({
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
+                    <StockGroupMarker ticker={s.ticker} />
                     <span className="font-mono text-base font-semibold text-primary">
                       {s.ticker}
                     </span>
@@ -661,6 +670,7 @@ function StockTable({
                 >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
+                      <StockGroupMarker ticker={s.ticker} />
                       <span className="font-mono font-semibold text-primary">
                         {s.ticker}
                       </span>
