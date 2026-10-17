@@ -290,6 +290,62 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_group_items: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          ticker: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          ticker: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          ticker?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_group_items_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "stock_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_groups: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_access_sessions: {
         Row: {
           client_session_id: string
