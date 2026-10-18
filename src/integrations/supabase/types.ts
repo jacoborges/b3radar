@@ -74,6 +74,77 @@ export type Database = {
         }
         Relationships: []
       }
+      macro_observations: {
+        Row: {
+          date: string
+          series_code: string
+          value: number
+        }
+        Insert: {
+          date: string
+          series_code: string
+          value: number
+        }
+        Update: {
+          date?: string
+          series_code?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "macro_observations_series_code_fkey"
+            columns: ["series_code"]
+            isOneToOne: false
+            referencedRelation: "macro_series"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      macro_series: {
+        Row: {
+          category: string
+          code: string
+          description: string
+          frequency: string
+          last_date: string | null
+          last_value: number | null
+          name: string
+          sort_order: number
+          source: string
+          source_id: string
+          unit: string
+          updated_at: string | null
+        }
+        Insert: {
+          category?: string
+          code: string
+          description?: string
+          frequency?: string
+          last_date?: string | null
+          last_value?: number | null
+          name: string
+          sort_order?: number
+          source: string
+          source_id: string
+          unit?: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          code?: string
+          description?: string
+          frequency?: string
+          last_date?: string | null
+          last_value?: number | null
+          name?: string
+          sort_order?: number
+          source?: string
+          source_id?: string
+          unit?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       market_cache: {
         Row: {
           fetched_at: string
