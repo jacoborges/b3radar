@@ -210,7 +210,8 @@ function CarteiraPage() {
     return typeof base === "number" && base > 0 ? base : null;
   };
 
-  const positions: Position[] = useMemo(() => {
+  // Full ledger history is independent of the active-only summary and row presentation.
+  const allPositions: Position[] = useMemo(() => {
     if (!selected) return [];
     const byTicker = new Map<string, { lots: PortfolioLot[]; sales: PortfolioSale[] }>();
     for (const lot of selected.lots) {
@@ -238,6 +239,7 @@ function CarteiraPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, quotes.map, stocks, corporateEvents.byTicker]);
 
+  const positions = allPositions;
   const posicoesResumo = useMemo(
     () =>
       positions.map((p) => ({
@@ -248,9 +250,8 @@ function CarteiraPage() {
     [positions],
   );
 
-  const allPositions = positions;
   const totals = useMemo(() => {
-    // Closed positions keep their result only in their own history.
+    // Only the current summary excludes closed positions; the timeline retains them.
     const positions = allPositions.filter((p) => p.totalQty > 1e-8);
 
     const invested = positions.reduce((s, p) => s + p.invested, 0);
@@ -484,7 +485,7 @@ function CarteiraPage() {
               />
 
               <PortfolioProventos posicoes={posicoesResumo} />
-              <PortfolioTimeline name={selected.name} positions={positions} />
+              <PortfolioTimeline name={selected.name} positions={allPositions} />
               {corporateEvents.isLoading && <p className="text-xs text-muted-foreground">Carregando histórico oficial de proventos e eventos…</p>}
               {corporateEvents.errors.map(error => <p key={error} className="text-xs text-destructive">{error}</p>)}
               {[mAddLot.error, mUpdateLot.error, mDeleteLot.error, mUpdateSale.error, mDeleteSale.error].filter((error): error is Error => error instanceof Error).map((error, i) => <p key={i} role="alert" className="text-xs text-destructive">{error.message}</p>)}

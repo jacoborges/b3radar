@@ -1,4 +1,5 @@
 # Carteira: vendas e histórico
+- [x] Garantir resultados e proventos de posições encerradas na linha do tempo e verificar com testes e Carteira autenticada.
 - [x] Registrar vendas com validação de saldo e apurar resultado realizado.
 - [x] Preservar compras, vendas e eventos oficiais do período, incluindo posições encerradas.
 - [x] Ajustar proventos por posição na Data Com e esmaecer ativos encerrados.
