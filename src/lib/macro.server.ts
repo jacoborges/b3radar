@@ -51,7 +51,7 @@ export async function fetchSgs(id: string, fromIso: string): Promise<Observation
     } else if (res.status !== 404) {
       throw new Error(`SGS ${id} HTTP ${res.status}`);
     }
-    start = addYears(end, 0) === end ? nextDay(end) : end;
+    start = nextDay(end);
   }
   return out;
 }
