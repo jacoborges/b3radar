@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InfoTip } from "./InfoTip";
 import { useValuation } from "@/hooks/use-valuation";
+import { useMacroContext } from "@/hooks/use-macro";
 import {
   PREMISSAS_DDM_PADRAO,
   cagrDividendos,
@@ -43,6 +44,7 @@ interface Overrides {
 }
 
 export function ValuationDdmPanel({ ticker, nome, precoAtual, roe, historico }: Props) {
+  const macro = useMacroContext();
   const call = useServerFn(buscarDadosDdm);
   const { data: val } = useValuation(ticker);
 
@@ -123,7 +125,7 @@ export function ValuationDdmPanel({ ticker, nome, precoAtual, roe, historico }: 
   const cenarios: Array<{ id: Cenario; label: string; g: number | null; hint: string }> = [
     { id: "fundamentalista", label: "Fundamentalista", g: gFund, hint: "ROE × (1 − payout)" },
     { id: "cagr", label: "CAGR histórico", g: gCagr, hint: "crescimento dos proventos" },
-    { id: "conservador", label: "Conservador", g: gCons, hint: "inflação + PIB nominal" },
+    { id: "conservador", label: "Conservador", g: gCons, hint: macro.gNominal != null ? "Focus: IPCA + PIB esperados" : "inflação + PIB nominal" },
   ];
 
   const cenarioSel: Cenario = ov.cenario ?? (gFund !== null ? "fundamentalista" : "conservador");
