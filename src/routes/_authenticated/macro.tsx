@@ -89,7 +89,7 @@ function MacroPage() {
               >
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <span className="truncate">{s.name}</span>
-                  <InfoTip title={s.name} fundamentalista={s.description} />
+                  <InfoTip title={s.name} fundamentalista={s.description} tecnica="Disponível para os cálculos de valuation (Selic como taxa livre de risco, risco-país no custo de capital, Focus no crescimento de longo prazo)." />
                 </div>
                 <div className="mt-1 text-lg font-semibold">
                   {fmt(s.lastValue, s.unit)} <span className="text-xs font-normal text-muted-foreground">{s.unit}</span>

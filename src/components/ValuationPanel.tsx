@@ -1,3 +1,4 @@
+import { useMacroContext } from "@/hooks/use-macro";
 import { useEffect, useMemo, useState } from "react";
 import { Calculator, Loader2, RefreshCw, RotateCcw } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -72,6 +73,7 @@ function NumField({
 
 export function ValuationPanel({ ticker, precoAtual }: Props) {
   const { data, isLoading, isFetching, error, refetch } = useValuation(ticker);
+  const macro = useMacroContext();
   const [tipo, setTipo] = useState<TipoFluxo>("FCFF");
   const [prem, setPrem] = useState<Premissas | null>(null);
 
@@ -79,10 +81,11 @@ export function ValuationPanel({ ticker, precoAtual }: Props) {
     if (!data) return null;
     return {
       ...PREMISSAS_PADRAO,
-      rf: data.selic ?? 0.15,
+      rf: macro.selic ?? data.selic ?? 0.15,
+      riscoPais: macro.riscoPais ?? PREMISSAS_PADRAO.riscoPais,
       beta: data.beta ?? 1,
     };
-  }, [data]);
+  }, [data, macro.selic, macro.riscoPais]);
 
   useEffect(() => {
     if (padrao) setPrem(padrao);
