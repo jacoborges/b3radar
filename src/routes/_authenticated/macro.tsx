@@ -79,20 +79,23 @@ function MacroPage() {
           <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">{cat}</h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {list.map((s) => (
-              <button
+              <div
                 key={s.code}
+                role="button"
+                tabIndex={0}
                 onClick={() => setSelected(s.code)}
+                onKeyDown={(e) => e.key === "Enter" && setSelected(s.code)}
                 className={`rounded-lg border p-3 text-left transition-colors ${selected === s.code ? "border-primary bg-primary/10" : "border-border/60 bg-card hover:bg-accent/40"}`}
               >
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <span className="truncate">{s.name}</span>
-                  <InfoTip text={s.description} />
+                  <InfoTip title={s.name} fundamentalista={s.description} />
                 </div>
                 <div className="mt-1 text-lg font-semibold">
                   {fmt(s.lastValue, s.unit)} <span className="text-xs font-normal text-muted-foreground">{s.unit}</span>
                 </div>
                 <div className="text-[11px] text-muted-foreground">{s.frequency} · ref. {fmtDate(s.lastDate)}</div>
-              </button>
+              </div>
             ))}
           </div>
         </section>
@@ -132,14 +135,14 @@ function HistoryChart({ series }: { series: MacroSeries }) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={points}>
-              <XAxis dataKey="date" tickFormatter={(d: string) => d.slice(0, 7)} tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} minTickGap={40} />
-              <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} width={50} domain={["auto", "auto"]} />
+              <XAxis dataKey="date" tickFormatter={(d: string) => d.slice(0, 7)} tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} minTickGap={40} />
+              <YAxis tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} width={50} domain={["auto", "auto"]} />
               <Tooltip
-                contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", fontSize: 12 }}
+                contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", fontSize: 12 }}
                 labelFormatter={(d) => fmtDate(String(d))}
                 formatter={(v) => [fmt(Number(v), series.unit), series.unit]}
               />
-              <Area dataKey="value" type="monotone" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.15)" strokeWidth={1.5} />
+              <Area dataKey="value" type="monotone" stroke="var(--primary)" fill="color-mix(in oklab, var(--primary) 15%, transparent)" strokeWidth={1.5} />
             </AreaChart>
           </ResponsiveContainer>
         )}
