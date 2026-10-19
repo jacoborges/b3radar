@@ -39,9 +39,11 @@ export async function fetchSgs(id: string, fromIso: string): Promise<Observation
     const endCandidate = addYears(start, 9);
     const end = endCandidate > today ? today : endCandidate;
     const url = `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${id}/dados?formato=json&dataInicial=${isoToBr(start)}&dataFinal=${isoToBr(end)}`;
-    const res = await fetch(url, { headers: { accept: "application/json" } });
+    const res = await bcbFetch(url);
     if (res.ok) {
-      const json = (await res.json()) as Array<{ data?: string; valor?: string }>;
+      const text = await res.text();
+      if (text.trimStart().startsWith("<")) throw new Error(`SGS ${id}: requisição recusada pelo Banco Central`);
+      const json = JSON.parse(text) as Array<{ data?: string; valor?: string }>;
       if (Array.isArray(json)) {
         for (const r of json) {
           const v = Number.parseFloat(String(r.valor ?? "").replace(",", "."));
@@ -51,9 +53,26 @@ export async function fetchSgs(id: string, fromIso: string): Promise<Observation
     } else if (res.status !== 404) {
       throw new Error(`SGS ${id} HTTP ${res.status}`);
     }
-    start = addYears(end, 0) === end ? nextDay(end) : end;
+    start = nextDay(end);
   }
   return out;
+}
+
+const HEADERS = {
+  accept: "application/json",
+  "user-agent": "Mozilla/5.0 (compatible; BovespaRadar/1.0)",
+};
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** O BCB bloqueia rajadas de requisições: espaçamos e tentamos de novo. */
+async function bcbFetch(url: string): Promise<Response> {
+  let last: Response | null = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await sleep(attempt === 0 ? 250 : 1500 * attempt);
+    last = await fetch(url, { headers: HEADERS });
+    if (last.status < 500) return last;
+  }
+  return last!;
 }
 
 function nextDay(iso: string): string {
@@ -80,7 +99,7 @@ export async function fetchFocus(indicador: string, fromIso: string): Promise<Ob
   const url =
     "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoAnuais" +
     `?$filter=${encodeURIComponent(filter)}&$select=Data,Mediana&$orderby=Data%20asc&$format=json&$top=5000`;
-  const res = await fetch(url, { headers: { accept: "application/json" } });
+  const res = await bcbFetch(url);
   if (!res.ok) throw new Error(`Focus ${indicador} HTTP ${res.status}`);
   const json = (await res.json()) as { value?: Array<{ Data?: string; Mediana?: number }> };
   const byDate = new Map<string, number>();
@@ -144,6 +163,6 @@ export async function refreshAllMacro(
       }
     }
   };
-  await Promise.all(Array.from({ length: 4 }, worker));
+  await Promise.all(Array.from({ length: 2 }, worker));
   return { updated, failed };
 }

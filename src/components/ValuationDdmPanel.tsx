@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InfoTip } from "./InfoTip";
 import { useValuation } from "@/hooks/use-valuation";
+import { useMacroContext } from "@/hooks/use-macro";
 import {
   PREMISSAS_DDM_PADRAO,
   cagrDividendos,
@@ -43,6 +44,7 @@ interface Overrides {
 }
 
 export function ValuationDdmPanel({ ticker, nome, precoAtual, roe, historico }: Props) {
+  const macro = useMacroContext();
   const call = useServerFn(buscarDadosDdm);
   const { data: val } = useValuation(ticker);
 
@@ -101,7 +103,8 @@ export function ValuationDdmPanel({ ticker, nome, precoAtual, roe, historico }: 
   const origemBeta =
     betaManual !== null ? "manual" : val?.beta ? "app" : ia?.beta ? "IA" : "padrão (1,00)";
 
-  const rf = val?.selic ?? 0.15;
+  const rf = macro.selic ?? val?.selic ?? 0.15;
+  const riscoPaisMacro = macro.riscoPais ?? PREMISSAS_DDM_PADRAO.riscoPais;
   const premioManual = parse(ov.premio);
   const premio =
     premioManual !== null && premioManual > 0 && premioManual < 20
@@ -110,19 +113,19 @@ export function ValuationDdmPanel({ ticker, nome, precoAtual, roe, historico }: 
   const r = custoCapitalProprio({
     rf,
     premioMercado: premio,
-    riscoPais: PREMISSAS_DDM_PADRAO.riscoPais,
+    riscoPais: riscoPaisMacro,
     beta,
   });
 
   // ---- cenários de crescimento ------------------------------------------
   const gFund = crescimentoFundamentalista(roeUsado, payout);
   const gCagr = useMemo(() => cagrDividendos(historico), [historico]);
-  const gCons = PREMISSAS_DDM_PADRAO.gConservador;
+  const gCons = macro.gNominal != null ? Math.min(macro.gNominal, rf - 0.01) : PREMISSAS_DDM_PADRAO.gConservador;
 
   const cenarios: Array<{ id: Cenario; label: string; g: number | null; hint: string }> = [
     { id: "fundamentalista", label: "Fundamentalista", g: gFund, hint: "ROE × (1 − payout)" },
     { id: "cagr", label: "CAGR histórico", g: gCagr, hint: "crescimento dos proventos" },
-    { id: "conservador", label: "Conservador", g: gCons, hint: "inflação + PIB nominal" },
+    { id: "conservador", label: "Conservador", g: gCons, hint: macro.gNominal != null ? "Focus: IPCA + PIB esperados" : "inflação + PIB nominal" },
   ];
 
   const cenarioSel: Cenario = ov.cenario ?? (gFund !== null ? "fundamentalista" : "conservador");
@@ -233,7 +236,7 @@ export function ValuationDdmPanel({ ticker, nome, precoAtual, roe, historico }: 
               <Row label="Rf (Selic)" value={pct(rf)} />
               <Row label={`Beta (${origemBeta})`} value={beta.toLocaleString("pt-BR", { maximumFractionDigits: 2 })} />
               <Row label="Prêmio de mercado" value={pct(premio)} />
-              <Row label="Risco-país" value={pct(PREMISSAS_DDM_PADRAO.riscoPais)} />
+              <Row label={macro.riscoPais != null ? "Risco-país (EMBI+)" : "Risco-país (padrão)"} value={pct(riscoPaisMacro)} />
               <Row label="r = Rf + β×prêmio + risco-país" value={pct(r)} />
               <tr className="border-t border-border/60">
                 <td className="py-1 pr-2 font-sans font-semibold">Preço justo (DDM)</td>

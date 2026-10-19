@@ -16,3 +16,4 @@
 - Insert portfolio sales through an authenticated, owner-scoped atomic snapshot RPC after validating the dated balance; concurrent sale submissions must not oversell a position.
 - Resolve blank simulator purchase prices on the server from the exact date's unadjusted daily close; never silently substitute another trading day.
 - Manual quote refresh uses ordered batches with portfolio tickers first and writes to the shared per-ticker cache; subscribers read that cache so navigation cannot mask refreshed prices with older query data.
+- Store macroeconomic series in the database catalog (macro_series/macro_observations) refreshed server-side from public BCB/Ipeadata APIs; valuations read premises via useMacroContext so new series need no code beyond a catalog row.
