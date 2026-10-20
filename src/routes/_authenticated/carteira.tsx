@@ -22,6 +22,9 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
+import { StockSortSelect } from "@/components/StockSortSelect";
+import { useStockSort } from "@/hooks/use-stock-sort";
+import { compareStocks } from "@/lib/stock-sort";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
 import { portfolioLedger } from "@/lib/portfolio-ledger";
 import {
@@ -123,6 +126,7 @@ function toneClass(v: number | null | undefined) {
 function CarteiraPage() {
   const queryClient = useQueryClient();
   const { stocks } = useAllStocks({ allSectors: true });
+  const [sort] = useStockSort();
 
   const fetchPortfolios = useServerFn(listPortfolios);
   const callCreate = useServerFn(createPortfolio);
@@ -239,7 +243,16 @@ function CarteiraPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected, quotes.map, stocks, corporateEvents.byTicker]);
 
-  const positions = allPositions;
+  const positions = useMemo(() => {
+    const byTicker = new Map(stocks.map((stock) => [stock.ticker, stock]));
+    return [...allPositions].sort((a, b) =>
+      Number(a.totalQty <= 1e-8) - Number(b.totalQty <= 1e-8) || compareStocks(
+        { ...byTicker.get(a.ticker), ticker: a.ticker, preco: a.price },
+        { ...byTicker.get(b.ticker), ticker: b.ticker, preco: b.price },
+        sort,
+      ),
+    );
+  }, [allPositions, stocks, sort]);
   const posicoesResumo = useMemo(
     () =>
       positions.map((p) => ({
@@ -438,6 +451,9 @@ function CarteiraPage() {
 
         {/* Detalhe da carteira */}
         <section className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <StockSortSelect />
+          </div>
           {!selected ? (
             <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
               Selecione ou crie uma carteira para começar.

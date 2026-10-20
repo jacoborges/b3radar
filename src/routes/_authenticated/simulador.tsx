@@ -27,6 +27,9 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
 import { SimReturnChart } from "@/components/SimReturnChart";
+import { StockSortSelect } from "@/components/StockSortSelect";
+import { useStockSort } from "@/hooks/use-stock-sort";
+import { compareStocks } from "@/lib/stock-sort";
 import {
   proventosPorAno,
   simularTicker,
@@ -107,6 +110,7 @@ function hojeISO() {
 function SimuladorPage() {
   const queryClient = useQueryClient();
   const { stocks } = useAllStocks();
+  const [sort] = useStockSort();
 
   const fetchPortfolios = useServerFn(listSimPortfolios);
   const callCreate = useServerFn(createSimPortfolio);
@@ -207,6 +211,15 @@ function SimuladorPage() {
   }, [selected, proventos.byTicker, quotes.map, stocks]);
 
   const totals = useMemo(() => somarPosicoes(posicoes), [posicoes]);
+  const sortedPositions = useMemo(() => {
+    const byTicker = new Map(stocks.map((stock) => [stock.ticker, stock]));
+    return [...posicoes].sort((a, b) => compareStocks(
+      { ...byTicker.get(a.ticker), ticker: a.ticker, preco: priceOf(a.ticker) },
+      { ...byTicker.get(b.ticker), ticker: b.ticker, preco: priceOf(b.ticker) },
+      sort,
+    ));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posicoes, stocks, quotes.map, sort]);
   const porAno = useMemo(() => proventosPorAno(posicoes), [posicoes]);
   const tickerList = useMemo(() => stocks.map((s) => s.ticker), [stocks]);
 
@@ -373,6 +386,9 @@ function SimuladorPage() {
         </aside>
 
         <section className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <StockSortSelect />
+          </div>
           {!selected ? (
             <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
               Crie uma carteira simulada para começar.
@@ -431,7 +447,7 @@ function SimuladorPage() {
                   <SimReturnChart posicoes={posicoes} proventosAno={porAno} />
 
                   <div className="space-y-2">
-                    {posicoes.map((pos) => (
+                    {sortedPositions.map((pos) => (
                       <PositionCard
                         key={pos.ticker}
                         pos={pos}

@@ -9,6 +9,9 @@ import { Slider } from "@/components/ui/slider";
 import { InfoTip, ClassificationInfoTip } from "@/components/InfoTip";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
+import { StockSortSelect } from "@/components/StockSortSelect";
+import { useStockSort } from "@/hooks/use-stock-sort";
+import { compareStocks } from "@/lib/stock-sort";
 import {
   activeRanges,
   initialFilters,
@@ -102,6 +105,7 @@ const FREQ_OPTS: Array<"ALL" | Frequencia> = [
 
 function DividendosPage() {
   const { stocks } = useAllStocks();
+  const [sort] = useStockSort();
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
     useDividendBatch(stocks);
   const [q, setQ] = useState("");
@@ -223,13 +227,9 @@ function DividendosPage() {
       }
       return true;
     });
-    return filtered.sort((a, b) => {
-      const sa = a.intel?.score ?? -1;
-      const sb = b.intel?.score ?? -1;
-      if (sb !== sa) return sb - sa;
-      return (b.intel?.dyUltimos12m ?? 0) - (a.intel?.dyUltimos12m ?? 0);
-    });
+    return filtered.sort((a, b) => compareStocks(a.stock, b.stock, sort));
   }, [
+    sort,
     rows,
     q,
     cls,
@@ -433,6 +433,7 @@ function DividendosPage() {
             placeholder="Buscar ticker ou empresa…"
             className="max-w-xs border-border/60 bg-input/60"
           />
+          <StockSortSelect />
           <StockFilterSheet
             title="Filtros — proventos e fundamentos"
             filters={filters}
