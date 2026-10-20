@@ -61,6 +61,9 @@ import { AccountControls } from "@/components/AccountControls";
 
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
+import { StockSortSelect } from "@/components/StockSortSelect";
+import { useStockSort } from "@/hooks/use-stock-sort";
+import { compareStocks } from "@/lib/stock-sort";
 import { margemDdmRapida } from "@/lib/valuation-ddm";
 
 
@@ -99,7 +102,6 @@ export const Route = createFileRoute("/_authenticated/")({
 
 
 type Tipo = "ALL" | "ON" | "PN" | "UNIT";
-type SortKey = "ticker" | "preco" | "dy" | "pl" | "pvp" | "roe";
 
 function HomePage() {
   const { stocks: STOCKS, sectors: SECTORS, fonte, updatedAt, error: dataError } = useAllStocks();
@@ -107,8 +109,7 @@ function HomePage() {
   const { groups: stockGroups } = useStockGroups();
   const [groupFilter, setGroupFilter] = useState<string[]>([]);
   const [tipo, setTipo] = useState<Tipo>("ALL");
-  const [sortKey, setSortKey] = useState<SortKey>("ticker");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sort] = useStockSort();
   const [filters, setFilters] = useState<Record<string, FilterRange>>(initialFilters);
   const [debtColors, setDebtColors] = useState<DebtColor[]>([]);
   const [recFilter, setRecFilter] = useState<RecOpt>("ALL");
@@ -231,17 +232,11 @@ function HomePage() {
           const bd = descontoMap.get(b.ticker) ?? -Infinity;
           if (ad !== bd) return bd - ad;
         }
-        const av = a[sortKey] as number | string;
-        const bv = b[sortKey] as number | string;
-        if (typeof av === "number" && typeof bv === "number")
-          return sortDir === "asc" ? av - bv : bv - av;
-        return sortDir === "asc"
-          ? String(av).localeCompare(String(bv))
-          : String(bv).localeCompare(String(av));
+        return compareStocks(a, b, sort);
       });
     }
     return map;
-  }, [SECTORS, filteredLive, sortKey, sortDir, rankByDesconto, descontoMap]);
+  }, [SECTORS, filteredLive, sort, rankByDesconto, descontoMap]);
 
   const total = filtered.length;
 
@@ -308,26 +303,7 @@ function HomePage() {
                 </SelectContent>
               </Select>
 
-              <Select
-                value={`${sortKey}:${sortDir}`}
-                onValueChange={(v) => {
-                  const [k, d] = v.split(":");
-                  setSortKey(k as SortKey);
-                  setSortDir(d as "asc" | "desc");
-                }}
-              >
-                <SelectTrigger className="min-w-0 flex-1 bg-input/60 border-border/60 sm:w-[170px] sm:flex-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ticker:asc">Ticker A→Z</SelectItem>
-                  <SelectItem value="dy:desc">Maior DY</SelectItem>
-                  <SelectItem value="pl:asc">Menor P/L</SelectItem>
-                  <SelectItem value="pvp:asc">Menor P/VP</SelectItem>
-                  <SelectItem value="roe:desc">Maior ROE</SelectItem>
-                  <SelectItem value="preco:desc">Maior preço</SelectItem>
-                </SelectContent>
-              </Select>
+              <StockSortSelect />
 
               <StockFilterSheet
                 filters={filters}
