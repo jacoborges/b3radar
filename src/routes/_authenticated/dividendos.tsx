@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { InfoTip, ClassificationInfoTip } from "@/components/InfoTip";
+import { StockGroupMarker } from "@/components/StockGroupMarker";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
 import { StockSortSelect } from "@/components/StockSortSelect";
