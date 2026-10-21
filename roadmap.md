@@ -24,3 +24,5 @@
 - [ ] Confirmar importação das séries SGS: Banco Central bloqueou temporariamente o servidor de testes por excesso de consultas.
 - [ ] Yahoo/COTAHIST como fonte paralela de cotações e Fundamentus como cruzamento de fundamentos (próxima etapa).
 - [ ] Atualização diária agendada (hoje atualiza ao abrir a página quando os dados têm mais de 12h).
+# Grupos na Inteligência de proventos
+- [x] Marcador de grupos à esquerda do ticker em cada linha da Inteligência de proventos, com popover para associar/criar grupos e persistência na conta.

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { InfoTip, ClassificationInfoTip } from "@/components/InfoTip";
+import { StockGroupMarker } from "@/components/StockGroupMarker";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
 import { StockSortSelect } from "@/components/StockSortSelect";
@@ -545,11 +546,18 @@ function DividendosPage() {
                     onClick={() => setSelected(r.stock)}
                   >
                     <td className="p-3">
-                      <div className="font-mono font-semibold">
-                        {r.stock.ticker}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.stock.nome}
+                      <div className="flex items-start gap-2">
+                        <span className="mt-0.5">
+                          <StockGroupMarker ticker={r.stock.ticker} />
+                        </span>
+                        <div>
+                          <div className="font-mono font-semibold">
+                            {r.stock.ticker}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {r.stock.nome}
+                          </div>
+                        </div>
                       </div>
                       <PayoutMonthsTimeline events={r.raw?.historicoCompleto ?? []} />
                     </td>
