@@ -93,47 +93,49 @@ export const CLASS_INFO: Record<
   Elite: {
     label: "Elite",
     color: "var(--color-success)",
-    criterio: "Score ≥ 80 e frequência mensal ou trimestral",
+    criterio: "Pagou proventos em dinheiro em todos os últimos 10 anos",
     fundamentalista:
-      "Pagador de altíssima previsibilidade: intervalos regulares, muitos anos consecutivos, valor estável e boa margem. É o selo de qualidade máxima.",
+      "Pagador de altíssima previsibilidade: dez anos seguidos remunerando o acionista. É o selo de qualidade máxima.",
     tecnica:
       "Ativos Elite costumam ter menor volatilidade em torno das datas COM/EX e atraem fluxo comprador recorrente de investidores em busca de renda.",
   },
   Consistente: {
     label: "Consistente",
     color: "hsl(160 70% 55%)",
-    criterio: "Score ≥ 65",
+    criterio: "Pagou proventos em todos os últimos 5 anos (fora dos 10)",
     fundamentalista:
-      "Pagador regular com bom histórico, mas que não atinge simultaneamente score ≥ 80 e frequência mensal/trimestral.",
+      "Cinco anos seguidos de pagamento sem falhas — histórico sólido, mas ainda não decenal.",
     tecnica:
-      "Oferece previsibilidade razoável de renda; pequenas oscilações de valor ou intervalo mais espaçado (semestral) impedem a classificação Elite.",
+      "Oferece boa previsibilidade de renda; o histórico mais curto exige acompanhamento da continuidade nos próximos anos.",
   },
   Regular: {
     label: "Regular",
     color: "var(--color-warning)",
-    criterio: "Score ≥ 45",
+    criterio:
+      "Pagou de forma contínua (sem ano em branco) nos últimos anos, mas por menos de 5 anos",
     fundamentalista:
-      "Paga dividendos, mas com falhas de regularidade nos intervalos ou consistência de valor abaixo do ideal.",
+      "Paga recorrentemente nos mesmos períodos desde que começou, porém o histórico é mais curto que cinco anos.",
     tecnica:
-      "Renda existente, porém menos previsível — convém confirmar o histórico recente antes de projetar fluxos de caixa.",
+      "Renda com padrão perceptível, mas amostra curta — convém confirmar a continuidade antes de projetar fluxos longos.",
   },
   Irregular: {
     label: "Irregular",
     color: "hsl(20 85% 60%)",
-    criterio: "Score ≥ 20",
+    criterio:
+      "Pagou proventos, mas deixou de pagar em pelo menos um ano (janela de 10 anos)",
     fundamentalista:
-      "Pagamentos esporádicos ou com cortes relevantes ao longo dos anos; baixa previsibilidade.",
+      "Histórico com falhas: houve pelo menos um ano inteiro sem distribuição de proventos.",
     tecnica:
-      "Sinal de atenção: proventos irregulares podem indicar deterioração de fundamentals ou lucro instável.",
+      "Sinal de atenção: interrupções anuais podem indicar deterioração de fundamentals ou lucro instável.",
   },
   "Sem cobertura": {
     label: "Sem cobertura",
     color: "var(--muted-foreground)",
-    criterio: "Score < 20 ou sem histórico de proventos em dinheiro",
+    criterio: "Não pagou proventos em dinheiro nos últimos 2 anos",
     fundamentalista:
-      "Não há histórico suficiente de dividendos/JCP em dinheiro para gerar previsão ou score confiável.",
+      "Sem distribuições nos dois últimos anos (ou sem histórico): não há cobertura de renda para avaliar.",
     tecnica:
-      "Ativo sem perfil de pagador de dividendos — pode ser growth, em fase inicial, ou nunca ter distribuído proventos.",
+      "Ativo sem perfil de pagador de dividendos — pode ser growth, em fase inicial, ou ter suspenso a distribuição.",
   },
 };
 
