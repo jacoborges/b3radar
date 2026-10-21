@@ -395,7 +395,7 @@ export function computeDividendIntelligence(
   const total12 = cash.filter((e) => e.t >= cutoff12).reduce((s, e) => s + e.valor, 0);
   const dy12 = precoAtual > 0 ? (total12 / precoAtual) * 100 : null;
 
-  const classification = classifyDividendQuality(score, next.frequencia);
+  const classification = classifyDividendQuality(cash.map((e) => e.dataCom));
 
   return {
     next,
@@ -415,13 +415,47 @@ export function computeDividendIntelligence(
   };
 }
 
+/**
+ * Classificação por anos de pagamento (regra do usuário):
+ * - Sem cobertura: sem provento em dinheiro no ano corrente e no ano anterior
+ * - Elite: pagou em todos os últimos 10 anos
+ * - Consistente: pagou em todos os últimos 5 anos (fora dos 10)
+ * - Regular: pagou de forma contínua (sem ano em branco) por menos de 5 anos
+ * - Irregular: pagou, mas deixou de pagar em pelo menos um ano
+ *
+ * O ano corrente ainda em aberto não quebra a série (grace year).
+ */
 export function classifyDividendQuality(
-  score: number,
-  freq: Frequencia,
+  datasCom: string[],
+  anoAtual = new Date().getUTCFullYear(),
 ): DividendClass {
-  if (score >= 80 && (freq === "Mensal" || freq === "Trimestral")) return "Elite";
-  if (score >= 65) return "Consistente";
-  if (score >= 45) return "Regular";
-  if (score >= 20) return "Irregular";
-  return "Sem cobertura";
+  const anosPagos = new Set(datasCom.map((d) => Number(d.slice(0, 4))));
+  // Ano corrente conta como pago enquanto não estiver encerrado (em aberto).
+  const isPago = (y: number) =>
+    anosPagos.has(y) || (y === anoAtual && !anosPagos.has(anoAtual));
+
+  // Sem cobertura: nada em dinheiro nos últimos 2 anos
+  if (!anosPagos.has(anoAtual) && !anosPagos.has(anoAtual - 1)) {
+    return "Sem cobertura";
+  }
+
+  const pagouJanela = (anos: number): boolean => {
+    for (let y = anoAtual; y >= anoAtual - anos + 1; y--) {
+      if (!isPago(y)) return false;
+    }
+    return true;
+  };
+
+  if (pagouJanela(10)) return "Elite";
+  if (pagouJanela(5)) return "Consistente";
+
+  // Regular: série contínua até o ano atual, com início dentro da janela de 5 anos
+  const janela5: boolean[] = [];
+  for (let y = anoAtual - 4; y <= anoAtual; y++) janela5.push(isPago(y));
+  const inicio = janela5.indexOf(true);
+  if (inicio >= 0 && janela5.slice(inicio).every(Boolean) && 5 - inicio >= 2) {
+    return "Regular";
+  }
+
+  return "Irregular";
 }
