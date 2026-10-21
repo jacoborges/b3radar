@@ -545,11 +545,18 @@ function DividendosPage() {
                     onClick={() => setSelected(r.stock)}
                   >
                     <td className="p-3">
-                      <div className="font-mono font-semibold">
-                        {r.stock.ticker}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.stock.nome}
+                      <div className="flex items-start gap-2">
+                        <span className="mt-0.5">
+                          <StockGroupMarker ticker={r.stock.ticker} />
+                        </span>
+                        <div>
+                          <div className="font-mono font-semibold">
+                            {r.stock.ticker}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {r.stock.nome}
+                          </div>
+                        </div>
                       </div>
                       <PayoutMonthsTimeline events={r.raw?.historicoCompleto ?? []} />
                     </td>
