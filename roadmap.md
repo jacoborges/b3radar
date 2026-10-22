@@ -19,6 +19,7 @@
 - [x] Validar o botão na tela principal autenticada e navegação para a Carteira.
 - [ ] Confirmar novas cotações e sincronização real: bloqueado pela resposta da brapi de token inválido ou sem permissão.
 # Dados macro e novas fontes
+- [ ] Corrigir importação travada, preencher indicadores oficiais e validar atualização e histórico na página autenticada.
 - [x] Catálogo e histórico macro (Banco Central SGS, Focus, Ipeadata) no banco e página Dados Macroeconômicos.
 - [x] Selic, risco-país e Focus alimentando FCD e DDM/Gordon.
 - [ ] Confirmar importação das séries SGS: Banco Central bloqueou temporariamente o servidor de testes por excesso de consultas.
