@@ -45,8 +45,8 @@ describe("classifyDividendQuality — regra por anos de pagamento", () => {
     expect(classifyDividendQuality([], ATUAL)).toBe("Sem cobertura");
   });
 
-  it("Sem cobertura: pago apenas no ano anterior não zera, mas sem série contínua cai em Irregular", () => {
-    // pagou só em 2025 (nada antes dentro da janela) -> série de 1 ano -> Irregular
-    expect(classifyDividendQuality(datas([2025]), ATUAL)).toBe("Irregular");
+  it("Regular: pago apenas no ano anterior conta com o ano corrente em aberto", () => {
+    // 2025 pago + 2026 em aberto (grace) -> série contínua de 2 anos -> Regular
+    expect(classifyDividendQuality(datas([2025]), ATUAL)).toBe("Regular");
   });
 });
