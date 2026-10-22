@@ -17,4 +17,5 @@
 - Resolve blank simulator purchase prices on the server from the exact date's unadjusted daily close; never silently substitute another trading day.
 - Manual quote refresh uses ordered batches with portfolio tickers first and writes to the shared per-ticker cache; subscribers read that cache so navigation cannot mask refreshed prices with older query data.
 - Store macroeconomic series in the database catalog (macro_series/macro_observations) refreshed server-side from public BCB/Ipeadata APIs; valuations read premises via useMacroContext so new series need no code beyond a catalog row.
+- Refresh macro indicators in bounded per-series requests with progressive cache invalidation; deduplicate and sort dated observations before upsert because official APIs can repeat periods across date windows.
 - Share stock ordering through one selector, pure comparator and session-scoped query state across asset lists; portfolio rows retain active-before-closed priority and sorting never changes ledger calculations.

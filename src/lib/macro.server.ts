@@ -14,6 +14,17 @@ export interface Observation {
   value: number;
 }
 
+/** Fontes podem repetir meses entre janelas ou devolver pontos fora do período. */
+export function normalizeObservations(rows: Observation[], from: string, to: string): Observation[] {
+  const byDate = new Map<string, number>();
+  for (const row of rows) {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(row.date) && row.date >= from && row.date <= to && Number.isFinite(row.value)) {
+      byDate.set(row.date, row.value);
+    }
+  }
+  return [...byDate].sort(([a], [b]) => a.localeCompare(b)).map(([date, value]) => ({ date, value }));
+}
+
 function brDateToIso(d: string): string {
   const [dd, mm, yyyy] = d.split("/");
   return `${yyyy}-${mm}-${dd}`;
@@ -55,7 +66,7 @@ export async function fetchSgs(id: string, fromIso: string): Promise<Observation
     }
     start = nextDay(end);
   }
-  return out;
+  return normalizeObservations(out, fromIso, today);
 }
 
 const HEADERS = {
@@ -66,13 +77,17 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** O BCB bloqueia rajadas de requisições: espaçamos e tentamos de novo. */
 async function bcbFetch(url: string): Promise<Response> {
-  let last: Response | null = null;
-  for (let attempt = 0; attempt < 3; attempt++) {
+  for (let attempt = 0; attempt < 2; attempt++) {
     await sleep(attempt === 0 ? 250 : 1500 * attempt);
-    last = await fetch(url, { headers: HEADERS });
-    if (last.status < 500) return last;
+    try {
+      const response = await fetch(url, { headers: HEADERS, signal: AbortSignal.timeout(10000) });
+      if (response.status < 500 || attempt === 1) return response;
+      await response.body?.cancel();
+    } catch (error) {
+      if (attempt === 1) throw error;
+    }
   }
-  return last!;
+  throw new Error("Banco Central indisponível no momento");
 }
 
 function nextDay(iso: string): string {
@@ -83,12 +98,11 @@ function nextDay(iso: string): string {
 
 export async function fetchIpea(id: string, fromIso: string): Promise<Observation[]> {
   const url = `http://www.ipeadata.gov.br/api/odata4/ValoresSerie(SERCODIGO='${id}')`;
-  const res = await fetch(url, { headers: { accept: "application/json" } });
+  const res = await fetch(url, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(15000) });
   if (!res.ok) throw new Error(`Ipeadata ${id} HTTP ${res.status}`);
   const json = (await res.json()) as { value?: Array<{ VALDATA?: string; VALVALOR?: number }> };
   return (json.value ?? [])
-    .filter((r) => r.VALDATA && typeof r.VALVALOR === "number")
-    .map((r) => ({ date: r.VALDATA!.slice(0, 10), value: r.VALVALOR! }))
+    .flatMap((r) => r.VALDATA && typeof r.VALVALOR === "number" ? [{ date: r.VALDATA.slice(0, 10), value: r.VALVALOR }] : [])
     .filter((r) => r.date >= fromIso);
 }
 
@@ -118,20 +132,25 @@ export function startDateFor(s: MacroSeriesRow): string {
 
 export async function fetchSeries(s: MacroSeriesRow): Promise<Observation[]> {
   const from = startDateFor(s);
-  if (s.source === "sgs") return fetchSgs(s.source_id, from);
-  if (s.source === "ipea") return fetchIpea(s.source_id, from);
-  if (s.source === "focus") return fetchFocus(s.source_id, from);
-  return [];
+  let observations: Observation[];
+  if (s.source === "sgs") observations = await fetchSgs(s.source_id, from);
+  else if (s.source === "ipea") observations = await fetchIpea(s.source_id, from);
+  else if (s.source === "focus") observations = await fetchFocus(s.source_id, from);
+  else throw new Error(`Fonte não suportada: ${s.source}`);
+  return normalizeObservations(observations, from, new Date().toISOString().slice(0, 10));
 }
 
 /** Atualiza todas as séries do catálogo no banco. Requer cliente com privilégio de escrita. */
 export async function refreshAllMacro(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   admin: any,
+  codes?: string[],
 ): Promise<{ updated: number; failed: string[] }> {
-  const { data: series, error } = await admin
+  let query = admin
     .from("macro_series")
     .select("code, source, source_id, last_date");
+  if (codes) query = query.in("code", codes);
+  const { data: series, error } = await query;
   if (error) throw new Error(error.message);
   const failed: string[] = [];
   let updated = 0;
@@ -143,19 +162,21 @@ export async function refreshAllMacro(
       if (!s) return;
       try {
         const obs = await fetchSeries(s);
+        if (obs.length === 0) throw new Error("A fonte não retornou observações válidas para o período");
         for (let i = 0; i < obs.length; i += 1000) {
           const rows = obs.slice(i, i + 1000).map((o) => ({ series_code: s.code, ...o }));
-          const { error: e } = await admin.from("macro_observations").upsert(rows);
+          const { error: e } = await admin.from("macro_observations").upsert(rows, { onConflict: "series_code,date" });
           if (e) throw new Error(e.message);
         }
         const last = obs.at(-1);
-        await admin
+        const { error: updateError } = await admin
           .from("macro_series")
           .update({
             updated_at: new Date().toISOString(),
             ...(last ? { last_value: last.value, last_date: last.date } : {}),
           })
           .eq("code", s.code);
+        if (updateError) throw new Error(updateError.message);
         updated++;
       } catch (err) {
         console.error("[macro] falha", s.code, err);
