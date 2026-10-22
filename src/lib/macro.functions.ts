@@ -69,16 +69,16 @@ export const getMacroHistory = createServerFn({ method: "POST" })
 /** Atualiza do Banco Central/Ipeadata. Sem `force`, só executa se os dados tiverem mais de 12h. */
 export const refreshMacro = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ force: z.boolean().optional() }).parse(d ?? {}))
+  .inputValidator((d) => z.object({ force: z.boolean().optional(), codes: z.array(z.string().min(1).max(60)).min(1).max(2).optional() }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
-    const { data: rows } = await context.supabase.from("macro_series").select("updated_at");
-    const oldest = Math.min(
-      ...(rows ?? []).map((r) => (r.updated_at ? new Date(r.updated_at).getTime() : 0)),
-    );
-    const fresh = Number.isFinite(oldest) && Date.now() - oldest < (data.force ? 10 * 60 * 1000 : STALE_MS);
-    if (fresh) return { skipped: true, updated: 0, failed: [] as string[] };
+    let query = context.supabase.from("macro_series").select("code, updated_at, last_value");
+    if (data.codes) query = query.in("code", data.codes);
+    const { data: rows, error } = await query;
+    if (error) throw new Error(error.message);
+    const stale = (rows ?? []).filter((r) => data.force || r.last_value == null || !r.updated_at || Date.now() - new Date(r.updated_at).getTime() >= STALE_MS);
+    if (stale.length === 0) return { skipped: true, updated: 0, failed: [] as string[] };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { refreshAllMacro } = await import("@/lib/macro.server");
-    const r = await refreshAllMacro(supabaseAdmin);
+    const r = await refreshAllMacro(supabaseAdmin, stale.map((r) => r.code));
     return { skipped: false, ...r };
   });

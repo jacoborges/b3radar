@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -31,20 +31,45 @@ const fmt = (v: number | null, unit: string) => {
 const fmtDate = (d: string | null) => (d ? d.split("-").reverse().join("/") : "—");
 
 function MacroPage() {
-  const { data, isLoading } = useMacroSeries();
+  const { data, isLoading, error: loadError } = useMacroSeries();
   const qc = useQueryClient();
   const refreshFn = useServerFn(refreshMacro);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const autoStarted = useRef(false);
   const refresh = useMutation({
-    mutationFn: (force: boolean) => refreshFn({ data: { force } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["macro-series"] }),
+    mutationFn: async (force: boolean) => {
+      const list = data ?? [];
+      const result = { updated: 0, failed: [] as string[] };
+      setProgress({ done: 0, total: list.length });
+      for (let i = 0; i < list.length; i += 2) {
+        const batch = list.slice(i, i + 2);
+        const outcomes = await Promise.all(batch.map(async (series) => {
+          try {
+            return await refreshFn({ data: { force, codes: [series.code] } });
+          } catch {
+            return { updated: 0, failed: [series.code] };
+          }
+        }));
+        for (const outcome of outcomes) {
+          result.updated += outcome.updated;
+          result.failed.push(...outcome.failed);
+        }
+        setProgress({ done: Math.min(i + 2, list.length), total: list.length });
+        await qc.invalidateQueries({ queryKey: ["macro-series"] });
+      }
+      await qc.invalidateQueries({ queryKey: ["macro-history"] });
+      return result;
+    },
   });
   const [selected, setSelected] = useState<string>("selic_meta");
 
   // atualização automática quando os dados estão com mais de 12h
   useEffect(() => {
+    if (!data?.length || autoStarted.current) return;
+    autoStarted.current = true;
     refresh.mutate(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [data]);
 
   const groups = useMemo(() => {
     const m = new Map<string, MacroSeries[]>();
@@ -60,9 +85,9 @@ function MacroPage() {
         <h1 className="text-xl font-semibold">Dados Macroeconômicos</h1>
         <div className="ml-auto flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {refresh.isPending ? "Atualizando no Banco Central…" : refresh.data?.failed?.length ? `${refresh.data.failed.length} série(s) indisponível(is) agora` : ""}
+            {refresh.isPending ? `Atualizando ${progress.done}/${progress.total} indicadores…` : refresh.data ? `${refresh.data.updated} atualizado(s)${refresh.data.failed.length ? ` · ${refresh.data.failed.length} indisponível(is)` : ""}` : ""}
           </span>
-          <Button size="sm" variant="outline" onClick={() => refresh.mutate(true)} disabled={refresh.isPending}>
+          <Button size="sm" variant="outline" onClick={() => refresh.mutate(true)} disabled={refresh.isPending || !data?.length}>
             <RefreshCw className={`mr-1 h-4 w-4 ${refresh.isPending ? "animate-spin" : ""}`} /> Atualizar
           </Button>
         </div>
@@ -74,6 +99,8 @@ function MacroPage() {
       {current && <HistoryChart series={current} />}
 
       {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
+      {loadError && <p role="alert" className="mb-4 text-sm text-destructive">Não foi possível carregar os indicadores. Tente novamente em instantes.</p>}
+      {refresh.data && refresh.data.failed.length > 0 && <p role="status" className="mb-4 text-xs text-muted-foreground">Sem resposta da fonte: {refresh.data.failed.map((code) => data?.find((s) => s.code === code)?.name ?? code).join(", ")}. Os últimos valores disponíveis foram preservados.</p>}
       {groups.map(([cat, list]) => (
         <section key={cat} className="mb-5">
           <h2 className="mb-2 text-sm font-medium uppercase tracking-wide text-muted-foreground">{cat}</h2>
