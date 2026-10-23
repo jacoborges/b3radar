@@ -19,11 +19,16 @@
 - [x] Validar o botão na tela principal autenticada e navegação para a Carteira.
 - [ ] Confirmar novas cotações e sincronização real: bloqueado pela resposta da brapi de token inválido ou sem permissão.
 # Dados macro e novas fontes
-- [ ] Corrigir importação travada, preencher indicadores oficiais e validar atualização e histórico na página autenticada.
+- [x] Corrigir importação travada, preencher indicadores oficiais e validar atualização e histórico na página autenticada (24 séries preenchidas; risco-país disponível na fonte até julho/2024).
 - [x] Catálogo e histórico macro (Banco Central SGS, Focus, Ipeadata) no banco e página Dados Macroeconômicos.
 - [x] Selic, risco-país e Focus alimentando FCD e DDM/Gordon.
-- [ ] Confirmar importação das séries SGS: Banco Central bloqueou temporariamente o servidor de testes por excesso de consultas.
+- [x] Confirmar importação das séries SGS com dados salvos e gráficos na página autenticada.
 - [ ] Yahoo/COTAHIST como fonte paralela de cotações e Fundamentus como cruzamento de fundamentos (próxima etapa).
 - [ ] Atualização diária agendada (hoje atualiza ao abrir a página quando os dados têm mais de 12h).
 # Grupos na Inteligência de proventos
 - [x] Marcador de grupos à esquerda do ticker em cada linha da Inteligência de proventos, com popover para associar/criar grupos e persistência na conta.
+
+# Cabeçalho compartilhado das listas
+- [ ] Fixar o cabeçalho da lista principal durante a rolagem.
+- [ ] Adicionar seleção de todos os indicadores fundamentalistas sem repetições e compartilhar a configuração nas demais listas de ativos.
+- [ ] Testar seleção, persistência, cabeçalho fixo e navegação entre listas.
