@@ -11,6 +11,9 @@ import { StockGroupMarker } from "@/components/StockGroupMarker";
 import { StockFilterSheet } from "@/components/StockFilterSheet";
 import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
 import { StockSortSelect } from "@/components/StockSortSelect";
+import { StockColumnsSelect } from "@/components/StockColumnsSelect";
+import { StockMetricHeaders, StockMetricCells } from "@/components/StockMetricColumns";
+import { useStockColumns } from "@/hooks/use-stock-columns";
 import { useStockSort } from "@/hooks/use-stock-sort";
 import { compareStocks } from "@/lib/stock-sort";
 import {
@@ -105,6 +108,7 @@ const FREQ_OPTS: Array<"ALL" | Frequencia> = [
 ];
 
 function DividendosPage() {
+  const [columns] = useStockColumns();
   const { stocks } = useAllStocks();
   const [sort] = useStockSort();
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
@@ -521,15 +525,16 @@ function DividendosPage() {
           })}
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-border/60 bg-card">
+        <div className="mb-3 flex justify-end"><StockColumnsSelect /></div>
+        <div className="max-h-[70dvh] overflow-auto rounded-lg border border-border/60 bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b border-border/60 text-xs uppercase text-muted-foreground">
+            <thead className="sticky top-0 z-20 border-b border-border/60 bg-card text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="p-3 text-left">Ticker</th>
                 <th className="p-3 text-left">Classe</th>
                 <th className="p-3 text-right">Score</th>
                 <th className="p-3 text-left">Frequência</th>
-                <th className="p-3 text-right">DY 12m</th>
+                <StockMetricHeaders />
                 <th className="p-3 text-right">Consecutivos</th>
                 <th className="p-3 text-left">Próxima COM</th>
                 <th className="p-3 text-right">Faixa esperada</th>
@@ -580,11 +585,7 @@ function DividendosPage() {
                     <td className="p-3 text-xs text-muted-foreground">
                       {intel?.next.frequencia ?? "—"}
                     </td>
-                    <td className="p-3 text-right font-mono">
-                      {intel?.dyUltimos12m != null
-                        ? `${intel.dyUltimos12m.toFixed(2)}%`
-                        : "—"}
-                    </td>
+                    <StockMetricCells stock={{ ...r.stock, dy: intel?.dyUltimos12m ?? r.stock.dy }} />
                     <td className="p-3 text-right font-mono">
                       {intel ? intel.anosConsecutivosPagando : "—"}
                     </td>
@@ -605,7 +606,7 @@ function DividendosPage() {
               {!isLoading && ranked.length === 0 && (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={7 + columns.length}
                     className="p-8 text-center text-sm text-muted-foreground"
                   >
                     Nenhum ativo encontrado para este filtro.

@@ -62,6 +62,9 @@ import { AccountControls } from "@/components/AccountControls";
 
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { StockSortSelect } from "@/components/StockSortSelect";
+import { StockColumnsSelect } from "@/components/StockColumnsSelect";
+import { StockMetricHeaders, StockMetricCells, StockMetricsStrip } from "@/components/StockMetricColumns";
+import { useStockColumns } from "@/hooks/use-stock-columns";
 import { useStockSort } from "@/hooks/use-stock-sort";
 import { compareStocks } from "@/lib/stock-sort";
 import { margemDdmRapida } from "@/lib/valuation-ddm";
@@ -106,6 +109,7 @@ type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 function HomePage() {
   const { stocks: STOCKS, sectors: SECTORS, fonte, updatedAt, error: dataError } = useAllStocks();
   const [search, setSearch] = useState("");
+  const [columns] = useStockColumns();
   const { groups: stockGroups } = useStockGroups();
   const [groupFilter, setGroupFilter] = useState<string[]>([]);
   const [tipo, setTipo] = useState<Tipo>("ALL");
@@ -446,7 +450,8 @@ function HomePage() {
           <span>
             {total} ativos em {SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0).length} setores
           </span>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <StockColumnsSelect />
             <button
               onClick={() =>
                 setOpenSectors(
@@ -470,6 +475,10 @@ function HomePage() {
             Nenhum ativo encontrado com esses filtros.
           </div>
         ) : (
+          <div className="max-h-[70dvh] overflow-auto rounded-lg border border-border/60" data-testid="asset-scroll">
+            <div className="sticky top-0 z-20 hidden bg-card md:block">
+              <table className="w-full table-fixed text-sm" style={{ minWidth: 340 + columns.length * 128 }}><StockColGroup count={columns.length} /><thead><tr className="border-b border-border text-xs uppercase text-muted-foreground"><th className="px-4 py-3 text-left font-medium">Ticker</th><StockMetricHeaders /><th className="px-3 py-3 text-center font-medium">Dívida</th></tr></thead></table>
+            </div>
           <Accordion
             type="multiple"
             value={
@@ -488,7 +497,7 @@ function HomePage() {
                 <AccordionItem
                   key={sec}
                   value={sec}
-                  className="overflow-hidden rounded-xl border border-border/60 bg-card"
+                  className="rounded-lg border border-border/60 bg-card"
                 >
                   <AccordionTrigger className="px-5 py-4 hover:no-underline">
                     <div className="flex items-center gap-3">
@@ -516,6 +525,7 @@ function HomePage() {
               );
             })}
           </Accordion>
+          </div>
         )}
       </main>
 
@@ -541,6 +551,7 @@ function StockTable({
   stocks: Stock[];
   onSelect: (s: Stock) => void;
 }) {
+  const [columns] = useStockColumns();
   return (
     <>
       {/* Mobile: card list */}
@@ -590,21 +601,7 @@ function StockTable({
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-4 gap-2 text-[11px]">
-                {(["dy", "pl", "pvp", "roe"] as const).map((k) => {
-                  const val = s[k] as number;
-                  return (
-                    <div key={k} className="min-w-0 rounded-md bg-background/40 px-2 py-1">
-                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                        {INDICATORS[k].label}
-                      </div>
-                      <div className="truncate font-mono">
-                        {INDICATORS[k].format(val)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              <StockMetricsStrip stock={s} />
               <div className="flex items-center justify-end">
                 <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
               </div>
@@ -613,41 +610,9 @@ function StockTable({
         })}
       </div>
 
-      {/* Tablet+ : real table with progressive columns */}
-      <div className="hidden overflow-x-auto border-t border-border/60 md:block">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border/40 bg-background/30 text-xs uppercase tracking-wide text-muted-foreground">
-              <th className="px-4 py-2.5 text-left font-medium">Ticker</th>
-              <th className="px-3 py-2.5 text-right font-medium">Preço</th>
-              <th className="px-3 py-2.5 text-right font-medium">Dia</th>
-              {FUNDAMENTAL_KEYS.slice(0, 6).map((k, i) => (
-                <th
-                  key={k}
-                  className={`px-3 py-2.5 text-right font-medium ${i >= 4 ? "hidden lg:table-cell" : i >= 2 ? "hidden md:table-cell lg:table-cell" : ""}`}
-                >
-                  <span className="inline-flex items-center gap-1">
-                    {INDICATORS[k].label}
-                    <InfoTip
-                      title={INDICATORS[k].short}
-                      fundamentalista={INDICATORS[k].fundamentalista}
-                      tecnica={INDICATORS[k].tecnica}
-                    />
-                  </span>
-                </th>
-              ))}
-              <th className="px-3 py-2.5 text-center font-medium">
-                <span className="inline-flex items-center gap-1">
-                  Dívida
-                  <InfoTip
-                    title="Semáforo de Endividamento"
-                    fundamentalista="Verde: Dív/PL ≤ 0,5x. Amarelo: entre 0,5x e 1,2x. Vermelho: > 1,2x."
-                    tecnica="Empresas mais endividadas amplificam movimentos e exigem stops mais largos."
-                  />
-                </span>
-              </th>
-            </tr>
-          </thead>
+      <div className="hidden border-t border-border/60 md:block">
+        <table className="w-full table-fixed text-sm" style={{ minWidth: 340 + columns.length * 128 }}>
+          <StockColGroup count={columns.length} />
           <tbody>
             {stocks.map((s) => {
               const dl = debtLevel(s.divBrutaPatrimonio);
@@ -674,39 +639,7 @@ function StockTable({
                       {s.nome}
                     </div>
                   </td>
-                  <td className="px-3 py-3 text-right font-mono">
-                    R$ {s.preco.toFixed(2)}
-                  </td>
-                  <td
-                    className="px-3 py-3 text-right font-mono"
-                    style={{
-                      color:
-                        s.variacaoDia >= 0
-                          ? "var(--color-success)"
-                          : "var(--color-danger)",
-                    }}
-                  >
-                    <span className="inline-flex items-center gap-1">
-                      {s.variacaoDia >= 0 ? (
-                        <TrendingUp className="h-3 w-3" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3" />
-                      )}
-                      {s.variacaoDia >= 0 ? "+" : ""}
-                      {s.variacaoDia.toFixed(2)}%
-                    </span>
-                  </td>
-                  {FUNDAMENTAL_KEYS.slice(0, 6).map((k, i) => {
-                    const val = s[k as keyof Stock] as number;
-                    return (
-                      <td
-                        key={k}
-                        className={`px-3 py-3 text-right font-mono ${i >= 4 ? "hidden lg:table-cell" : i >= 2 ? "hidden md:table-cell lg:table-cell" : ""}`}
-                      >
-                        {INDICATORS[k].format(val)}
-                      </td>
-                    );
-                  })}
+                  <StockMetricCells stock={s} />
                   <td className="px-3 py-3 text-center" title={dl.label}>
                     <div className="flex justify-center">
                       <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
@@ -723,6 +656,10 @@ function StockTable({
 }
 
 
+
+function StockColGroup({ count }: { count: number }) {
+  return <colgroup><col style={{ width: 240 }} />{Array.from({ length: count }, (_, index) => <col key={index} style={{ width: 128 }} />)}<col style={{ width: 100 }} /></colgroup>;
+}
 
 function LiveBadge({
   updatedAt,

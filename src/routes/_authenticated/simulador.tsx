@@ -28,6 +28,8 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
 import { SimReturnChart } from "@/components/SimReturnChart";
 import { StockSortSelect } from "@/components/StockSortSelect";
+import { StockColumnsSelect } from "@/components/StockColumnsSelect";
+import { StockMetricsStrip } from "@/components/StockMetricColumns";
 import { useStockSort } from "@/hooks/use-stock-sort";
 import { compareStocks } from "@/lib/stock-sort";
 import {
@@ -388,6 +390,7 @@ function SimuladorPage() {
         <section className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <StockSortSelect />
+            <div className="ml-auto"><StockColumnsSelect /></div>
           </div>
           {!selected ? (
             <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
@@ -451,6 +454,7 @@ function SimuladorPage() {
                       <PositionCard
                         key={pos.ticker}
                         pos={pos}
+                        stock={stocks.find(s => s.ticker === pos.ticker)}
                         lots={
                           selected.lots.filter((l) => l.ticker === pos.ticker) ?? []
                         }
@@ -492,11 +496,13 @@ function SummaryCard({
 }
 
 function PositionCard({
+  stock,
   pos,
   lots,
   onUpdateLot,
   onDeleteLot,
 }: {
+  stock?: Partial<Record<import("@/lib/indicators").IndicatorKey, number>>;
   pos: SimPosition;
   lots: SimLot[];
   onUpdateLot: (v: {
@@ -557,6 +563,7 @@ function PositionCard({
           </span>
         </button>
       </CollapsibleTrigger>
+      <StockMetricsStrip stock={{ ...stock, preco: pos.precoAtual ?? undefined }} />
 
       <CollapsibleContent>
         <div className="space-y-4 border-t border-border/50 px-4 py-4">

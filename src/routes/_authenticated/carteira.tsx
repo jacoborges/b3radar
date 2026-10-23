@@ -23,6 +23,8 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import { StockSortSelect } from "@/components/StockSortSelect";
+import { StockColumnsSelect } from "@/components/StockColumnsSelect";
+import { StockMetricsStrip } from "@/components/StockMetricColumns";
 import { useStockSort } from "@/hooks/use-stock-sort";
 import { compareStocks } from "@/lib/stock-sort";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
@@ -453,6 +455,7 @@ function CarteiraPage() {
         <section className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <StockSortSelect />
+            <div className="ml-auto"><StockColumnsSelect /></div>
           </div>
           {!selected ? (
             <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
@@ -518,6 +521,7 @@ function CarteiraPage() {
                       key={pos.ticker}
                       pos={pos}
                       price={priceOf(pos.ticker)}
+                      stock={stocks.find(s => s.ticker === pos.ticker)}
                       onUpdateLot={(v) => mUpdateLot.mutate(v)}
                       onDeleteLot={(id) => mDeleteLot.mutate(id)}
                       onUpdateSale={(v) => mUpdateSale.mutate(v)}
@@ -705,6 +709,7 @@ function AddSaleForm({ positions, pending, serverError, onSubmit }: {
 }
 
 function PositionRow({
+  stock,
   pos,
   price,
   onUpdateLot,
@@ -712,6 +717,7 @@ function PositionRow({
   onUpdateSale,
   onDeleteSale,
 }: {
+  stock?: Partial<Record<import("@/lib/indicators").IndicatorKey, number>>;
   pos: Position;
   price: number | null;
   onUpdateLot: (v: {
@@ -761,6 +767,7 @@ function PositionRow({
           </span>
         )}
       </button>
+      <div className={closed ? "text-muted-foreground/50" : ""}><StockMetricsStrip stock={{ ...stock, preco: price ?? undefined }} /></div>
 
       {open && (
         <div className="border-t border-border/50 px-4 py-3">
