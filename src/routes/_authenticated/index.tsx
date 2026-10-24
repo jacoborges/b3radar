@@ -488,7 +488,7 @@ function HomePage() {
             }
 
             onValueChange={setOpenSectors}
-            className="space-y-3 md:w-max md:min-w-full"
+            className="space-y-3"
           >
             {SECTORS.map((sec) => {
               const items = bySector.get(sec) ?? [];
@@ -497,7 +497,7 @@ function HomePage() {
                 <AccordionItem
                   key={sec}
                   value={sec}
-                  className="rounded-lg border border-border/60 bg-card"
+                  className="rounded-lg border border-border/60 bg-card md:min-w-max"
                 >
                   <AccordionTrigger className="px-5 py-4 hover:no-underline">
                     <div className="flex items-center gap-3">
