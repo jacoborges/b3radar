@@ -497,7 +497,7 @@ function HomePage() {
                 <AccordionItem
                   key={sec}
                   value={sec}
-                  className="rounded-lg border border-border/60 bg-card md:min-w-max"
+                  className="rounded-lg border border-border/60 bg-card"
                 >
                   <AccordionTrigger className="px-5 py-4 hover:no-underline">
                     <div className="flex items-center gap-3">
