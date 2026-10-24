@@ -585,7 +585,7 @@ function DividendosPage() {
                     <td className="p-3 text-xs text-muted-foreground">
                       {intel?.next.frequencia ?? "—"}
                     </td>
-                    <StockMetricCells stock={{ ...r.stock, dy: intel?.dyUltimos12m ?? r.stock.dy }} />
+                    <StockMetricCells stock={r.stock} />
                     <td className="p-3 text-right font-mono">
                       {intel ? intel.anosConsecutivosPagando : "—"}
                     </td>

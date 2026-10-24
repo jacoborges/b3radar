@@ -476,8 +476,8 @@ function HomePage() {
           </div>
         ) : (
           <div className="max-h-[70dvh] overflow-auto rounded-lg border border-border/60" data-testid="asset-scroll">
-            <div className="sticky top-0 z-20 hidden bg-card md:block">
-              <table className="w-full table-fixed text-sm" style={{ minWidth: 340 + columns.length * 128 }}><StockColGroup count={columns.length} /><thead><tr className="border-b border-border text-xs uppercase text-muted-foreground"><th className="px-4 py-3 text-left font-medium">Ticker</th><StockMetricHeaders /><th className="px-3 py-3 text-center font-medium">Dívida</th></tr></thead></table>
+            <div className="sticky top-0 z-20 hidden bg-card md:block" style={{ minWidth: 340 + columns.length * 160 }}>
+              <table className="w-full table-fixed text-sm" style={{ minWidth: 340 + columns.length * 160 }}><StockColGroup count={columns.length} /><thead><tr className="border-b border-border text-xs uppercase text-muted-foreground"><th className="px-4 py-3 text-left font-medium">Ticker</th><StockMetricHeaders /><th className="px-3 py-3 text-center font-medium">Dívida</th></tr></thead></table>
             </div>
           <Accordion
             type="multiple"
@@ -488,7 +488,8 @@ function HomePage() {
             }
 
             onValueChange={setOpenSectors}
-            className="space-y-3"
+            className="space-y-3 md:min-w-[var(--asset-width)]"
+            style={{ "--asset-width": `${340 + columns.length * 160}px` } as import("react").CSSProperties}
           >
             {SECTORS.map((sec) => {
               const items = bySector.get(sec) ?? [];
@@ -611,7 +612,7 @@ function StockTable({
       </div>
 
       <div className="hidden border-t border-border/60 md:block">
-        <table className="w-full table-fixed text-sm" style={{ minWidth: 340 + columns.length * 128 }}>
+        <table className="w-full table-fixed text-sm" style={{ minWidth: 340 + columns.length * 160 }}>
           <StockColGroup count={columns.length} />
           <tbody>
             {stocks.map((s) => {
@@ -658,7 +659,7 @@ function StockTable({
 
 
 function StockColGroup({ count }: { count: number }) {
-  return <colgroup><col style={{ width: 240 }} />{Array.from({ length: count }, (_, index) => <col key={index} style={{ width: 128 }} />)}<col style={{ width: 100 }} /></colgroup>;
+  return <colgroup><col style={{ width: 240 }} />{Array.from({ length: count }, (_, index) => <col key={index} style={{ width: 160 }} />)}<col style={{ width: 100 }} /></colgroup>;
 }
 
 function LiveBadge({
