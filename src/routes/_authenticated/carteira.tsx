@@ -22,6 +22,7 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
+import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
 import { StockMetricsStrip } from "@/components/StockMetricColumns";
@@ -129,6 +130,7 @@ function CarteiraPage() {
   const queryClient = useQueryClient();
   const { stocks } = useAllStocks({ allSectors: true });
   const [sort] = useStockSort();
+  const [timelineYear, setTimelineYear] = useState(new Date().getFullYear());
 
   const fetchPortfolios = useServerFn(listPortfolios);
   const callCreate = useServerFn(createPortfolio);
@@ -255,6 +257,19 @@ function CarteiraPage() {
       ),
     );
   }, [allPositions, stocks, sort]);
+
+  const taxPositions = useMemo(() => portfolios.flatMap(portfolio => {
+    const grouped = new Map<string, { lots: PortfolioLot[]; sales: PortfolioSale[] }>();
+    for (const lot of portfolio.lots) {
+      const item = grouped.get(lot.ticker) ?? { lots: [], sales: [] };
+      item.lots.push(lot); grouped.set(lot.ticker, item);
+    }
+    for (const sale of portfolio.sales) {
+      const item = grouped.get(sale.ticker) ?? { lots: [], sales: [] };
+      item.sales.push(sale); grouped.set(sale.ticker, item);
+    }
+    return Array.from(grouped, ([ticker, item]) => portfolioLedger(item.lots, item.sales, corporateEvents.byTicker.get(ticker) ?? [], new Date().toISOString().slice(0, 10)));
+  }), [portfolios, corporateEvents.byTicker]);
   const posicoesResumo = useMemo(
     () =>
       positions.map((p) => ({
@@ -452,7 +467,7 @@ function CarteiraPage() {
         </aside>
 
         {/* Detalhe da carteira */}
-        <section className="space-y-4">
+        <section className="min-w-0 space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <StockSortSelect />
             <div className="ml-auto"><StockColumnsSelect /></div>
@@ -504,7 +519,8 @@ function CarteiraPage() {
               />
 
               <PortfolioProventos posicoes={posicoesResumo} />
-              <PortfolioTimeline name={selected.name} positions={allPositions} />
+              <PortfolioTimeline name={selected.name} positions={allPositions} year={timelineYear} onYearChange={setTimelineYear} />
+              <PortfolioSalesTimeline positions={taxPositions} selectedPositions={allPositions} year={timelineYear} loading={corporateEvents.isLoading} />
               {corporateEvents.isLoading && <p className="text-xs text-muted-foreground">Carregando histórico oficial de proventos e eventos…</p>}
               {corporateEvents.errors.map(error => <p key={error} className="text-xs text-destructive">{error}</p>)}
               {[mAddLot.error, mUpdateLot.error, mDeleteLot.error, mUpdateSale.error, mDeleteSale.error].filter((error): error is Error => error instanceof Error).map((error, i) => <p key={i} role="alert" className="text-xs text-destructive">{error.message}</p>)}

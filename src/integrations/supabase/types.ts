@@ -480,6 +480,7 @@ export type Database = {
         Row: {
           brapi_token: string | null
           created_at: string
+          monthly_sales_limit: number
           selected_sectors: Json | null
           stock_columns: Json | null
           updated_at: string
@@ -488,6 +489,7 @@ export type Database = {
         Insert: {
           brapi_token?: string | null
           created_at?: string
+          monthly_sales_limit?: number
           selected_sectors?: Json | null
           stock_columns?: Json | null
           updated_at?: string
@@ -496,6 +498,7 @@ export type Database = {
         Update: {
           brapi_token?: string | null
           created_at?: string
+          monthly_sales_limit?: number
           selected_sectors?: Json | null
           stock_columns?: Json | null
           updated_at?: string

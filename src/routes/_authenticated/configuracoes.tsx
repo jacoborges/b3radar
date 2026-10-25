@@ -20,6 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { MonthlySalesLimitSettings } from "@/components/MonthlySalesLimitSettings";
 import { useBrapiToken } from "@/hooks/use-live-quotes";
 import {
   useBazinDivisor,
@@ -165,6 +166,8 @@ function SettingsPage() {
         </section>
 
         <BazinSection />
+
+        <MonthlySalesLimitSettings />
 
         <LiquidezSection />
 
