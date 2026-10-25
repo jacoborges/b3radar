@@ -19,11 +19,18 @@ function useValuationCells(stock: MetricStock) {
   });
 }
 
+function splitCols(columns: IndicatorKey[]) {
+  const i = columns.indexOf("variacaoDia");
+  const at = i >= 0 ? i + 1 : columns.length;
+  return [columns.slice(0, at), columns.slice(at)] as const;
+}
+
 export function StockMetricHeaders() {
-  const [columns] = useStockColumns();
+  const [all] = useStockColumns();
+  const [a, b] = splitCols(all);
   const [valuation] = useValuationColumns();
   return <>
-    {columns.map(key => <th key={key} data-indicator={key} className="min-w-32 px-3 py-3 text-right text-xs font-medium text-muted-foreground"><span className="inline-flex items-center gap-1 whitespace-nowrap">{stockColumnLabel(key)}<InfoTip title={INDICATORS[key].short} fundamentalista={INDICATORS[key].fundamentalista} tecnica={INDICATORS[key].tecnica} /></span></th>)}
+    {a.map(key => <Th key={key} k={key} />)} data-indicator={key} className="min-w-32 px-3 py-3 text-right text-xs font-medium text-muted-foreground"><span className="inline-flex items-center gap-1 whitespace-nowrap">{stockColumnLabel(key)}<InfoTip title={INDICATORS[key].short} fundamentalista={INDICATORS[key].fundamentalista} tecnica={INDICATORS[key].tecnica} /></span></th>)}
     {valuation && VALUATION_COLUMNS.map(c => <th key={c.key} data-valuation={c.key} className="min-w-32 px-3 py-3 text-right text-xs font-medium text-muted-foreground"><span className="inline-flex items-center gap-1 whitespace-nowrap">{c.label}<InfoTip title={c.label} fundamentalista={c.tip} tecnica="Valuation estimado com os indicadores da lista; o cálculo detalhado fica no ativo expandido." /></span></th>)}
   </>;
 }
