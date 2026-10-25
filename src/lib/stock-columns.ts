@@ -1,6 +1,6 @@
 import { FUNDAMENTAL_KEYS, INDICATORS, type IndicatorKey } from "./indicators";
 
-export const DEFAULT_STOCK_COLUMNS: IndicatorKey[] = ["preco", "variacaoDia", "valorMercado", "liquidezDiaria", "pl", "pvp", "dy"];
+export const DEFAULT_STOCK_COLUMNS: IndicatorKey[] = ["preco", "variacaoDia", "dy", "pvp", "varD7", "varD30", "freeFloat"];
 
 export function normalizeStockColumns(value: unknown): IndicatorKey[] {
   if (!Array.isArray(value)) return [...DEFAULT_STOCK_COLUMNS];
