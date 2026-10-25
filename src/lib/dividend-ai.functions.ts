@@ -34,7 +34,7 @@ export interface DividendAiResult {
 const TTL_MS = 24 * 60 * 60 * 1000;
 
 // =============================================================
-// Perplexity — busca real em RI da empresa, CVM e B3
+// Gemini — busca em RI da empresa, CVM e B3
 // =============================================================
 
 const PPLX_CACHE = new Map<string, { content: string; ts: number; citations: string[] }>();
