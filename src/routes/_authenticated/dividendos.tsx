@@ -12,6 +12,8 @@ import { StockFilterSheet } from "@/components/StockFilterSheet";
 import { VisibleSectorsSheet } from "@/components/VisibleSectorsSheet";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
+import { useValuationColumns } from "@/hooks/use-valuation-columns";
+import { VALUATION_COLUMNS } from "@/lib/valuation-columns";
 import { StockMetricHeaders, StockMetricCells } from "@/components/StockMetricColumns";
 import { useStockColumns } from "@/hooks/use-stock-columns";
 import { useStockSort } from "@/hooks/use-stock-sort";
@@ -108,7 +110,9 @@ const FREQ_OPTS: Array<"ALL" | Frequencia> = [
 ];
 
 function DividendosPage() {
-  const [columns] = useStockColumns();
+  const [baseColumns] = useStockColumns();
+  const [valuationOn] = useValuationColumns();
+  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
   const { stocks } = useAllStocks();
   const [sort] = useStockSort();
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
