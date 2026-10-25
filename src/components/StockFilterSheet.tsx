@@ -38,6 +38,8 @@ export function StockFilterSheet({
   setMinDescontoTeto,
   ddmOnly = false,
   setDdmOnly,
+  grahamOnly = false,
+  setGrahamOnly,
   title = "Filtros por indicadores técnicos",
   extraSection,
   onClearExtra,
@@ -59,6 +61,8 @@ export function StockFilterSheet({
   setMinDescontoTeto?: (v: number) => void;
   ddmOnly?: boolean;
   setDdmOnly?: (v: boolean) => void;
+  grahamOnly?: boolean;
+  setGrahamOnly?: (v: boolean) => void;
   title?: string;
   /** bloco extra renderizado no topo do painel (ex.: inteligência de proventos) */
   extraSection?: ReactNode;
@@ -271,6 +275,20 @@ export function StockFilterSheet({
                     </p>
                   </>
                 )}
+              </div>
+            )}
+
+            {setGrahamOnly && (
+              <div className="space-y-2 border-t border-border/50 pt-4">
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="flex items-center gap-1.5 text-sm">
+                    Graham favorável
+                    <InfoTip title="Preço justo de Graham" fundamentalista="Preço justo = √(22,5 × LPA × VPA)." tecnica="Mostra apenas ativos cotados abaixo do preço justo de Graham (LPA e VPA positivos)." />
+                  </Label>
+                  <button type="button" onClick={() => setGrahamOnly(!grahamOnly)} className={`rounded-md border px-2.5 py-1.5 text-xs transition-colors ${grahamOnly ? "border-primary/70 bg-primary/10 text-primary" : "border-border/60 text-muted-foreground hover:border-primary/40"}`}>
+                    {grahamOnly ? "Somente descontadas" : "Todas"}
+                  </button>
+                </div>
               </div>
             )}
 
