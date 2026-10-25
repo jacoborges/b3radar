@@ -63,6 +63,8 @@ import { AccountControls } from "@/components/AccountControls";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
+import { useValuationColumns } from "@/hooks/use-valuation-columns";
+import { VALUATION_COLUMNS } from "@/lib/valuation-columns";
 import { StockMetricHeaders, StockMetricCells, StockMetricsStrip } from "@/components/StockMetricColumns";
 import { useStockColumns } from "@/hooks/use-stock-columns";
 import { useStockSort } from "@/hooks/use-stock-sort";
@@ -110,7 +112,9 @@ type Tipo = "ALL" | "ON" | "PN" | "UNIT";
 function HomePage() {
   const { stocks: STOCKS, sectors: SECTORS, fonte, updatedAt, error: dataError } = useAllStocks();
   const [search, setSearch] = useState("");
-  const [columns] = useStockColumns();
+  const [baseColumns] = useStockColumns();
+  const [valuationOn] = useValuationColumns();
+  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
   const { groups: stockGroups } = useStockGroups();
   const [groupFilter, setGroupFilter] = useState<string[]>([]);
   const [tipo, setTipo] = useState<Tipo>("ALL");
@@ -561,7 +565,9 @@ function StockTable({
   stocks: Stock[];
   onSelect: (s: Stock) => void;
 }) {
-  const [columns] = useStockColumns();
+  const [baseColumns] = useStockColumns();
+  const [valuationOn] = useValuationColumns();
+  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
   return (
     <>
       {/* Mobile: card list */}
