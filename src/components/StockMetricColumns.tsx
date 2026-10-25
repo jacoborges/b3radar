@@ -1,6 +1,7 @@
 import { InfoTip } from "@/components/InfoTip";
 import { useStockColumns } from "@/hooks/use-stock-columns";
 import { useValuationColumns } from "@/hooks/use-valuation-columns";
+import { useBazinEvents } from "@/hooks/use-bazin-events";
 import { useBazinDivisor } from "@/hooks/use-bazin-divisor";
 import { INDICATORS, type IndicatorKey } from "@/lib/indicators";
 import { stockColumnLabel, stockColumnValue } from "@/lib/stock-columns";
@@ -11,9 +12,10 @@ type MetricStock = Partial<Record<IndicatorKey, number>> & Omit<ValuationStock, 
 function useValuationCells(stock: MetricStock) {
   const [enabled] = useValuationColumns();
   const [divisor] = useBazinDivisor();
+  const eventos = useBazinEvents(enabled);
   if (!enabled) return [];
   return VALUATION_COLUMNS.map(c => {
-    const v = valuationValue(stock as ValuationStock, c.key, divisor);
+    const v = valuationValue(stock as ValuationStock, c.key, divisor, (stock as { ticker?: string }).ticker ? eventos.get((stock as { ticker: string }).ticker) : undefined);
     const tone = valuationTone(c.key, v, stock.preco);
     return { ...c, text: formatValuation(c.key, v), cls: tone === "up" ? "text-success" : tone === "down" ? "text-destructive" : "" };
   });
