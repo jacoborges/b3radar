@@ -1,0 +1,2 @@
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS monthly_sales_limit numeric NOT NULL DEFAULT 20000;
+ALTER TABLE public.user_settings ADD CONSTRAINT monthly_sales_limit_positive CHECK (monthly_sales_limit > 0 AND monthly_sales_limit <= 1000000000);
