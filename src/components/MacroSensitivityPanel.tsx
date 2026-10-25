@@ -55,7 +55,7 @@ export function MacroSensitivityPanel({ ticker, nome, setor }: Props) {
         </h3>
         <InfoTip
           title="Como funciona"
-          fundamentalista="A IA (Perplexity) pesquisa na web e explica de forma didática como o negócio desta empresa reage a variações do dólar, da inflação e da taxa Selic."
+          fundamentalista="A IA (Google Gemini) pesquisa na web e explica de forma didática como o negócio desta empresa reage a variações do dólar, da inflação e da taxa Selic."
           tecnica="Ativos exportadores tendem a se beneficiar do dólar alto; bancos e seguradoras costumam se beneficiar da Selic alta; empresas endividadas e de consumo cíclico sofrem com juros altos."
         />
       </div>

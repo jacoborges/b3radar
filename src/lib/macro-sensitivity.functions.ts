@@ -1,3 +1,4 @@
+import { geminiSearch } from "./gemini-search.server";
 import { createServerFn } from "@tanstack/react-start";
 import { setResponseHeader } from "@tanstack/react-start/server";
 import { z } from "zod";
@@ -19,27 +20,12 @@ export interface MacroSensitivityResult {
 const TTL_MS = 24 * 60 * 60 * 1000;
 const CACHE = new Map<string, { content: string; ts: number; citations: string[] }>();
 
-interface PerplexityResponse {
-  choices?: Array<{ message?: { content?: string } }>;
-  citations?: string[];
-  error?: { message?: string };
-}
 
 export const analyzeMacroSensitivity = createServerFn({ method: "POST" })
   .inputValidator((data) => inputSchema.parse(data))
   .handler(async ({ data }): Promise<MacroSensitivityResult> => {
     setResponseHeader("cache-control", "no-store");
 
-    const apiKey = process.env.PERPLEXITY_API_KEY;
-    if (!apiKey) {
-      return {
-        content: null,
-        cached: false,
-        updatedAt: new Date().toISOString(),
-        error:
-          "Conector Perplexity não está linkado ao projeto. Peça ao Lovable para conectar Perplexity.",
-      };
-    }
 
     const cacheKey = data.ticker;
     const cached = CACHE.get(cacheKey);
@@ -80,77 +66,17 @@ Considere o setor e o modelo de negócio da empresa (exportadora, importadora, e
     const userPrompt = `Explique de forma didática como a ação ${data.ticker} (${nomeCurto})${setorTxt} pode ser afetada positivamente ou negativamente com a alta ou a queda do dólar, da inflação e da taxa Selic.`;
 
     try {
-      const res = await fetch("https://api.perplexity.ai/chat/completions", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: "sonar",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          temperature: 0.2,
-          max_tokens: 900,
-          search_domain_filter: [
-            "-reddit.com",
-            "-twitter.com",
-            "-x.com",
-            "-facebook.com",
-            "-instagram.com",
-          ],
-        }),
-      });
-
-      if (res.status === 429) {
-        return {
-          content: null,
-          cached: false,
-          updatedAt: new Date().toISOString(),
-          error: "Limite momentâneo da Perplexity atingido. Tente novamente em alguns segundos.",
-        };
-      }
-      if (res.status === 401) {
-        const body = await res.text();
-        if (body.includes("insufficient_quota")) {
-          return {
-            content: null,
-            cached: false,
-            updatedAt: new Date().toISOString(),
-            error:
-              "Créditos da Perplexity esgotados. Adicione crédito em console.perplexity.ai (créditos de API são separados do Perplexity Pro).",
-          };
-        }
-        return {
-          content: null,
-          cached: false,
-          updatedAt: new Date().toISOString(),
-          error: "Chave da Perplexity inválida. Reconecte o conector.",
-        };
-      }
-      if (!res.ok) {
-        const body = await res.text();
-        console.error("[macro-sensitivity] http", res.status, body);
-        return {
-          content: null,
-          cached: false,
-          updatedAt: new Date().toISOString(),
-          error: `Falha na API da Perplexity (HTTP ${res.status}).`,
-        };
-      }
-
-      const json = (await res.json()) as PerplexityResponse;
-      const text = json.choices?.[0]?.message?.content?.trim();
-      const citations = Array.isArray(json.citations) ? json.citations.slice(0, 10) : [];
+      const g = await geminiSearch(systemPrompt, userPrompt, "macro-sensitivity");
+      const text = g.text;
+      const citations = g.citations;
+      const json = { error: g.error ? { message: g.error } : undefined };
 
       if (!text) {
         return {
           content: null,
           cached: false,
           updatedAt: new Date().toISOString(),
-          error: json.error?.message ?? "Resposta vazia da Perplexity.",
+          error: json.error?.message ?? "Resposta vazia da IA.",
         };
       }
 
@@ -168,7 +94,7 @@ Considere o setor e o modelo de negócio da empresa (exportadora, importadora, e
         content: null,
         cached: false,
         updatedAt: new Date().toISOString(),
-        error: "Não foi possível contatar a Perplexity agora.",
+        error: "Não foi possível contatar o Gemini agora.",
       };
     }
   });
