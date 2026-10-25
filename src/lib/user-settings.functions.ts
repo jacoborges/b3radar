@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { DEFAULT_MONTHLY_SALES_LIMIT, validateMonthlySalesLimit } from "./portfolio-sales-control";
 
 /** Token brapi.dev salvo na conta do usuário (RLS: só o próprio dono lê/grava). */
 export const getMyBrapiToken = createServerFn({ method: "GET" })
@@ -82,4 +83,24 @@ export const setMyStockColumns = createServerFn({ method: "POST" })
     const { error } = await context.supabase.from("user_settings").upsert({ user_id: context.userId, stock_columns: data }, { onConflict: "user_id" });
     if (error) throw error;
     return { ok: true as const };
+  });
+
+export const getMyMonthlySalesLimit = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.from("user_settings")
+      .select("monthly_sales_limit").eq("user_id", context.userId).maybeSingle();
+    if (error) throw new Error("Não foi possível carregar o limite mensal.");
+    return { limit: Number(data?.monthly_sales_limit ?? DEFAULT_MONTHLY_SALES_LIMIT) };
+  });
+
+export const setMyMonthlySalesLimit = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { limit: number }) => ({ limit: validateMonthlySalesLimit(input.limit) }))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("user_settings").upsert(
+      { user_id: context.userId, monthly_sales_limit: data.limit }, { onConflict: "user_id" },
+    );
+    if (error) throw new Error("Não foi possível salvar o limite mensal.");
+    return { limit: data.limit };
   });
