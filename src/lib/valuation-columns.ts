@@ -1,6 +1,6 @@
 /** Colunas de valuation para o cabeçalho (derivadas; não alteram cálculos). */
 import { grahamFromMultiples } from "./graham";
-import { calcPrecoTetoFromEventos, calcPrecoTetoFromYears } from "./preco-teto";
+import { calcPrecoTetoFromEventos } from "./preco-teto";
 import type { EventoSocietario } from "./dividend-intelligence";
 import { margemDdmRapida } from "./valuation-ddm";
 import type { DividendYear } from "./stocks-data";
@@ -24,7 +24,7 @@ export function valuationValue(s: ValuationStock, key: ValuationColumn, divisor:
   }
   if (key === "bazin" || key === "bazinMargem") {
     // média ponderada dos 5 anos fechados de proventos B3 (mesma base do painel Preço Teto)
-    const { teto } = eventosB3 ? calcPrecoTetoFromEventos(eventosB3, divisor) : calcPrecoTetoFromYears(s.dividendos, divisor);
+    const { teto } = calcPrecoTetoFromEventos(eventosB3, divisor);
     if (key === "bazin") return teto;
     return teto && preco && preco > 0 ? ((teto - preco) / preco) * 100 : null;
   }
