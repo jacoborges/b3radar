@@ -58,3 +58,28 @@ export const setMySelectedSectors = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true as const };
   });
+
+/** Preferência do cabeçalho de ativos (indicadores + valuation) salva na conta. */
+export const getMyStockColumns = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ columns: string[] | null; valuation: boolean | null }> => {
+    const { data } = await context.supabase.from("user_settings").select("stock_columns").eq("user_id", context.userId).maybeSingle();
+    const v = data?.stock_columns as { columns?: unknown; valuation?: unknown } | null | undefined;
+    if (!v || typeof v !== "object") return { columns: null, valuation: null };
+    return {
+      columns: Array.isArray(v.columns) ? v.columns.filter((x): x is string => typeof x === "string") : null,
+      valuation: typeof v.valuation === "boolean" ? v.valuation : null,
+    };
+  });
+
+export const setMyStockColumns = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { columns: string[]; valuation: boolean }) => ({
+    columns: (Array.isArray(input?.columns) ? input.columns : []).filter((s) => typeof s === "string" && s.length < 60).slice(0, 80),
+    valuation: input?.valuation === true,
+  }))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("user_settings").upsert({ user_id: context.userId, stock_columns: data }, { onConflict: "user_id" });
+    if (error) throw error;
+    return { ok: true as const };
+  });
