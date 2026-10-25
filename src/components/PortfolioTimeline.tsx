@@ -6,8 +6,10 @@ import { monthlyPerformance, type TimelineInput } from "@/lib/portfolio-timeline
 const MESES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-export function PortfolioTimeline({ name, positions }: { name: string; positions: TimelineInput[] }) {
-  const [year, setYear] = useState(new Date().getFullYear());
+export function PortfolioTimeline({ name, positions, year: selectedYear, onYearChange }: { name: string; positions: TimelineInput[]; year?: number; onYearChange?: (year: number) => void }) {
+  const [localYear, setLocalYear] = useState(new Date().getFullYear());
+  const year = selectedYear ?? localYear;
+  const setYear = onYearChange ?? setLocalYear;
   const months = useMemo(() => monthlyPerformance(positions, year), [positions, year]);
   const [open, setOpen] = useState<number | null>(null);
   const total = months.reduce((s, m) => s + m.total, 0);

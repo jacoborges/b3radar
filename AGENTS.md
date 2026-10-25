@@ -13,6 +13,7 @@
 - Render the global sector selector inline beside stock filters, not as a floating layout control, so navigation actions remain grouped.
 - Calculate portfolio balances and realized returns in the shared pure chronological ledger; retain original purchases and sales so closed positions keep their event history.
 - Feed portfolio monthly timelines from the complete ledger positions, never the active-only summary, so closing an asset cannot remove realized sales or eligible payouts from their months.
+- Compute monthly sale-volume control from complete chronological ledgers across the user's portfolios; keep gross positive-gain tax estimates separate from performance and label them as non-definitive, because losses, operation types and external trades are not a full tax ledger. Persist its limit through owner-scoped authenticated settings and share the timeline year.
 - Insert portfolio sales through an authenticated, owner-scoped atomic snapshot RPC after validating the dated balance; concurrent sale submissions must not oversell a position.
 - Resolve blank simulator purchase prices on the server from the exact date's unadjusted daily close; never silently substitute another trading day.
 - Manual quote refresh uses ordered batches with portfolio tickers first and writes to the shared per-ticker cache; subscribers read that cache so navigation cannot mask refreshed prices with older query data.
