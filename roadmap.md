@@ -29,6 +29,6 @@
 - [x] Marcador de grupos à esquerda do ticker em cada linha da Inteligência de proventos, com popover para associar/criar grupos e persistência na conta.
 
 # Cabeçalho compartilhado das listas
-- [ ] Fixar o cabeçalho da lista principal durante a rolagem.
-- [ ] Adicionar seleção de todos os indicadores fundamentalistas sem repetições e compartilhar a configuração nas demais listas de ativos.
-- [ ] Testar seleção, persistência, cabeçalho fixo e navegação entre listas.
+- [x] Fixar o cabeçalho da lista principal durante a rolagem.
+- [x] Adicionar seleção de todos os indicadores fundamentalistas sem repetições e compartilhar a configuração nas demais listas de ativos.
+- [x] Testar seleção, persistência, cabeçalho fixo e navegação entre listas (Carteira e Simulador preenchidos, seleção preservada após recarregar, celular sem ultrapassar margens).
