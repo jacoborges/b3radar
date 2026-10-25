@@ -1,6 +1,7 @@
 /** Colunas de valuation para o cabeçalho (derivadas; não alteram cálculos). */
 import { grahamFromMultiples } from "./graham";
-import { calcPrecoTetoFromYears } from "./preco-teto";
+import { calcPrecoTetoFromEventos, calcPrecoTetoFromYears } from "./preco-teto";
+import type { EventoSocietario } from "./dividend-intelligence";
 import { margemDdmRapida } from "./valuation-ddm";
 import type { DividendYear } from "./stocks-data";
 
@@ -15,14 +16,15 @@ export const VALUATION_COLUMNS: { key: ValuationColumn; label: string; tip: stri
 
 export type ValuationStock = { preco?: number; pl?: number; pvp?: number; dy?: number; roe?: number; setor?: string; dividendos?: DividendYear[] };
 
-export function valuationValue(s: ValuationStock, key: ValuationColumn, divisor: number): number | null {
+export function valuationValue(s: ValuationStock, key: ValuationColumn, divisor: number, eventosB3?: EventoSocietario[] | null): number | null {
   const preco = s.preco;
   if (key === "graham" || key === "grahamMargem") {
     const g = grahamFromMultiples(s);
     return key === "graham" ? g.precoJusto : g.margem;
   }
   if (key === "bazin" || key === "bazinMargem") {
-    const { teto } = calcPrecoTetoFromYears(s.dividendos, divisor);
+    // média ponderada dos 5 anos fechados de proventos B3 (mesma base do painel Preço Teto)
+    const { teto } = eventosB3 ? calcPrecoTetoFromEventos(eventosB3, divisor) : calcPrecoTetoFromYears(s.dividendos, divisor);
     if (key === "bazin") return teto;
     return teto && preco && preco > 0 ? ((teto - preco) / preco) * 100 : null;
   }
