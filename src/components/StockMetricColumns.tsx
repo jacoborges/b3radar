@@ -27,17 +27,17 @@ function splitCols(columns: IndicatorKey[]) {
   return [columns.slice(0, at), columns.slice(at)] as const;
 }
 
-const TH = "min-w-32 px-3 py-3 text-right text-xs font-medium text-muted-foreground";
-const TD = "min-w-32 whitespace-nowrap px-3 py-3 text-right font-mono text-xs";
+const TH = "px-2 py-2 text-right align-bottom text-[11px] font-medium leading-tight text-muted-foreground";
+const TD = "whitespace-nowrap px-2 py-3 text-right font-mono text-xs tabular-nums";
 
 export function StockMetricHeaders() {
   const [all] = useStockColumns();
   const [a, b] = splitCols(all);
   const [valuation] = useValuationColumns();
-  const ind = (key: IndicatorKey) => <th key={key} data-indicator={key} className={TH}><span className="inline-flex items-center gap-1 whitespace-nowrap">{stockColumnLabel(key)}<InfoTip title={INDICATORS[key].short} fundamentalista={INDICATORS[key].fundamentalista} tecnica={INDICATORS[key].tecnica} /></span></th>;
+  const ind = (key: IndicatorKey) => <th key={key} data-indicator={key} className={TH}><span className="inline-flex items-center justify-end gap-0.5 text-balance">{stockColumnLabel(key)}<InfoTip title={INDICATORS[key].short} fundamentalista={INDICATORS[key].fundamentalista} tecnica={INDICATORS[key].tecnica} /></span></th>;
   return <>
     {a.map(ind)}
-    {valuation && VALUATION_COLUMNS.map(c => <th key={c.key} data-valuation={c.key} className={TH}><span className="inline-flex items-center gap-1 whitespace-nowrap">{c.label}<InfoTip title={c.label} fundamentalista={c.tip} tecnica="Valuation estimado com os indicadores da lista; o cálculo detalhado fica no ativo expandido." /></span></th>)}
+    {valuation && VALUATION_COLUMNS.map(c => <th key={c.key} data-valuation={c.key} className={TH}><span className="inline-flex items-center justify-end gap-0.5 text-balance">{c.label}<InfoTip title={c.label} fundamentalista={c.tip} tecnica="Valuation estimado com os indicadores da lista; o cálculo detalhado fica no ativo expandido." /></span></th>)}
     {b.map(ind)}
   </>;
 }

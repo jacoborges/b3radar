@@ -8,10 +8,10 @@ import type { DividendYear } from "./stocks-data";
 export type ValuationColumn = "graham" | "grahamMargem" | "bazin" | "bazinMargem" | "ddmMargem";
 export const VALUATION_COLUMNS: { key: ValuationColumn; label: string; tip: string }[] = [
   { key: "graham", label: "Graham", tip: "Preço justo de Graham = √(22,5 × LPA × VPA)." },
-  { key: "grahamMargem", label: "Margem Graham", tip: "Diferença entre o preço justo de Graham e a cotação atual." },
+  { key: "grahamMargem", label: "Marg. Graham", tip: "Diferença entre o preço justo de Graham e a cotação atual." },
   { key: "bazin", label: "Teto Bazin", tip: "Média dos proventos dos 5 anos fechados ÷ divisor configurado." },
-  { key: "bazinMargem", label: "Margem Bazin", tip: "Diferença entre o preço teto Bazin e a cotação atual." },
-  { key: "ddmMargem", label: "Margem DDM", tip: "Estimativa rápida do Modelo de Gordon (somente bancos e seguradoras)." },
+  { key: "bazinMargem", label: "Marg. Bazin", tip: "Diferença entre o preço teto Bazin e a cotação atual." },
+  { key: "ddmMargem", label: "Marg. DDM", tip: "Estimativa rápida do Modelo de Gordon (somente bancos e seguradoras)." },
 ];
 
 export type ValuationStock = { preco?: number; pl?: number; pvp?: number; dy?: number; roe?: number; setor?: string; dividendos?: DividendYear[] };
