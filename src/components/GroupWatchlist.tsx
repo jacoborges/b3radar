@@ -49,7 +49,7 @@ export function GroupWatchlist({ group }: { group: StockGroup }) {
               <StockGroupMarker ticker={r.ticker} />
               <div className="min-w-0">
                 <p className="font-mono font-semibold">{r.ticker}</p>
-                <p className="truncate text-xs text-muted-foreground">{r.base?.empresa ?? ""}</p>
+                <p className="truncate text-xs text-muted-foreground">{r.base?.nome ?? ""}</p>
               </div>
               <div className="ml-auto text-right">
                 <p className="font-mono text-sm">{brl(r.preco)}</p>

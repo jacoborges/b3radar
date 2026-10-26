@@ -22,6 +22,9 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
+import { GroupWatchlist } from "@/components/GroupWatchlist";
+import { StockGroupsSheet } from "@/components/StockGroupsSheet";
+import { useStockGroups } from "@/hooks/use-stock-groups";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
 import { StockSortSelect } from "@/components/StockSortSelect";
@@ -198,6 +201,9 @@ function CarteiraPage() {
   const mDeleteSale = useMutation({ mutationFn: (id: string) => callDeleteSale({ data: { id } }), onSuccess: invalidate });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { groups } = useStockGroups();
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const selectedGroup = groups.find((g) => g.id === groupId) ?? null;
   const [newName, setNewName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -422,7 +428,7 @@ function CarteiraPage() {
                       <button
                         type="button"
                         className="flex-1 truncate text-left text-sm font-medium"
-                        onClick={() => setSelectedId(p.id)}
+                        onClick={() => { setSelectedId(p.id); setGroupId(null); }}
                       >
                         {p.name}
                         <span className="ml-2 text-xs text-muted-foreground">
@@ -465,6 +471,26 @@ function CarteiraPage() {
               );
             })}
           </div>
+          <div className="rounded-xl border border-border/60 bg-card p-2">
+            <p className="px-2 pb-1 pt-1 text-xs font-medium text-muted-foreground">Grupos</p>
+            {groups.length === 0 ? (
+              <div className="space-y-2 p-2 text-xs text-muted-foreground">
+                <p>Você ainda não criou grupos.</p>
+                <StockGroupsSheet filter={[]} onFilterChange={() => {}} />
+              </div>
+            ) : groups.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => setGroupId(g.id)}
+                className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${groupId === g.id ? "bg-primary/10 text-primary" : "hover:bg-muted/40"}`}
+              >
+                <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: g.color }} />
+                <span className="flex-1 truncate font-medium">{g.name}</span>
+                <span className="text-xs text-muted-foreground">{g.tickers.length}</span>
+              </button>
+            ))}
+          </div>
         </aside>
 
         {/* Detalhe da carteira */}
@@ -473,7 +499,9 @@ function CarteiraPage() {
             <StockSortSelect />
             <div className="ml-auto"><StockColumnsSelect /></div>
           </div>
-          {!selected ? (
+          {selectedGroup ? (
+            <GroupWatchlist group={selectedGroup} />
+          ) : !selected ? (
             <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
               Selecione ou crie uma carteira para começar.
             </div>
