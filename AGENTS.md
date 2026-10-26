@@ -21,3 +21,4 @@
 - Refresh macro indicators in bounded per-series requests with progressive cache invalidation; deduplicate and sort dated observations before upsert because official APIs can repeat periods across date windows.
 - Share stock ordering through one selector, pure comparator and session-scoped query state across asset lists; portfolio rows retain active-before-closed priority and sorting never changes ledger calculations.
 - Share configurable asset metrics through a normalized unique-key model and query-cache preference with browser persistence; table and position-card renderers use the same metadata without altering financial calculations. Main assets use one bounded scroll region and a single aligned opaque sticky header across sectors.
+- Keep portfolio chart viewing in a dedicated fullscreen dialog component using the public TradingView embed; chart controls stay separate from position-history toggles to avoid nested buttons.
