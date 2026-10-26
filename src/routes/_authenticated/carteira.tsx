@@ -382,7 +382,7 @@ function CarteiraPage() {
               </p>
             )}
             {portfolios.map((p) => {
-              const isActive = selected?.id === p.id;
+              const isActive = !selectedGroup && selected?.id === p.id;
               return (
                 <div
                   key={p.id}
