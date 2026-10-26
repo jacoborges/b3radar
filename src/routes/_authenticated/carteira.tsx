@@ -22,6 +22,7 @@ import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
+import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
@@ -755,10 +756,13 @@ function PositionRow({
 
   return (
     <div className="rounded-xl border border-border/60 bg-card">
-      <button
-        type="button"
+      <div className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left">
+      <Button
+        variant="ghost"
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left"
+        aria-expanded={open}
+        aria-label={`Ver histórico de ${pos.ticker}`}
+        className="h-auto flex-wrap justify-start gap-3 p-0 hover:bg-transparent"
       >
         {open ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -769,9 +773,11 @@ function PositionRow({
         <Badge variant="outline" className="font-mono text-xs">
           {closed ? "Encerrada" : `${qty(pos.totalQty)} un.`}
         </Badge>
+      </Button>
         <span className="text-xs text-muted-foreground">
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
         </span>
+        <PortfolioChartButton ticker={pos.ticker} />
         {!closed && (
           <span className="ml-auto text-right">
             <span className={`block text-sm font-semibold ${toneClass(pos.result)}`}>
@@ -782,7 +788,7 @@ function PositionRow({
             </span>
           </span>
         )}
-      </button>
+      </div>
       <div className={closed ? "text-muted-foreground/50" : ""}><StockMetricsStrip stock={{ ...stock, preco: price ?? undefined }} /></div>
 
       {open && (
