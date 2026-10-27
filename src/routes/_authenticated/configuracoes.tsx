@@ -33,14 +33,14 @@ import {
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   head: () => ({
     meta: [
-      { title: "Configurações — B3 Radar" },
+      { title: "Ajustes — B3 Radar" },
       {
         name: "description",
         content:
           "Ajuste seu token da brapi.dev para acelerar a atualização das cotações em tempo real do B3 Radar.",
       },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Configurações — B3 Radar" },
+      { property: "og:title", content: "Ajustes — B3 Radar" },
       { property: "og:description", content: "Ajuste as preferências de cotações e análises do B3 Radar." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
