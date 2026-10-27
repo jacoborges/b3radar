@@ -22,6 +22,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -359,17 +365,31 @@ function HomePage() {
 
 
 
-              <Button
-                asChild
-                variant="outline"
-                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
-                title="Carteira"
-              >
-                <Link to="/carteira" aria-label="Carteira">
-                  <Wallet className="h-4 w-4" />
-                  <span>Carteira</span>
-                </Link>
-              </Button>
+              <TooltipProvider delayDuration={150}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                    >
+                      <Link to="/carteira" aria-label="Carteira">
+                        <Wallet className="h-4 w-4" />
+                        <span>Carteira</span>
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="bottom"
+                    align="start"
+                    className="max-w-xs border border-border/60 bg-popover/95 px-3 py-2 text-xs leading-relaxed text-muted-foreground backdrop-blur"
+                  >
+                    Visualize sua carteira, o valuation de suas ações, sua
+                    performance anual, as suas vendas, e simule o balanceamento
+                    de seus ativos.
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               <Button
                 asChild
