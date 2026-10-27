@@ -16,6 +16,7 @@ import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedDividendosRouteImport } from './routes/_authenticated/dividendos'
 import { Route as AuthenticatedMacroRouteImport } from './routes/_authenticated/macro'
+import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedSimuladorRouteImport } from './routes/_authenticated/simulador'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as ApiPublicRefreshProventosRouteImport } from './routes/api/public/refresh-proventos'
@@ -55,6 +56,11 @@ const AuthenticatedMacroRoute = AuthenticatedMacroRouteImport.update({
   path: '/macro',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRankingRoute = AuthenticatedRankingRouteImport.update({
+  id: '/ranking',
+  path: '/ranking',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSimuladorRoute = AuthenticatedSimuladorRouteImport.update({
   id: '/simulador',
   path: '/simulador',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
   '/macro': typeof AuthenticatedMacroRoute
+  '/ranking': typeof AuthenticatedRankingRoute
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/api/public/refresh-proventos': typeof ApiPublicRefreshProventosRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
   '/macro': typeof AuthenticatedMacroRoute
+  '/ranking': typeof AuthenticatedRankingRoute
   '/simulador': typeof AuthenticatedSimuladorRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/': typeof AuthenticatedIndexRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dividendos': typeof AuthenticatedDividendosRoute
   '/_authenticated/macro': typeof AuthenticatedMacroRoute
+  '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/simulador': typeof AuthenticatedSimuladorRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -116,6 +125,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dividendos'
     | '/macro'
+    | '/ranking'
     | '/simulador'
     | '/usuarios'
     | '/api/public/refresh-proventos'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/dividendos'
     | '/macro'
+    | '/ranking'
     | '/simulador'
     | '/usuarios'
     | '/'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configuracoes'
     | '/_authenticated/dividendos'
     | '/_authenticated/macro'
+    | '/_authenticated/ranking'
     | '/_authenticated/simulador'
     | '/_authenticated/usuarios'
     | '/_authenticated/'
@@ -201,6 +213,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMacroRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ranking': {
+      id: '/_authenticated/ranking'
+      path: '/ranking'
+      fullPath: '/ranking'
+      preLoaderRoute: typeof AuthenticatedRankingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/simulador': {
       id: '/_authenticated/simulador'
       path: '/simulador'
@@ -230,6 +249,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDividendosRoute: typeof AuthenticatedDividendosRoute
   AuthenticatedMacroRoute: typeof AuthenticatedMacroRoute
+  AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedSimuladorRoute: typeof AuthenticatedSimuladorRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -240,6 +260,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDividendosRoute: AuthenticatedDividendosRoute,
   AuthenticatedMacroRoute: AuthenticatedMacroRoute,
+  AuthenticatedRankingRoute: AuthenticatedRankingRoute,
   AuthenticatedSimuladorRoute: AuthenticatedSimuladorRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
