@@ -26,6 +26,7 @@ import { GroupWatchlist } from "@/components/GroupWatchlist";
 import { StockGroupsSheet } from "@/components/StockGroupsSheet";
 import { useStockGroups } from "@/hooks/use-stock-groups";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
+import { PortfolioRebalanceButton } from "@/components/PortfolioRebalanceButton";
 import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
@@ -806,6 +807,7 @@ function PositionRow({
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
         </span>
         <PortfolioChartButton ticker={pos.ticker} />
+        <PortfolioRebalanceButton ticker={pos.ticker} qty={pos.totalQty} avgPrice={pos.avgPrice} price={price ?? null} />
         {!closed && (
           <span className="ml-auto text-right">
             <span className={`block text-sm font-semibold ${toneClass(pos.result)}`}>
