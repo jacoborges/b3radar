@@ -33,25 +33,25 @@ export function AccountControls() {
         <Button
           asChild
           variant="outline"
-          size="icon"
-          className="shrink-0 border-border/60 bg-input/60"
+          className="shrink-0 gap-1.5 px-2.5 border-border/60 bg-input/60"
           title="Usuários"
         >
           <Link to="/usuarios" aria-label="Usuários">
             <Users className="h-4 w-4" />
+            <span>Usuários</span>
           </Link>
         </Button>
       )}
 
       <Button
         variant="outline"
-        size="icon"
-        className="shrink-0 border-border/60 bg-input/60"
+        className="shrink-0 gap-1.5 px-2.5 border-border/60 bg-input/60"
         title="Sair"
         aria-label="Sair"
         onClick={signOut}
       >
         <LogOut className="h-4 w-4" />
+        <span>Sair</span>
       </Button>
     </>
   );

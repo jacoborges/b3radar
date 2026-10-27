@@ -88,7 +88,7 @@ function SettingsPage() {
             className="h-6 w-1 rounded-full"
             style={{ backgroundColor: "var(--color-primary)" }}
           />
-          <h1 className="text-xl font-bold tracking-tight">Configurações</h1>
+          <h1 className="text-xl font-bold tracking-tight">Ajustes</h1>
         </div>
       </header>
 
