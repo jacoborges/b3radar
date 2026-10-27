@@ -22,3 +22,4 @@
 - Share stock ordering through one selector, pure comparator and session-scoped query state across asset lists; portfolio rows retain active-before-closed priority and sorting never changes ledger calculations.
 - Share configurable asset metrics through a normalized unique-key model and query-cache preference with browser persistence; table and position-card renderers use the same metadata without altering financial calculations. Main assets use one bounded scroll region and a single aligned opaque sticky header across sectors.
 - Keep portfolio chart viewing in a dedicated fullscreen dialog component using the public TradingView embed; chart controls stay separate from position-history toggles to avoid nested buttons.
+- Sector ranking math lives in pure src/lib/ranking.ts (100 shares, Data Com window, corporate-event quantity adjust); server fn only fetches data, so rules stay testable.

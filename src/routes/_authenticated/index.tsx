@@ -12,6 +12,7 @@ import {
   Coins,
   Wallet,
   LineChart,
+  Trophy,
   Landmark,
   X,
 } from "lucide-react";
@@ -379,6 +380,18 @@ function HomePage() {
               >
                 <Link to="/simulador" aria-label="Simulador de Carteira">
                   <LineChart className="h-4 w-4" />
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                variant="outline"
+                size="icon"
+                className="shrink-0 border-border/60 bg-input/60"
+                title="Ranking por setor"
+              >
+                <Link to="/ranking" aria-label="Ranking por setor">
+                  <Trophy className="h-4 w-4" />
                 </Link>
               </Button>
 
