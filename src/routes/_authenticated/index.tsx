@@ -362,72 +362,72 @@ function HomePage() {
               <Button
                 asChild
                 variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
                 title="Carteira"
               >
                 <Link to="/carteira" aria-label="Carteira">
                   <Wallet className="h-4 w-4" />
+                  <span>Carteira</span>
                 </Link>
               </Button>
 
               <Button
                 asChild
                 variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
                 title="Simulador de Carteira"
               >
                 <Link to="/simulador" aria-label="Simulador de Carteira">
                   <LineChart className="h-4 w-4" />
+                  <span>Simulador</span>
                 </Link>
               </Button>
 
               <Button
                 asChild
                 variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
                 title="Ranking por setor"
               >
                 <Link to="/ranking" aria-label="Ranking por setor">
                   <Trophy className="h-4 w-4" />
+                  <span>Ranking</span>
                 </Link>
               </Button>
 
               <Button
                 asChild
                 variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
                 title="Dados Macroeconômicos"
               >
                 <Link to="/macro" aria-label="Dados Macroeconômicos">
                   <Landmark className="h-4 w-4" />
+                  <span>Macro</span>
                 </Link>
               </Button>
 
               <Button
                 asChild
                 variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
                 title="Proventos"
               >
                 <Link to="/dividendos" aria-label="Proventos">
                   <Coins className="h-4 w-4" />
+                  <span>Proventos</span>
                 </Link>
               </Button>
 
               <Button
                 asChild
                 variant="outline"
-                size="icon"
-                className="shrink-0 border-border/60 bg-input/60"
-                title="Configurações"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                title="Ajustes"
               >
-                <Link to="/configuracoes" aria-label="Configurações">
+                <Link to="/configuracoes" aria-label="Ajustes">
                   <Settings className="h-4 w-4" />
+                  <span>Ajustes</span>
                 </Link>
               </Button>
 

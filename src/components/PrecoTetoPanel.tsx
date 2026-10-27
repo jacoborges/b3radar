@@ -98,7 +98,7 @@ export function PrecoTetoPanel({ ticker, nome, precoAtual, historico }: Props) {
         </h3>
         <InfoTip
           title="Preço Teto (método Bazin)"
-          fundamentalista={`Soma dividendos + JCP de cada um dos cinco anos fechados (dados da B3), divide o somatório por 5 para obter a média ponderada e divide essa média pelo divisor configurado (${divisorTxt}), o yield mínimo desejado. O resultado é o preço máximo a pagar para ainda obter esse retorno anual em proventos. Ajuste o divisor em Configurações.`}
+          fundamentalista={`Soma dividendos + JCP de cada um dos cinco anos fechados (dados da B3), divide o somatório por 5 para obter a média ponderada e divide essa média pelo divisor configurado (${divisorTxt}), o yield mínimo desejado. O resultado é o preço máximo a pagar para ainda obter esse retorno anual em proventos. Ajuste o divisor em Ajustes.`}
           tecnica="Comprar abaixo do preço teto amplia a margem de segurança; acima dele, o retorno em proventos fica abaixo do alvo e o ativo tende a estar caro para estratégias de renda."
         />
         {teto !== null && (
