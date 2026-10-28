@@ -15,6 +15,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedCarteiraRouteImport } from './routes/_authenticated/carteira'
 import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedDividendosRouteImport } from './routes/_authenticated/dividendos'
+import { Route as AuthenticatedIndicesRouteImport } from './routes/_authenticated/indices'
 import { Route as AuthenticatedMacroRouteImport } from './routes/_authenticated/macro'
 import { Route as AuthenticatedRankingRouteImport } from './routes/_authenticated/ranking'
 import { Route as AuthenticatedSimuladorRouteImport } from './routes/_authenticated/simulador'
@@ -51,6 +52,11 @@ const AuthenticatedDividendosRoute = AuthenticatedDividendosRouteImport.update({
   path: '/dividendos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedIndicesRoute = AuthenticatedIndicesRouteImport.update({
+  id: '/indices',
+  path: '/indices',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMacroRoute = AuthenticatedMacroRouteImport.update({
   id: '/macro',
   path: '/macro',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
+  '/indices': typeof AuthenticatedIndicesRoute
   '/macro': typeof AuthenticatedMacroRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/simulador': typeof AuthenticatedSimuladorRoute
@@ -95,6 +102,7 @@ export interface FileRoutesByTo {
   '/carteira': typeof AuthenticatedCarteiraRoute
   '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/dividendos': typeof AuthenticatedDividendosRoute
+  '/indices': typeof AuthenticatedIndicesRoute
   '/macro': typeof AuthenticatedMacroRoute
   '/ranking': typeof AuthenticatedRankingRoute
   '/simulador': typeof AuthenticatedSimuladorRoute
@@ -109,6 +117,7 @@ export interface FileRoutesById {
   '/_authenticated/carteira': typeof AuthenticatedCarteiraRoute
   '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/dividendos': typeof AuthenticatedDividendosRoute
+  '/_authenticated/indices': typeof AuthenticatedIndicesRoute
   '/_authenticated/macro': typeof AuthenticatedMacroRoute
   '/_authenticated/ranking': typeof AuthenticatedRankingRoute
   '/_authenticated/simulador': typeof AuthenticatedSimuladorRoute
@@ -124,6 +133,7 @@ export interface FileRouteTypes {
     | '/carteira'
     | '/configuracoes'
     | '/dividendos'
+    | '/indices'
     | '/macro'
     | '/ranking'
     | '/simulador'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/carteira'
     | '/configuracoes'
     | '/dividendos'
+    | '/indices'
     | '/macro'
     | '/ranking'
     | '/simulador'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/_authenticated/carteira'
     | '/_authenticated/configuracoes'
     | '/_authenticated/dividendos'
+    | '/_authenticated/indices'
     | '/_authenticated/macro'
     | '/_authenticated/ranking'
     | '/_authenticated/simulador'
@@ -206,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDividendosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/indices': {
+      id: '/_authenticated/indices'
+      path: '/indices'
+      fullPath: '/indices'
+      preLoaderRoute: typeof AuthenticatedIndicesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/macro': {
       id: '/_authenticated/macro'
       path: '/macro'
@@ -248,6 +267,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCarteiraRoute: typeof AuthenticatedCarteiraRoute
   AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedDividendosRoute: typeof AuthenticatedDividendosRoute
+  AuthenticatedIndicesRoute: typeof AuthenticatedIndicesRoute
   AuthenticatedMacroRoute: typeof AuthenticatedMacroRoute
   AuthenticatedRankingRoute: typeof AuthenticatedRankingRoute
   AuthenticatedSimuladorRoute: typeof AuthenticatedSimuladorRoute
@@ -259,6 +279,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCarteiraRoute: AuthenticatedCarteiraRoute,
   AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedDividendosRoute: AuthenticatedDividendosRoute,
+  AuthenticatedIndicesRoute: AuthenticatedIndicesRoute,
   AuthenticatedMacroRoute: AuthenticatedMacroRoute,
   AuthenticatedRankingRoute: AuthenticatedRankingRoute,
   AuthenticatedSimuladorRoute: AuthenticatedSimuladorRoute,

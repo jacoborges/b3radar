@@ -23,6 +23,7 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import { GroupWatchlist } from "@/components/GroupWatchlist";
+import { Gauge } from "lucide-react";
 import { MarketIndicesList } from "@/components/MarketIndicesList";
 import { StockGroupsSheet } from "@/components/StockGroupsSheet";
 import { useStockGroups } from "@/hooks/use-stock-groups";
@@ -205,6 +206,7 @@ function CarteiraPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { groups } = useStockGroups();
   const [groupId, setGroupId] = useState<string | null>(null);
+  const [showIndices, setShowIndices] = useState(false);
   const selectedGroup = groups.find((g) => g.id === groupId) ?? null;
   const [newName, setNewName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -430,7 +432,7 @@ function CarteiraPage() {
                       <button
                         type="button"
                         className="flex-1 truncate text-left text-sm font-medium"
-                        onClick={() => { setSelectedId(p.id); setGroupId(null); }}
+                        onClick={() => { setSelectedId(p.id); setGroupId(null); setShowIndices(false); }}
                       >
                         {p.name}
                         <span className="ml-2 text-xs text-muted-foreground">
@@ -484,7 +486,7 @@ function CarteiraPage() {
               <button
                 key={g.id}
                 type="button"
-                onClick={() => setGroupId(g.id)}
+                onClick={() => { setGroupId(g.id); setShowIndices(false); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${groupId === g.id ? "bg-primary/10 text-primary" : "hover:bg-muted/40"}`}
               >
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: g.color }} />
@@ -492,6 +494,16 @@ function CarteiraPage() {
                 <span className="text-xs text-muted-foreground">{g.tickers.length}</span>
               </button>
             ))}
+          </div>
+          <div className="mt-4 border-t border-border/60 pt-3">
+            <button
+              type="button"
+              onClick={() => { setShowIndices(true); setGroupId(null); }}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${showIndices ? "bg-primary/10 text-primary" : "hover:bg-muted/40"}`}
+            >
+              <Gauge className="h-4 w-4 shrink-0" />
+              <span className="flex-1 font-medium">Índices de mercado</span>
+            </button>
           </div>
         </aside>
 
@@ -501,7 +513,9 @@ function CarteiraPage() {
             <StockSortSelect />
             <div className="ml-auto"><StockColumnsSelect /></div>
           </div>
-          {selectedGroup ? (
+          {showIndices ? (
+            <MarketIndicesList compact />
+          ) : selectedGroup ? (
             <GroupWatchlist group={selectedGroup} />
           ) : !selected ? (
             <div className="rounded-xl border border-border/60 bg-card p-8 text-center text-sm text-muted-foreground">
