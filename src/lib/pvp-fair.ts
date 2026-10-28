@@ -10,6 +10,6 @@ export function pvpFairCell(preco?: number, pvp?: number) {
   const v = fairPriceAtPvp1(preco, pvp);
   if (v == null || preco == null) return { text: "—", cls: "" };
   const diff = (v / preco - 1) * 100;
-  const text = `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (${diff >= 0 ? "+" : ""}${diff.toFixed(0)}%)`;
+  const text = `${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${diff >= 0 ? "↑" : "↓"}${Math.abs(diff).toFixed(0)}%`;
   return { text, cls: diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : "" };
 }
