@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Pencil,
   Plus,
+  RefreshCw,
   TrendingDown,
   Trash2,
   Wallet,
@@ -220,6 +221,17 @@ function CarteiraPage() {
     [portfolios],
   );
   const quotes = useLiveQuotes(tickers);
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshPrices = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      const held = portfolios.flatMap((p) => p.lots.map((l) => l.ticker));
+      await quotes.refresh(Array.from(new Set([...held, ...tickers])));
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const corporateEvents = useSimProventos(tickers);
 
   const priceOf = (ticker: string): number | null => {
@@ -333,6 +345,18 @@ function CarteiraPage() {
                 ? `Cotações ${quotes.updatedAt.toLocaleTimeString("pt-BR")}`
                 : "Cotações do último fechamento"}
           </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={refreshing}
+            aria-busy={refreshing}
+            onClick={refreshPrices}
+            title="Atualizar cotações, priorizando os ativos da carteira"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin motion-reduce:animate-none" : ""}`} />
+            {refreshing ? "Atualizando…" : "Atualizar"}
+          </Button>
         </div>
         {quotes.error && (
           <div className="mx-auto w-full max-w-6xl px-3 pb-3 text-xs text-destructive sm:px-6 md:px-8">
