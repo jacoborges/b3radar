@@ -5,6 +5,8 @@ export function fairPriceAtPvp1(preco: number | null | undefined, pvp: number | 
 }
 
 export const PVP_FAIR_TIP = "Preço que a ação teria se fosse negociada exatamente pelo seu valor patrimonial (P/VP = 1). Equivale ao valor patrimonial por ação (VPA).";
+export const PVP_FAIR_SHORT = "Preço com P/VP = 1";
+export const PVP_FAIR_TECNICA = "Cotação atual ÷ P/VP. Verde: valor justo acima do preço (descontada); vermelho: abaixo (valorizada).";
 
 export function pvpFairCell(preco?: number, pvp?: number) {
   const v = fairPriceAtPvp1(preco, pvp);
