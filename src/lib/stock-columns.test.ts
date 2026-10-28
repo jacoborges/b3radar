@@ -36,7 +36,7 @@ describe("shared stock columns", () => {
   });
   it("adds the column to saved preferences that predate it, in the default position", () => {
     expect(withPvpFairColumn(["preco", "variacaoDia", "dy", "pvp"])).toEqual(["preco", "variacaoDia", PVP_FAIR_KEY, "dy", "pvp"]);
-    const already = ["preco", "variacaoDia", PVP_FAIR_KEY, "dy"];
+    const already: StockColumnKey[] = ["preco", "variacaoDia", PVP_FAIR_KEY, "dy"];
     expect(withPvpFairColumn(already)).toBe(already);
     expect(withPvpFairColumn(["preco", "dy"])).toEqual(["preco", "dy", PVP_FAIR_KEY]);
   });
