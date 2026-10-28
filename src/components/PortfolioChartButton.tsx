@@ -3,10 +3,10 @@ import { ChartCandlestick } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-export function PortfolioChartButton({ ticker }: { ticker: string }) {
+export function PortfolioChartButton({ ticker, symbol }: { ticker: string; symbol?: string }) {
   const [loaded, setLoaded] = useState(false);
   const params = new URLSearchParams({
-    symbol: `BMFBOVESPA:${ticker}`,
+    symbol: symbol ?? `BMFBOVESPA:${ticker}`,
     interval: "D",
     timezone: "America/Sao_Paulo",
     theme: "dark",

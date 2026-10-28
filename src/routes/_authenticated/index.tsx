@@ -1,3 +1,4 @@
+import { Gauge } from "lucide-react";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -412,6 +413,18 @@ function HomePage() {
                 <Link to="/ranking" aria-label="Ranking por setor">
                   <Trophy className="h-4 w-4" />
                   <span>Ranking</span>
+                </Link>
+              </Button>
+
+              <Button
+                asChild
+                variant="outline"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                title="Índices de mercado"
+              >
+                <Link to="/indices" aria-label="Índices de mercado">
+                  <Gauge className="h-4 w-4" />
+                  <span>Índices</span>
                 </Link>
               </Button>
 
