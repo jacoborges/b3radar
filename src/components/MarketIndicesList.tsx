@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { InfoTip } from "@/components/InfoTip";
+import { HelpCircle } from "lucide-react";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { getMarketIndices, type MarketIndexRow } from "@/lib/market-indices.functions";
 import { sentimentFromScore } from "@/lib/market-sentiment";
@@ -38,7 +38,7 @@ export function MarketIndicesList({ compact = false }: { compact?: boolean }) {
           <h2 className="text-base font-semibold">Índices de mercado</h2>
           <p className="text-xs text-muted-foreground">
             Sensação geral do mercado: <Sentiment score={avg} />
-            <InfoTip text="Consenso técnico do TradingView (médias móveis e osciladores). Não há base pública e gratuita com recomendações de casas de análise e fundos internacionais por índice, então este termômetro reflete o mercado técnico." />
+            <span title={"Consenso técnico do TradingView (médias móveis e osciladores). Não há base pública e gratuita com recomendações de casas de análise e fundos internacionais por índice, então este termômetro reflete o mercado técnico."} className="ml-1 inline-flex cursor-help text-muted-foreground"><HelpCircle className="h-3.5 w-3.5" /></span>
           </p>
         </div>
         <Button size="sm" variant="outline" onClick={() => q.refetch()} disabled={q.isFetching} className="gap-2">
@@ -81,7 +81,7 @@ function Row({ r, compact }: { r: MarketIndexRow; compact: boolean }) {
   return (
     <tr className="border-b border-border/30 last:border-0">
       <td className="px-3 py-2">
-        <div className="flex items-center gap-1 font-medium">{r.name}<InfoTip text={r.description} /></div>
+        <div className="flex items-center gap-1 font-medium">{r.name}<span title={r.description} className="ml-1 inline-flex cursor-help text-muted-foreground"><HelpCircle className="h-3.5 w-3.5" /></span></div>
         {!compact && <div className="text-[11px] text-muted-foreground">{r.proxy ?? r.symbol.split(":")[1]} · {r.currency}</div>}
       </td>
       <td className="px-2 py-2 text-right tabular-nums">
