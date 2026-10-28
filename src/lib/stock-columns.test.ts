@@ -6,6 +6,7 @@ import {
   PVP_FAIR_KEY,
   stockColumnLabel,
   STOCK_COLUMN_KEYS,
+  type StockColumnKey,
   withPvpFairColumn,
 } from "./stock-columns";
 
