@@ -23,6 +23,7 @@ import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import { GroupWatchlist } from "@/components/GroupWatchlist";
+import { MarketIndicesList } from "@/components/MarketIndicesList";
 import { StockGroupsSheet } from "@/components/StockGroupsSheet";
 import { useStockGroups } from "@/hooks/use-stock-groups";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
