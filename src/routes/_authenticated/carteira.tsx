@@ -522,11 +522,13 @@ function CarteiraPage() {
           <div className="mt-4 border-t border-border/60 pt-3">
             <button
               type="button"
-              onClick={() => { setShowIndices(true); setGroupId(null); }}
-              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${showIndices ? "bg-primary/10 text-primary" : "hover:bg-muted/40"}`}
+              aria-pressed={showIndices}
+              onClick={() => { setShowIndices((v) => !v); setGroupId(null); }}
+              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${showIndices ? "bg-emerald-500/15 text-emerald-400" : "hover:bg-muted/40"}`}
             >
               <Gauge className="h-4 w-4 shrink-0" />
               <span className="flex-1 font-medium">Índices de mercado</span>
+              {showIndices && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden />}
             </button>
           </div>
         </aside>
