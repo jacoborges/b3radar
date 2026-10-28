@@ -610,7 +610,7 @@ function DividendosPage() {
               {!isLoading && ranked.length === 0 && (
                 <tr>
                   <td
-                    colSpan={7 + columns.length + (columns.includes("pvp") ? 1 : 0)}
+                    colSpan={7 + columns.length}
                     className="p-8 text-center text-sm text-muted-foreground"
                   >
                     Nenhum ativo encontrado para este filtro.
