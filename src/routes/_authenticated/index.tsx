@@ -121,7 +121,7 @@ function HomePage() {
   const [search, setSearch] = useState("");
   const [baseColumns] = useStockColumns();
   const [valuationOn] = useValuationColumns();
-  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
+  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) + (baseColumns.includes("pvp") ? 1 : 0) };
   const { groups: stockGroups } = useStockGroups();
   const [groupFilter, setGroupFilter] = useState<string[]>([]);
   const [tipo, setTipo] = useState<Tipo>("ALL");
@@ -600,7 +600,7 @@ function StockTable({
 }) {
   const [baseColumns] = useStockColumns();
   const [valuationOn] = useValuationColumns();
-  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
+  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) + (baseColumns.includes("pvp") ? 1 : 0) };
   return (
     <>
       {/* Mobile: card list */}

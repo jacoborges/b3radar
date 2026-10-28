@@ -112,7 +112,7 @@ const FREQ_OPTS: Array<"ALL" | Frequencia> = [
 function DividendosPage() {
   const [baseColumns] = useStockColumns();
   const [valuationOn] = useValuationColumns();
-  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
+  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) + (baseColumns.includes("pvp") ? 1 : 0) };
   const { stocks } = useAllStocks();
   const [sort] = useStockSort();
   const { rows, updatedAt, isLoading, isFetching, pendentes, coletando } =
