@@ -1,5 +1,5 @@
 import { Gauge, ChevronDown, ChevronUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { listPortfolios } from "@/lib/portfolio.functions";
@@ -263,10 +263,25 @@ function HomePage() {
 
   const total = filtered.length;
 
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerH, setHeaderH] = useState(0);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const update = () => setHeaderH(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background"
+      style={{ "--radar-header-h": `${headerH}px` } as import("react").CSSProperties}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
+      <header ref={headerRef} className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div style={{ zoom: 0.8 }} className="mx-auto w-full max-w-[1750px] px-3 py-4 sm:px-6 md:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
