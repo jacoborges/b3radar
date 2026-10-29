@@ -328,7 +328,34 @@ function HomePage() {
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border/40 pt-3">
+              <StockGroupsSheet filter={groupFilter} onFilterChange={setGroupFilter} />
+              <VisibleSectorsSheet />
+              <StockFilterSheet
+                filters={filters}
+                setFilters={setFilters}
+                activeCount={activeFilters.length + extraActiveCount}
+                debtColors={debtColors}
+                setDebtColors={setDebtColors}
+                recFilter={recFilter}
+                setRecFilter={setRecFilter}
+                minAnosAcimaSelic={minAnosAcimaSelic}
+                setMinAnosAcimaSelic={setMinAnosAcimaSelic}
+                minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
+                setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
+                precoTetoOnly={precoTetoOnly}
+                setPrecoTetoOnly={setPrecoTetoOnly}
+                minDescontoTeto={minDescontoTeto}
+                setMinDescontoTeto={setMinDescontoTeto}
+                ddmOnly={ddmOnly}
+                setDdmOnly={setDdmOnly}
+                grahamOnly={grahamOnly}
+                setGrahamOnly={setGrahamOnly}
+              />
+              <StockSortSelect />
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border/40 pt-3">
               <Button
                 variant="outline"
                 className="shrink-0 border-border/60 bg-input/60"
@@ -420,33 +447,6 @@ function HomePage() {
                   <span>Macro</span>
                 </Link>
               </Button>
-          </div>
-
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
-              <StockGroupsSheet filter={groupFilter} onFilterChange={setGroupFilter} />
-              <VisibleSectorsSheet />
-              <StockFilterSheet
-                filters={filters}
-                setFilters={setFilters}
-                activeCount={activeFilters.length + extraActiveCount}
-                debtColors={debtColors}
-                setDebtColors={setDebtColors}
-                recFilter={recFilter}
-                setRecFilter={setRecFilter}
-                minAnosAcimaSelic={minAnosAcimaSelic}
-                setMinAnosAcimaSelic={setMinAnosAcimaSelic}
-                minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
-                setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
-                precoTetoOnly={precoTetoOnly}
-                setPrecoTetoOnly={setPrecoTetoOnly}
-                minDescontoTeto={minDescontoTeto}
-                setMinDescontoTeto={setMinDescontoTeto}
-                ddmOnly={ddmOnly}
-                setDdmOnly={setDdmOnly}
-                grahamOnly={grahamOnly}
-                setGrahamOnly={setGrahamOnly}
-              />
-              <StockSortSelect />
           </div>
 
 
