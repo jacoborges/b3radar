@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
-import { isOrderFilled } from "@/lib/open-orders";
+import { isOrderFilled, orderAmount, sumOpenOrdersByDate } from "@/lib/open-orders";
 
-type Order = { id: string; portfolio_id: string; ticker: string; price: number; quantity: number; filled_at: string | null };
+type Order = { id: string; portfolio_id: string; ticker: string; price: number; quantity: number; created_at: string; filled_at: string | null };
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+const dateLabel = (iso: string) => iso.slice(0, 10).split("-").reverse().join("/");
+const timeLabel = (iso: string) => new Date(iso).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
 export function useOpenOrders() {
   return useQuery({
