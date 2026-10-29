@@ -26,6 +26,8 @@ import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import { GroupWatchlist } from "@/components/GroupWatchlist";
 import { Gauge } from "lucide-react";
 import { MarketIndicesList } from "@/components/MarketIndicesList";
+import { OpenOrdersPanel, useOpenOrders } from "@/components/OpenOrdersPanel";
+import { ListOrdered } from "lucide-react";
 import { StockGroupsSheet } from "@/components/StockGroupsSheet";
 import { useStockGroups } from "@/hooks/use-stock-groups";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
@@ -208,6 +210,9 @@ function CarteiraPage() {
   const { groups } = useStockGroups();
   const [groupId, setGroupId] = useState<string | null>(null);
   const [showIndices, setShowIndices] = useState(false);
+  const [showOrders, setShowOrders] = useState(false);
+  const { data: openOrders = [] } = useOpenOrders();
+  const filledOrders = openOrders.filter((o) => o.filled_at).length;
   const selectedGroup = groups.find((g) => g.id === groupId) ?? null;
   const [newName, setNewName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -456,7 +461,7 @@ function CarteiraPage() {
                       <button
                         type="button"
                         className="flex-1 truncate text-left text-sm font-medium"
-                        onClick={() => { setSelectedId(p.id); setGroupId(null); setShowIndices(false); }}
+                        onClick={() => { setSelectedId(p.id); setGroupId(null); setShowIndices(false); setShowOrders(false); }}
                       >
                         {p.name}
                         <span className="ml-2 text-xs text-muted-foreground">
@@ -510,7 +515,7 @@ function CarteiraPage() {
               <button
                 key={g.id}
                 type="button"
-                onClick={() => { setGroupId(g.id); setShowIndices(false); }}
+                onClick={() => { setGroupId(g.id); setShowIndices(false); setShowOrders(false); }}
                 className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${groupId === g.id ? "bg-primary/10 text-primary" : "hover:bg-muted/40"}`}
               >
                 <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: g.color }} />
@@ -523,12 +528,22 @@ function CarteiraPage() {
             <button
               type="button"
               aria-pressed={showIndices}
-              onClick={() => { setShowIndices((v) => !v); setGroupId(null); }}
+              onClick={() => { setShowIndices((v) => !v); setShowOrders(false); setGroupId(null); }}
               className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${showIndices ? "bg-emerald-500/15 text-emerald-400" : "hover:bg-muted/40"}`}
             >
               <Gauge className="h-4 w-4 shrink-0" />
               <span className="flex-1 font-medium">Índices de mercado</span>
               {showIndices && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" aria-hidden />}
+            </button>
+            <button
+              type="button"
+              aria-pressed={showOrders}
+              onClick={() => { setShowOrders((v) => !v); setShowIndices(false); setGroupId(null); }}
+              className={`mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors ${showOrders ? "bg-emerald-500/15 text-emerald-400" : "hover:bg-muted/40"} ${filledOrders > 0 && !showOrders ? "animate-pulse text-emerald-400" : ""}`}
+            >
+              <ListOrdered className="h-4 w-4 shrink-0" />
+              <span className="flex-1 font-medium">Ordens</span>
+              {filledOrders > 0 && <span className="rounded-full bg-emerald-500 px-1.5 text-[10px] font-bold text-background">{filledOrders}</span>}
             </button>
           </div>
         </aside>
@@ -539,7 +554,14 @@ function CarteiraPage() {
             <StockSortSelect />
             <div className="ml-auto"><StockColumnsSelect /></div>
           </div>
-          {showIndices ? (
+          {showOrders ? (
+            <OpenOrdersPanel
+              portfolios={portfolios.map((p) => ({ id: p.id, name: p.name }))}
+              defaultPortfolioId={selected?.id ?? null}
+              fallbackPrice={priceOf}
+              onConfirm={(v) => mAddLot.mutateAsync(v)}
+            />
+          ) : showIndices ? (
             <MarketIndicesList compact />
           ) : selectedGroup ? (
             <GroupWatchlist group={selectedGroup} />
