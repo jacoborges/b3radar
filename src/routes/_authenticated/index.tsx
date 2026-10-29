@@ -328,7 +328,7 @@ function HomePage() {
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border/40 pt-3">
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
               <StockGroupsSheet filter={groupFilter} onFilterChange={setGroupFilter} />
               <VisibleSectorsSheet />
               <StockFilterSheet
@@ -355,7 +355,7 @@ function HomePage() {
               <StockSortSelect />
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-border/40 pt-3">
+          <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
               <Button
                 variant="outline"
                 className="shrink-0 border-border/60 bg-input/60"
