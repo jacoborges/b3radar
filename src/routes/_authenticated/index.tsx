@@ -615,62 +615,6 @@ function StockTable({
   const columns = { length: baseColumns.length + (baseColumns.includes("preco") ? 0 : 1) + (valuationOn ? VALUATION_COLUMNS.length : 0) };
   return (
     <>
-      {/* Mobile: card list */}
-      <div className="hidden">
-        {stocks.map((s) => {
-          const positive = s.variacaoDia >= 0;
-          const color = positive ? "var(--color-success)" : "var(--color-danger)";
-          return (
-            <button
-              key={s.ticker}
-              onClick={() => onSelect(s)}
-              className="flex flex-col gap-2 px-4 py-3 text-left transition-colors hover:bg-primary/5 active:bg-primary/10"
-            >
-              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <StockGroupMarker ticker={s.ticker} />
-                    <span className="font-mono text-base font-semibold text-primary">
-                      {s.ticker}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="shrink-0 border-border/50 px-1.5 py-0 text-[10px] font-normal text-muted-foreground"
-                    >
-                      {s.tipo}
-                    </Badge>
-                  </div>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {s.nome}
-                  </div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <div className="font-mono text-sm font-semibold">
-                    R$ {s.preco.toFixed(2)}
-                  </div>
-                  <div
-                    className="inline-flex items-center gap-0.5 font-mono text-xs"
-                    style={{ color }}
-                  >
-                    {positive ? (
-                      <TrendingUp className="h-3 w-3" />
-                    ) : (
-                      <TrendingDown className="h-3 w-3" />
-                    )}
-                    {positive ? "+" : ""}
-                    {s.variacaoDia.toFixed(2)}%
-                  </div>
-                </div>
-              </div>
-              <StockMetricsStrip stock={s} />
-              <div className="flex items-center justify-end">
-                <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
       <div data-stock-scroll tabIndex={0} aria-label="Lista de ativos do setor" className="border-t border-border/60">
         <table className="stock-main-table text-sm">
           <StockColGroup count={columns.length} />
