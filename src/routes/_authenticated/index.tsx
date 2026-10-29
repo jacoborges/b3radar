@@ -300,8 +300,23 @@ function HomePage() {
                 </p>
               )}
             </div>
-            <div className="flex flex-1 items-start gap-2 md:justify-end">
-              <div className="relative min-w-0 flex-1 md:max-w-sm md:self-center">
+            <div className="flex min-w-0 flex-1 flex-col items-stretch gap-2 md:max-w-sm md:items-end">
+              <div className="flex flex-wrap items-center justify-end gap-1.5 [&>*:first-child]:order-1 [&>*:last-child]:order-3">
+                <AccountControls />
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="order-2 shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                  title="Ajustes"
+                >
+                  <Link to="/configuracoes" aria-label="Ajustes">
+                    <Settings className="h-4 w-4" />
+                    <span>Ajustes</span>
+                  </Link>
+                </Button>
+              </div>
+              <div className="relative w-full min-w-0">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar ticker ou empresa…"
@@ -309,22 +324,6 @@ function HomePage() {
                   onChange={(e) => setSearch(e.target.value)}
                   className="pl-9 bg-input/60 border-border/60"
                 />
-              </div>
-              <div className="flex shrink-0 flex-col items-stretch gap-1.5 [&_a]:justify-start [&_button]:justify-start">
-                <div className="flex flex-col-reverse items-stretch gap-1.5 [&>*]:justify-start">
-                  <AccountControls />
-                </div>
-              <Button
-                asChild
-                variant="outline"
-                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
-                title="Ajustes"
-              >
-                <Link to="/configuracoes" aria-label="Ajustes">
-                  <Settings className="h-4 w-4" />
-                  <span>Ajustes</span>
-                </Link>
-              </Button>
               </div>
             </div>
           </div>
