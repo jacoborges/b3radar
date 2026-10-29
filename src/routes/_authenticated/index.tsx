@@ -267,7 +267,7 @@ function HomePage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-6 md:px-8">
+        <div style={{ zoom: 0.8 }} className="mx-auto w-full max-w-[1750px] px-3 py-4 sm:px-6 md:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
