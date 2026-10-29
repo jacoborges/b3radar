@@ -71,6 +71,7 @@ import { AccountControls } from "@/components/AccountControls";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
+import { StockListViewport } from "@/components/StockListViewport";
 import { useValuationColumns } from "@/hooks/use-valuation-columns";
 import { VALUATION_COLUMNS } from "@/lib/valuation-columns";
 import { StockMetricHeaders, StockMetricCells, StockMetricsStrip } from "@/components/StockMetricColumns";
@@ -122,7 +123,7 @@ function HomePage() {
   const [search, setSearch] = useState("");
   const [baseColumns] = useStockColumns();
   const [valuationOn] = useValuationColumns();
-  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
+  const columns = { length: baseColumns.length + (baseColumns.includes("preco") ? 0 : 1) + (valuationOn ? VALUATION_COLUMNS.length : 0) };
   const { groups: stockGroups } = useStockGroups();
   const [groupFilter, setGroupFilter] = useState<string[]>([]);
   const [tipo, setTipo] = useState<Tipo>("ALL");
@@ -530,12 +531,12 @@ function HomePage() {
             Nenhum ativo encontrado com esses filtros.
           </div>
         ) : (
-          <div>
+          <StockListViewport metricCount={columns.length}>
             <div
-              className="sticky z-20 hidden bg-card md:block"
-              style={{ top: "var(--radar-header-h, 0px)", minWidth: 240 + columns.length * 80 }}
+              className="sticky z-20 bg-card"
+              style={{ top: "var(--radar-header-h, 0px)" }}
             >
-              <table className="w-full table-fixed text-sm" style={{ minWidth: 240 + columns.length * 80 }}><StockColGroup count={columns.length} /><thead><tr className="border-b border-border text-xs uppercase text-muted-foreground"><th className="px-4 py-3 text-left font-medium">Ticker</th><StockMetricHeaders /><th className="px-3 py-3 text-center font-medium">Dívida</th></tr></thead></table>
+              <div data-stock-scroll tabIndex={0} aria-label="Colunas dos ativos"><table className="stock-main-table text-sm"><StockColGroup count={columns.length} /><thead><tr className="border-b border-border text-xs uppercase text-muted-foreground"><th className="px-4 py-3 text-left font-medium">Ticker</th><StockMetricHeaders pinPrice /><th className="px-3 py-3 text-center font-medium">Dívida</th></tr></thead></table></div>
             </div>
           <Accordion
             type="multiple"
@@ -546,8 +547,7 @@ function HomePage() {
             }
 
             onValueChange={setOpenSectors}
-            className="space-y-3 md:min-w-[var(--asset-width)]"
-            style={{ "--asset-width": `${240 + columns.length * 80}px` } as import("react").CSSProperties}
+            className="space-y-3"
           >
             {SECTORS.map((sec) => {
               const items = bySector.get(sec) ?? [];
@@ -584,7 +584,7 @@ function HomePage() {
               );
             })}
           </Accordion>
-          </div>
+          </StockListViewport>
         )}
       </main>
 
@@ -612,11 +612,11 @@ function StockTable({
 }) {
   const [baseColumns] = useStockColumns();
   const [valuationOn] = useValuationColumns();
-  const columns = { length: baseColumns.length + (valuationOn ? VALUATION_COLUMNS.length : 0) };
+  const columns = { length: baseColumns.length + (baseColumns.includes("preco") ? 0 : 1) + (valuationOn ? VALUATION_COLUMNS.length : 0) };
   return (
     <>
       {/* Mobile: card list */}
-      <div className="flex flex-col divide-y divide-border/30 border-t border-border/60 md:hidden">
+      <div className="hidden">
         {stocks.map((s) => {
           const positive = s.variacaoDia >= 0;
           const color = positive ? "var(--color-success)" : "var(--color-danger)";
@@ -671,8 +671,8 @@ function StockTable({
         })}
       </div>
 
-      <div className="hidden border-t border-border/60 md:block">
-        <table className="w-full table-fixed text-sm" style={{ minWidth: 240 + columns.length * 80 }}>
+      <div data-stock-scroll tabIndex={0} aria-label="Lista de ativos do setor" className="border-t border-border/60">
+        <table className="stock-main-table text-sm">
           <StockColGroup count={columns.length} />
           <tbody>
             {stocks.map((s) => {
@@ -700,7 +700,7 @@ function StockTable({
                       {s.nome}
                     </div>
                   </td>
-                  <StockMetricCells stock={s} />
+                  <StockMetricCells stock={s} pinPrice />
                   <td className="px-3 py-3 text-center" title={dl.label}>
                     <div className="flex justify-center">
                       <DebtSemaphore divPL={s.divBrutaPatrimonio} compact />
@@ -719,7 +719,7 @@ function StockTable({
 
 
 function StockColGroup({ count }: { count: number }) {
-  return <colgroup><col style={{ width: 180 }} />{Array.from({ length: count }, (_, index) => <col key={index} style={{ width: 80 }} />)}<col style={{ width: 60 }} /></colgroup>;
+  return <colgroup><col />{Array.from({ length: count }, (_, index) => <col key={index} />)}<col /></colgroup>;
 }
 
 function LiveBadge({

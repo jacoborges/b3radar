@@ -45,8 +45,9 @@ function fairStrip(stock: MetricStock, key: StockColumnKey) {
   return <div key={key} data-indicator={key}><dt className="text-muted-foreground">Justo P/VP=1</dt><dd className={`font-mono ${fair.cls}`}>{fair.text}</dd></div>;
 }
 
-export function StockMetricHeaders() {
-  const [all] = useStockColumns();
+export function StockMetricHeaders({ pinPrice = false }: { pinPrice?: boolean } = {}) {
+  const [selected] = useStockColumns();
+  const all: StockColumnKey[] = pinPrice ? ["preco", ...selected.filter(key => key !== "preco")] : selected;
   const [a, b] = splitCols(all);
   const [valuation] = useValuationColumns();
   const ind = (key: StockColumnKey) => key === PVP_FAIR_KEY ? fairHeader(key) : <th key={key} data-indicator={key} className={TH}><span className="inline-flex items-center justify-end gap-0.5 text-balance">{stockColumnLabel(key)}<InfoTip title={INDICATORS[key].short} fundamentalista={INDICATORS[key].fundamentalista} tecnica={INDICATORS[key].tecnica} /></span></th>;
@@ -57,8 +58,9 @@ export function StockMetricHeaders() {
   </>;
 }
 
-export function StockMetricCells({ stock }: { stock: MetricStock }) {
-  const [all] = useStockColumns();
+export function StockMetricCells({ stock, pinPrice = false }: { stock: MetricStock; pinPrice?: boolean }) {
+  const [selected] = useStockColumns();
+  const all: StockColumnKey[] = pinPrice ? ["preco", ...selected.filter(key => key !== "preco")] : selected;
   const [a, b] = splitCols(all);
   const vals = useValuationCells(stock);
   const ind = (key: StockColumnKey) => key === PVP_FAIR_KEY ? fairCell(stock, key) : <td key={key} data-indicator={key} className={`${TD} ${key === "variacaoDia" && stock[key] != null ? stock[key] >= 0 ? "text-success" : "text-destructive" : ""}`}>{stockColumnValue(stock, key)}</td>;
