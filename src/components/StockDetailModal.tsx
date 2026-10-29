@@ -261,7 +261,6 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   </button>
                 </span>
               </DialogDescription>
-              <DetailPayoutTimeline stock={stock} />
             </DialogHeader>
 
             <section className="mt-4 rounded-xl border border-border/60 bg-card p-4">
@@ -487,6 +486,10 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </div>
 
               <div className="mt-4">
+                <div className="mb-2 rounded-lg border border-border/60 bg-background p-3">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Meses de pagamento de proventos</div>
+                  <DetailPayoutTimeline stock={stock} />
+                </div>
                 <DividendIntelligencePanel stock={stock} />
               </div>
 
