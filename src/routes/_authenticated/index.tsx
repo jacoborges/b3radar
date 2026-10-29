@@ -268,7 +268,7 @@ function HomePage() {
   useEffect(() => {
     const el = headerRef.current;
     if (!el) return;
-    const update = () => setHeaderH(el.offsetHeight);
+    const update = () => setHeaderH(el.getBoundingClientRect().height);
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
