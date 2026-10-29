@@ -525,16 +525,16 @@ function HomePage() {
 
       {/* Content */}
       <main className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-6 md:px-8">
-        <div className="mb-3 text-xs text-muted-foreground">
-            {total} ativos em {SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0).length} setores
-        </div>
         {total === 0 ? (
           <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
             Nenhum ativo encontrado com esses filtros.
           </div>
         ) : (
-          <div className="max-h-[70dvh] overflow-auto rounded-lg border border-border/60" data-testid="asset-scroll">
-            <div className="sticky top-0 z-20 hidden bg-card md:block" style={{ minWidth: 240 + columns.length * 80 }}>
+          <div>
+            <div
+              className="sticky z-20 hidden bg-card md:block"
+              style={{ top: "var(--radar-header-h, 0px)", minWidth: 240 + columns.length * 80 }}
+            >
               <table className="w-full table-fixed text-sm" style={{ minWidth: 240 + columns.length * 80 }}><StockColGroup count={columns.length} /><thead><tr className="border-b border-border text-xs uppercase text-muted-foreground"><th className="px-4 py-3 text-left font-medium">Ticker</th><StockMetricHeaders /><th className="px-3 py-3 text-center font-medium">Dívida</th></tr></thead></table>
             </div>
           <Accordion
