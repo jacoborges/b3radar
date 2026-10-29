@@ -329,6 +329,31 @@ function HomePage() {
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+              <div className="mr-auto flex flex-wrap items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                  onClick={() =>
+                    setOpenSectors(
+                      SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0),
+                    )
+                  }
+                >
+                  <ChevronDown className="h-4 w-4" />
+                  <span>Expandir</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                  onClick={() => setOpenSectors([])}
+                >
+                  <ChevronUp className="h-4 w-4" />
+                  <span>Recolher</span>
+                </Button>
+                <StockColumnsSelect />
+              </div>
               <StockGroupsSheet filter={groupFilter} onFilterChange={setGroupFilter} />
               <VisibleSectorsSheet />
               <StockFilterSheet
@@ -485,29 +510,8 @@ function HomePage() {
 
       {/* Content */}
       <main className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-6 md:px-8">
-        <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
-          <span>
+        <div className="mb-3 text-xs text-muted-foreground">
             {total} ativos em {SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0).length} setores
-          </span>
-          <div className="flex flex-wrap items-center justify-end gap-2">
-            <StockColumnsSelect />
-            <button
-              onClick={() =>
-                setOpenSectors(
-                  SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0),
-                )
-              }
-              className="rounded-md border border-border/60 px-2.5 py-1 transition-colors hover:border-primary/60 hover:text-foreground"
-            >
-              Expandir tudo
-            </button>
-            <button
-              onClick={() => setOpenSectors([])}
-              className="rounded-md border border-border/60 px-2.5 py-1 transition-colors hover:border-primary/60 hover:text-foreground"
-            >
-              Recolher tudo
-            </button>
-          </div>
         </div>
         {total === 0 ? (
           <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
