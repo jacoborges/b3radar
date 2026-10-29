@@ -96,9 +96,14 @@
 .stock-list-viewport [data-stock-scroll] {
   overflow-x: auto;
   overscroll-behavior-x: contain;
-  scrollbar-width: thin;
-  scrollbar-color: var(--muted-foreground) var(--card);
+  scrollbar-width: none;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
 }
+.stock-list-viewport [data-stock-scroll]::-webkit-scrollbar { display: none; }
+.stock-list-viewport[data-dragging] [data-stock-scroll],
+.stock-list-viewport[data-dragging] [data-stock-scroll] * { cursor: grabbing; }
 .stock-list-viewport > .sticky > [data-stock-scroll] { margin-inline: 1px; }
 .stock-main-table {
   width: 100%;

@@ -26,6 +26,8 @@ export function StockListViewport({ children, metricCount }: { children: ReactNo
     });
   };
   const start = (event: PointerEvent<HTMLDivElement>) => {
+    drag.current = null;
+    root.current?.removeAttribute("data-dragging");
     if (event.pointerType !== "mouse" || event.button !== 0 || !(event.target instanceof HTMLElement)) return;
     if (event.target.closest("button, a, input, [role=button]")) return;
     const element = event.target.closest<HTMLElement>("[data-stock-scroll]");
@@ -36,6 +38,7 @@ export function StockListViewport({ children, metricCount }: { children: ReactNo
     if (!current || event.buttons !== 1) return;
     if (Math.abs(event.clientX - current.x) > 5) {
       current.moved = true;
+      root.current?.setAttribute("data-dragging", "");
       current.element.setPointerCapture(event.pointerId);
       current.element.scrollLeft = current.left + current.x - event.clientX;
       event.preventDefault();
@@ -43,8 +46,8 @@ export function StockListViewport({ children, metricCount }: { children: ReactNo
   };
   return <div ref={root} className="stock-list-viewport" style={{ "--stock-metric-count": metricCount } as CSSProperties}
     onScrollCapture={sync} onPointerDown={start} onPointerMove={move}
-    onPointerUp={() => { if (drag.current && !drag.current.moved) drag.current = null; }}
-    onPointerCancel={() => { drag.current = null; }}
+    onPointerUp={() => { root.current?.removeAttribute("data-dragging"); if (drag.current && !drag.current.moved) drag.current = null; }}
+    onPointerCancel={() => { root.current?.removeAttribute("data-dragging"); drag.current = null; }}
     onClickCapture={event => { if (drag.current?.moved) { event.preventDefault(); event.stopPropagation(); } drag.current = null; }}>
     {children}
   </div>;
