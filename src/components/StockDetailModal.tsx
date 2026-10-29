@@ -13,6 +13,8 @@ import type { Stock } from "@/lib/stocks-data";
 import { sectorLabel } from "@/lib/sector-label";
 import { computeDividendStats, SELIC } from "@/lib/stocks-data";
 import { INDICATORS, FUNDAMENTAL_KEYS } from "@/lib/indicators";
+import { pvpFairCell, PVP_FAIR_TIP, PVP_FAIR_SHORT, PVP_FAIR_TECNICA } from "@/lib/pvp-fair";
+import { DetailPayoutTimeline } from "@/components/DetailPayoutTimeline";
 import { useTickerData } from "@/hooks/use-ticker-data";
 import { usePriceHistory } from "@/hooks/use-price-history";
 import { useTickerFundamentals } from "@/hooks/use-ticker-fundamentals";
@@ -259,6 +261,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   </button>
                 </span>
               </DialogDescription>
+              <DetailPayoutTimeline stock={stock} />
             </DialogHeader>
 
             <section className="mt-4 rounded-xl border border-border/60 bg-card p-4">
@@ -362,6 +365,16 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                         <div className="mt-1 font-mono text-base font-semibold">
                           {ind.format(val)}
                         </div>
+                        {k === "pvp" && (() => {
+                          const c = pvpFairCell(stock.preco, stock.pvp);
+                          return (
+                            <div className="mt-1 flex items-center gap-1 text-xs">
+                              <span className="text-muted-foreground">Preço justo (P/VP=1):</span>
+                              <span className={`font-mono font-semibold ${c.cls}`}>{c.text === "—" ? "—" : `R$ ${c.text}`}</span>
+                              <InfoTip title={PVP_FAIR_SHORT} fundamentalista={PVP_FAIR_TIP} tecnica={PVP_FAIR_TECNICA} />
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}
