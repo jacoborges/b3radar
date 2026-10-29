@@ -99,6 +99,7 @@
   scrollbar-width: thin;
   scrollbar-color: var(--muted-foreground) var(--card);
 }
+.stock-list-viewport > .sticky > [data-stock-scroll] { margin-inline: 1px; }
 .stock-main-table {
   width: 100%;
   min-width: calc(var(--stock-ticker-width) + var(--stock-price-width) + (var(--stock-metric-count) - 1) * 80px + 60px);
