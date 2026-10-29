@@ -267,8 +267,7 @@ function HomePage() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
-        <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-6 md:px-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <div className="flex min-w-0 items-center gap-3">
@@ -289,7 +288,7 @@ function HomePage() {
                 <DataSourceBadge fonte={fonte} updatedAt={updatedAt} error={dataError} />
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
-                {total} ativos · ON, PN e Units organizados por setor econômico
+                {total} ativos · organizados por setor econômico
               </p>
               {(refreshError || live.error) && (
                 <p className="mt-1 text-xs text-destructive">
@@ -300,11 +299,8 @@ function HomePage() {
                 </p>
               )}
             </div>
-
-
-
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="relative w-full sm:w-72">
+            <div className="flex flex-1 items-start gap-2 md:justify-end">
+              <div className="relative min-w-0 flex-1 md:max-w-sm md:self-center">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Buscar ticker ou empresa…"
@@ -313,44 +309,26 @@ function HomePage() {
                   className="pl-9 bg-input/60 border-border/60"
                 />
               </div>
+              <div className="flex shrink-0 flex-col items-stretch gap-1.5 [&_a]:justify-start [&_button]:justify-start">
+                <div className="flex flex-col-reverse items-stretch gap-1.5 [&>*]:justify-start">
+                  <AccountControls />
+                </div>
+              <Button
+                asChild
+                variant="outline"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                title="Ajustes"
+              >
+                <Link to="/configuracoes" aria-label="Ajustes">
+                  <Settings className="h-4 w-4" />
+                  <span>Ajustes</span>
+                </Link>
+              </Button>
+              </div>
+            </div>
+          </div>
 
-              <Select value={tipo} onValueChange={(v) => setTipo(v as Tipo)}>
-                <SelectTrigger className="min-w-0 flex-1 bg-input/60 border-border/60 sm:w-[110px] sm:flex-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ALL">Todos</SelectItem>
-                  <SelectItem value="ON">ON</SelectItem>
-                  <SelectItem value="PN">PN</SelectItem>
-                  <SelectItem value="UNIT">UNIT</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <StockSortSelect />
-
-              <StockFilterSheet
-                filters={filters}
-                setFilters={setFilters}
-                activeCount={activeFilters.length + extraActiveCount}
-                debtColors={debtColors}
-                setDebtColors={setDebtColors}
-                recFilter={recFilter}
-                setRecFilter={setRecFilter}
-                minAnosAcimaSelic={minAnosAcimaSelic}
-                setMinAnosAcimaSelic={setMinAnosAcimaSelic}
-                minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
-                setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
-                precoTetoOnly={precoTetoOnly}
-                setPrecoTetoOnly={setPrecoTetoOnly}
-                minDescontoTeto={minDescontoTeto}
-                setMinDescontoTeto={setMinDescontoTeto}
-                ddmOnly={ddmOnly}
-                setDdmOnly={setDdmOnly}
-                grahamOnly={grahamOnly}
-                setGrahamOnly={setGrahamOnly}
-              />
-              <VisibleSectorsSheet />
-              <StockGroupsSheet filter={groupFilter} onFilterChange={setGroupFilter} />
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
               <Button
                 variant="outline"
                 className="shrink-0 border-border/60 bg-input/60"
@@ -362,10 +340,17 @@ function HomePage() {
                 <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin motion-reduce:animate-none" : ""}`} />
                 {refreshing ? "Atualizando…" : "Atualizar"}
               </Button>
-
-
-
-
+              <Button
+                asChild
+                variant="outline"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                title="Índices de mercado"
+              >
+                <Link to="/indices" aria-label="Índices de mercado">
+                  <Gauge className="h-4 w-4" />
+                  <span>Índices</span>
+                </Link>
+              </Button>
               <TooltipProvider delayDuration={150}>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -391,55 +376,6 @@ function HomePage() {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-
-              <Button
-                asChild
-                variant="outline"
-                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
-                title="Simulador de Carteira"
-              >
-                <Link to="/simulador" aria-label="Simulador de Carteira">
-                  <LineChart className="h-4 w-4" />
-                  <span>Simulador</span>
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
-                title="Ranking por setor"
-              >
-                <Link to="/ranking" aria-label="Ranking por setor">
-                  <Trophy className="h-4 w-4" />
-                  <span>Ranking</span>
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
-                title="Índices de mercado"
-              >
-                <Link to="/indices" aria-label="Índices de mercado">
-                  <Gauge className="h-4 w-4" />
-                  <span>Índices</span>
-                </Link>
-              </Button>
-
-              <Button
-                asChild
-                variant="outline"
-                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
-                title="Dados Macroeconômicos"
-              >
-                <Link to="/macro" aria-label="Dados Macroeconômicos">
-                  <Landmark className="h-4 w-4" />
-                  <span>Macro</span>
-                </Link>
-              </Button>
-
               <Button
                 asChild
                 variant="outline"
@@ -451,22 +387,66 @@ function HomePage() {
                   <span>Proventos</span>
                 </Link>
               </Button>
-
               <Button
                 asChild
                 variant="outline"
                 className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
-                title="Ajustes"
+                title="Simulador de Carteira"
               >
-                <Link to="/configuracoes" aria-label="Ajustes">
-                  <Settings className="h-4 w-4" />
-                  <span>Ajustes</span>
+                <Link to="/simulador" aria-label="Simulador de Carteira">
+                  <LineChart className="h-4 w-4" />
+                  <span>Simulador</span>
                 </Link>
               </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                title="Ranking por setor"
+              >
+                <Link to="/ranking" aria-label="Ranking por setor">
+                  <Trophy className="h-4 w-4" />
+                  <span>Ranking</span>
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="shrink-0 gap-1.5 border-border/60 bg-input/60 px-2.5"
+                title="Dados Macroeconômicos"
+              >
+                <Link to="/macro" aria-label="Dados Macroeconômicos">
+                  <Landmark className="h-4 w-4" />
+                  <span>Macro</span>
+                </Link>
+              </Button>
+          </div>
 
-              <AccountControls />
-
-            </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
+              <StockGroupsSheet filter={groupFilter} onFilterChange={setGroupFilter} />
+              <VisibleSectorsSheet />
+              <StockFilterSheet
+                filters={filters}
+                setFilters={setFilters}
+                activeCount={activeFilters.length + extraActiveCount}
+                debtColors={debtColors}
+                setDebtColors={setDebtColors}
+                recFilter={recFilter}
+                setRecFilter={setRecFilter}
+                minAnosAcimaSelic={minAnosAcimaSelic}
+                setMinAnosAcimaSelic={setMinAnosAcimaSelic}
+                minAnosPrecoAcimaSelic={minAnosPrecoAcimaSelic}
+                setMinAnosPrecoAcimaSelic={setMinAnosPrecoAcimaSelic}
+                precoTetoOnly={precoTetoOnly}
+                setPrecoTetoOnly={setPrecoTetoOnly}
+                minDescontoTeto={minDescontoTeto}
+                setMinDescontoTeto={setMinDescontoTeto}
+                ddmOnly={ddmOnly}
+                setDdmOnly={setDdmOnly}
+                grahamOnly={grahamOnly}
+                setGrahamOnly={setGrahamOnly}
+              />
+              <StockSortSelect />
           </div>
 
 
