@@ -1,4 +1,4 @@
-import { Gauge } from "lucide-react";
+import { Gauge, ChevronDown, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
