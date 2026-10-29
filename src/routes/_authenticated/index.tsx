@@ -1,5 +1,5 @@
 import { Gauge, ChevronDown, ChevronUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { listPortfolios } from "@/lib/portfolio.functions";
@@ -263,10 +263,25 @@ function HomePage() {
 
   const total = filtered.length;
 
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerH, setHeaderH] = useState(0);
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const update = () => setHeaderH(el.getBoundingClientRect().height);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background"
+      style={{ "--radar-header-h": `${headerH}px` } as import("react").CSSProperties}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
+      <header ref={headerRef} className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
         <div style={{ zoom: 0.8 }} className="mx-auto w-full max-w-[1750px] px-3 py-4 sm:px-6 md:px-8">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
@@ -510,16 +525,16 @@ function HomePage() {
 
       {/* Content */}
       <main className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-6 md:px-8">
-        <div className="mb-3 text-xs text-muted-foreground">
-            {total} ativos em {SECTORS.filter((s) => (bySector.get(s)?.length ?? 0) > 0).length} setores
-        </div>
         {total === 0 ? (
           <div className="rounded-xl border border-border/60 bg-card p-12 text-center text-muted-foreground">
             Nenhum ativo encontrado com esses filtros.
           </div>
         ) : (
-          <div className="max-h-[70dvh] overflow-auto rounded-lg border border-border/60" data-testid="asset-scroll">
-            <div className="sticky top-0 z-20 hidden bg-card md:block" style={{ minWidth: 240 + columns.length * 80 }}>
+          <div>
+            <div
+              className="sticky z-20 hidden bg-card md:block"
+              style={{ top: "var(--radar-header-h, 0px)", minWidth: 240 + columns.length * 80 }}
+            >
               <table className="w-full table-fixed text-sm" style={{ minWidth: 240 + columns.length * 80 }}><StockColGroup count={columns.length} /><thead><tr className="border-b border-border text-xs uppercase text-muted-foreground"><th className="px-4 py-3 text-left font-medium">Ticker</th><StockMetricHeaders /><th className="px-3 py-3 text-center font-medium">Dívida</th></tr></thead></table>
             </div>
           <Accordion
