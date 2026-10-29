@@ -1,10 +1,21 @@
-import { useRef, type ReactNode, type PointerEvent, type UIEvent } from "react";
+import { useEffect, useRef, type CSSProperties, type ReactNode, type PointerEvent, type UIEvent } from "react";
 
 /** Synchronizes horizontal scrolling without enclosing page content in a vertical scroller. */
 export function StockListViewport({ children, metricCount }: { children: ReactNode; metricCount: number }) {
   const root = useRef<HTMLDivElement>(null);
   const offset = useRef(0);
   const drag = useRef<{ element: HTMLElement; x: number; left: number; moved: boolean } | null>(null);
+  useEffect(() => {
+    const element = root.current;
+    if (!element) return;
+    const observer = new MutationObserver(() => {
+      element.querySelectorAll<HTMLElement>("[data-stock-scroll]").forEach(scroller => {
+        scroller.scrollLeft = offset.current;
+      });
+    });
+    observer.observe(element, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
   const sync = (event: UIEvent<HTMLDivElement>) => {
     const target = event.target;
     if (!(target instanceof HTMLElement) || !target.matches("[data-stock-scroll]")) return;
@@ -30,7 +41,7 @@ export function StockListViewport({ children, metricCount }: { children: ReactNo
       event.preventDefault();
     }
   };
-  return <div ref={root} className="stock-list-viewport" style={{ "--stock-metric-count": metricCount } as React.CSSProperties}
+  return <div ref={root} className="stock-list-viewport" style={{ "--stock-metric-count": metricCount } as CSSProperties}
     onScrollCapture={sync} onPointerDown={start} onPointerMove={move}
     onPointerUp={() => { if (drag.current && !drag.current.moved) drag.current = null; }}
     onPointerCancel={() => { drag.current = null; }}
