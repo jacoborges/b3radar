@@ -87,3 +87,40 @@
     padding-right: env(safe-area-inset-right);
   }
 }
+
+.stock-list-viewport {
+  --stock-ticker-width: 160px;
+  --stock-price-width: 84px;
+  min-width: 0;
+}
+.stock-list-viewport [data-stock-scroll] {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted-foreground) var(--card);
+}
+.stock-list-viewport > .sticky > [data-stock-scroll] { margin-inline: 1px; }
+.stock-main-table {
+  width: 100%;
+  min-width: calc(var(--stock-ticker-width) + var(--stock-price-width) + (var(--stock-metric-count) - 1) * 80px + 60px);
+  table-layout: fixed;
+}
+.stock-main-table col:first-child { width: var(--stock-ticker-width); }
+.stock-main-table col:nth-child(2) { width: var(--stock-price-width); }
+.stock-main-table :is(th, td):first-child,
+.stock-main-table [data-indicator="preco"] {
+  position: sticky;
+  z-index: 2;
+  background: var(--card);
+}
+.stock-main-table :is(th, td):first-child { left: 0; }
+.stock-main-table [data-indicator="preco"] {
+  left: var(--stock-ticker-width);
+  box-shadow: 1px 0 0 var(--border);
+}
+.stock-main-table tbody tr:hover :is(td:first-child, [data-indicator="preco"]) { background: var(--secondary); }
+@media (max-width: 767px) {
+  .stock-list-viewport { --stock-ticker-width: 124px; --stock-price-width: 80px; }
+  .stock-main-table td:first-child { padding-inline: 8px; }
+  .stock-main-table td:first-child > div:first-child { gap: 4px; flex-wrap: wrap; }
+}
