@@ -22,6 +22,11 @@ export const StockSearchInput = memo(function StockSearchInput({
         onChange={(event) => {
           const value = event.target.value;
           setDraft(value);
+          if (value === "") {
+            debouncer.cancel();
+            onSearch("");
+            return;
+          }
           debouncer.schedule(value);
         }}
         className="pl-9 bg-input/60 border-border/60"
