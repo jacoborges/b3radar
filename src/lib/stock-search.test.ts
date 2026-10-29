@@ -19,16 +19,15 @@ describe("stock search delay", () => {
     expect(search.mock.calls).toEqual([["PETR4"]]);
   });
 
-  it("also waits 1000 ms when clearing the field", () => {
+  it("clears the search immediately, without waiting 1000 ms", () => {
     const search = vi.fn();
     const debouncer = createStockSearchDebouncer(search);
     debouncer.schedule("PETR4");
-    vi.advanceTimersByTime(500);
-    debouncer.schedule("");
-    vi.advanceTimersByTime(999);
-    expect(search).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(1);
+    debouncer.cancel();
+    search("");
     expect(search.mock.calls).toEqual([[""]]);
+    vi.advanceTimersByTime(1000);
+    expect(search).toHaveBeenCalledTimes(1);
   });
 
   it("cancels pending searches when unmounted", () => {
