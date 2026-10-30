@@ -129,6 +129,21 @@ export function OpenOrdersPanel({
           );
         })}
       </div>
+      {orders.length > 0 && (
+        <div className="rounded-xl border border-border/60 bg-card p-4 text-sm">
+          <h3 className="mb-2 font-semibold">Total aportado em ordens abertas</h3>
+          {dateTotals.map(({ date, amount }) => (
+            <div key={date} className="flex items-center justify-between border-b border-border/40 py-1.5 last:border-0">
+              <span className="text-muted-foreground">{date.split("-").reverse().join("/")}</span>
+              <span>{brl(amount)}</span>
+            </div>
+          ))}
+          <div className="mt-2 flex items-center justify-between font-semibold">
+            <span>Total geral</span>
+            <span>{brl(totalAmount)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
