@@ -82,6 +82,8 @@ export function OpenOrdersPanel({
   }, [orders, quotes.map]);
 
   const nameOf = (id: string) => portfolios.find((p) => p.id === id)?.name ?? "—";
+  const dateTotals = useMemo(() => sumOpenOrdersByDate(orders), [orders]);
+  const totalAmount = useMemo(() => orders.reduce((s, o) => s + orderAmount(o), 0), [orders]);
   const err = [add.error, remove.error, confirm.error].find((e) => e instanceof Error) as Error | undefined;
 
   return (
