@@ -82,6 +82,8 @@ export function OpenOrdersPanel({
   }, [orders, quotes.map]);
 
   const nameOf = (id: string) => portfolios.find((p) => p.id === id)?.name ?? "—";
+  const dateTotals = useMemo(() => sumOpenOrdersByDate(orders), [orders]);
+  const totalAmount = useMemo(() => orders.reduce((s, o) => s + orderAmount(o), 0), [orders]);
   const err = [add.error, remove.error, confirm.error].find((e) => e instanceof Error) as Error | undefined;
 
   return (
@@ -108,6 +110,8 @@ export function OpenOrdersPanel({
             <div key={o.id} className={`flex flex-wrap items-center gap-3 rounded-xl border p-3 text-sm ${filled ? "animate-pulse border-emerald-500 bg-emerald-500/15" : "border-border/60 bg-card"}`}>
               <span className="w-20 font-semibold">{o.ticker}</span>
               <span>{o.quantity} × {brl(o.price)}</span>
+              <span className="text-xs text-muted-foreground" title="Data em que a ordem foi registrada">{dateLabel(o.created_at)} {timeLabel(o.created_at)}</span>
+              <span>Valor {brl(orderAmount(o))}</span>
               <span className="text-muted-foreground">Atual {cur != null ? brl(cur) : "—"}</span>
               <span className="text-xs text-muted-foreground">{nameOf(o.portfolio_id)}</span>
               <span className="ml-auto flex items-center gap-2">
@@ -125,6 +129,21 @@ export function OpenOrdersPanel({
           );
         })}
       </div>
+      {orders.length > 0 && (
+        <div className="rounded-xl border border-border/60 bg-card p-4 text-sm">
+          <h3 className="mb-2 font-semibold">Total aportado em ordens abertas</h3>
+          {dateTotals.map(({ date, amount }) => (
+            <div key={date} className="flex items-center justify-between border-b border-border/40 py-1.5 last:border-0">
+              <span className="text-muted-foreground">{date.split("-").reverse().join("/")}</span>
+              <span>{brl(amount)}</span>
+            </div>
+          ))}
+          <div className="mt-2 flex items-center justify-between font-semibold">
+            <span>Total geral</span>
+            <span>{brl(totalAmount)}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
