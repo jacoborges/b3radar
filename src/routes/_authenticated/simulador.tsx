@@ -26,7 +26,7 @@ import {
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
-import { SimReturnChart } from "@/components/SimReturnChart";
+import { SimCompareChart } from "@/components/SimCompareChart";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
 import { StockMetricsStrip } from "@/components/StockMetricColumns";
@@ -413,25 +413,19 @@ function SimuladorPage() {
                 </div>
               ) : (
                 <>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                    <SummaryCard label="Investido" value={brl(totals.investido)} />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <SummaryCard label="Total investido" value={brl(totals.investido)} />
                     <SummaryCard
-                      label="Valor atual"
-                      value={brl(totals.valorMercado)}
-                      hint={`Ganho de capital ${brl(totals.ganhoCapital)}`}
-                      toneClass={tone(totals.ganhoCapital)}
-                    />
-                    <SummaryCard
-                      label="Proventos recebidos"
-                      value={brl(totals.proventos)}
-                      hint={`Yield on cost ${totals.yieldOnCost.toFixed(2)}%`}
-                      toneClass="text-success"
-                    />
-                    <SummaryCard
-                      label="Retorno total"
+                      label="Retorno total da carteira"
                       value={brl(totals.retornoTotal)}
                       hint={pct(totals.retornoTotalPct)}
                       toneClass={tone(totals.retornoTotal)}
+                    />
+                    <SummaryCard
+                      label="Retorno total em proventos"
+                      value={brl(totals.proventos)}
+                      hint={`Yield on cost ${totals.yieldOnCost.toFixed(2)}%`}
+                      toneClass="text-success"
                     />
                   </div>
 
@@ -447,7 +441,7 @@ function SimuladorPage() {
                     </p>
                   )}
 
-                  <SimReturnChart posicoes={posicoes} proventosAno={porAno} />
+                  <SimCompareChart posicoes={posicoes} />
 
                   <div className="space-y-2">
                     {sortedPositions.map((pos) => (
