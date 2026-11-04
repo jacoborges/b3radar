@@ -127,7 +127,6 @@ function RankingPage() {
                 <th className="p-2 text-right">Valorização</th>
                 <th className="p-2 text-right">Proventos</th>
                 <th className="p-2 text-right">Retorno total</th>
-                <th className="p-2" />
               </tr>
             </thead>
             <tbody>
@@ -141,6 +140,7 @@ function RankingPage() {
                       <div className="flex items-center gap-2">
                         <StockGroupMarker ticker={r.ticker} />
                         <span className="font-semibold text-foreground">{r.ticker}</span>
+                        <PortfolioChartButton ticker={r.ticker} />
                         {r.quantidadeFinal !== RANKING_SHARES && (
                           <span className="text-xs text-muted-foreground">({r.quantidadeFinal} ações)</span>
                         )}
@@ -169,8 +169,7 @@ function RankingPage() {
                         </td>
                       </>
                     )}
-                    <td className="p-2 text-right"><PortfolioChartButton ticker={r.ticker} /></td>
-                  </tr>
+                                      </tr>
                 );
               })}
             </tbody>
