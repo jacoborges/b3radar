@@ -18,6 +18,38 @@ export function payoutMonthCounts(events: PayoutEvent[]): number[] {
   return payoutMonthYears(events).map((s) => s.size);
 }
 
+/**
+ * Última data de pagamento de um mês (0-11), começando pelo ano atual e
+ * recuando ano a ano até encontrar um pagamento. Retorna null se o mês
+ * nunca teve pagamento.
+ */
+export function lastPayoutDateInMonth(
+  events: PayoutEvent[],
+  month: number,
+  anoAtual = new Date().getUTCFullYear(),
+): string | null {
+  let atual: string | null = null;
+  let anterior: string | null = null;
+  for (const e of events) {
+    if ((e.tipo !== "Dividendo" && e.tipo !== "JCP") || !(e.valor > 0)) continue;
+    const d = e.dataPagamento || e.dataCom;
+    if (!d || Number(d.slice(5, 7)) - 1 !== month) continue;
+    const y = Number(d.slice(0, 4));
+    if (y === anoAtual) {
+      if (!atual || d > atual) atual = d;
+    } else if (y < anoAtual) {
+      if (!anterior || d > anterior) anterior = d;
+    }
+  }
+  return atual ?? anterior;
+}
+
+/** "2026-12-15" -> "15/12/2026" (null quando não há data). */
+export function formatPayoutDate(iso: string | null): string | null {
+  if (!iso) return null;
+  return `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}`;
+}
+
 export interface PayoutMonthState {
   /** anos (crescentes) em que houve pagamento no mês */
   anos: number[];
