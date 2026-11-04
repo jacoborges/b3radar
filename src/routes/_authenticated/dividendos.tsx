@@ -34,6 +34,7 @@ import {
   type Frequencia,
 } from "@/lib/dividend-intelligence";
 import { PayoutMonthsTimeline } from "@/components/PayoutMonthsTimeline";
+import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { StockDetailModal } from "@/components/StockDetailModal";
 import type { Stock } from "@/lib/stocks-data";
 
@@ -563,6 +564,9 @@ function DividendosPage() {
                           <div className="font-mono font-semibold">
                             {r.stock.ticker}
                           </div>
+                          <span className="mt-1 inline-block" onClick={(e) => e.stopPropagation()}>
+                            <PortfolioChartButton ticker={r.stock.ticker} />
+                          </span>
                           <div className="text-xs text-muted-foreground">
                             {r.stock.nome}
                           </div>

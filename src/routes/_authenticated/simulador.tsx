@@ -1,3 +1,4 @@
+import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -521,10 +522,11 @@ function PositionCard({
       onOpenChange={setOpen}
       className="rounded-xl border border-border/60 bg-card"
     >
+      <div className="flex items-center gap-2 pr-3">
       <CollapsibleTrigger asChild>
         <button
           type="button"
-          className="flex w-full flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-left"
+          className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 text-left"
         >
           {open ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -557,6 +559,8 @@ function PositionCard({
           </span>
         </button>
       </CollapsibleTrigger>
+      <PortfolioChartButton ticker={pos.ticker} />
+      </div>
       <StockMetricsStrip stock={{ ...stock, preco: pos.precoAtual ?? undefined }} />
 
       <CollapsibleContent>
