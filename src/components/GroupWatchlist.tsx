@@ -5,6 +5,7 @@ import { useStockSort } from "@/hooks/use-stock-sort";
 import { compareStocks } from "@/lib/stock-sort";
 import type { StockGroup } from "@/lib/stock-groups";
 import { StockGroupMarker } from "@/components/StockGroupMarker";
+import { TickerPayoutTimeline } from "@/components/TickerPayoutTimeline";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { StockMetricsStrip } from "@/components/StockMetricColumns";
 
@@ -50,6 +51,7 @@ export function GroupWatchlist({ group }: { group: StockGroup }) {
               <div className="min-w-0">
                 <p className="font-mono font-semibold">{r.ticker}</p>
                 <p className="truncate text-xs text-muted-foreground">{r.base?.nome ?? ""}</p>
+                <TickerPayoutTimeline ticker={r.ticker} />
               </div>
               <div className="ml-auto text-right">
                 <p className="font-mono text-sm">{brl(r.preco)}</p>
