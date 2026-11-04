@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { payoutMonthStates, type PayoutEvent } from "./payout-months";
+import {
+  formatPayoutDate,
+  lastPayoutDateInMonth,
+  payoutMonthStates,
+  type PayoutEvent,
+} from "./payout-months";
 
 const ev = (dataPagamento: string, valor = 1): PayoutEvent => ({
   tipo: "Dividendo",
