@@ -49,3 +49,44 @@ describe("payoutMonthStates", () => {
     expect(st.every((s) => !s.atual && !s.anterior && !s.recorrente)).toBe(true);
   });
 });
+
+describe("lastPayoutDateInMonth", () => {
+  const ATUAL = 2026;
+
+  it("prioriza o ano atual mesmo quando um ano antigo tem dia maior", () => {
+    const d = lastPayoutDateInMonth([ev("2025-07-30"), ev("2026-07-08")], 6, ATUAL);
+    expect(d).toBe("2026-07-08");
+  });
+
+  it("recua para o ano anterior quando o ano atual não tem pagamento", () => {
+    const d = lastPayoutDateInMonth([ev("2024-03-05"), ev("2025-03-27")], 2, ATUAL);
+    expect(d).toBe("2025-03-27");
+  });
+
+  it("recua mais anos quando os recentes não pagaram naquele mês", () => {
+    const d = lastPayoutDateInMonth([ev("2021-11-12"), ev("2019-11-20")], 10, ATUAL);
+    expect(d).toBe("2021-11-12");
+  });
+
+  it("retorna null para mês sem pagamento", () => {
+    expect(lastPayoutDateInMonth([ev("2026-01-15")], 5, ATUAL)).toBeNull();
+  });
+
+  it("ignora eventos societários e valores zerados", () => {
+    const events: PayoutEvent[] = [
+      { tipo: "Bonificacao", valor: 0, dataCom: "2026-01-10", dataPagamento: "2026-01-10" },
+      { tipo: "Dividendo", valor: 0, dataCom: "2026-01-20", dataPagamento: "2026-01-20" },
+    ];
+    expect(lastPayoutDateInMonth(events, 0, ATUAL)).toBeNull();
+  });
+
+  it("usa o pagamento mais recente do ano quando há mais de um", () => {
+    const d = lastPayoutDateInMonth([ev("2026-08-05"), ev("2026-08-28")], 7, ATUAL);
+    expect(d).toBe("2026-08-28");
+  });
+
+  it("formata a data no padrão brasileiro", () => {
+    expect(formatPayoutDate("2026-12-15")).toBe("15/12/2026");
+    expect(formatPayoutDate(null)).toBeNull();
+  });
+});
