@@ -30,6 +30,7 @@ import { OpenOrdersPanel, useOpenOrders } from "@/components/OpenOrdersPanel";
 import { ListOrdered } from "lucide-react";
 import { StockGroupsSheet } from "@/components/StockGroupsSheet";
 import { useStockGroups } from "@/hooks/use-stock-groups";
+import { TickerPayoutTimeline } from "@/components/TickerPayoutTimeline";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { PortfolioRebalanceButton } from "@/components/PortfolioRebalanceButton";
 import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
@@ -881,6 +882,7 @@ function PositionRow({
             </span>
           </span>
         )}
+        <div className="basis-full"><TickerPayoutTimeline ticker={pos.ticker} /></div>
       </div>
       <div className={closed ? "text-muted-foreground/50" : ""}><StockMetricsStrip stock={{ ...stock, preco: price ?? undefined }} /></div>
 
