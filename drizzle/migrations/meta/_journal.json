@@ -43,6 +43,13 @@
       "when": 1793293313388,
       "tag": "0005_create_open_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793962070960,
+      "tag": "0006_sector_presets",
+      "breakpoints": true
     }
   ]
 }
