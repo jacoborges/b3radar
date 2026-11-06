@@ -60,6 +60,45 @@ export const setMySelectedSectors = createServerFn({ method: "POST" })
     return { ok: true as const };
   });
 
+export type SectorPreset = { name: string; sectors: string[] };
+
+function cleanPresets(v: unknown): SectorPreset[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((p): p is { name: unknown; sectors: unknown } => !!p && typeof p === "object")
+    .map((p) => ({
+      name: typeof p.name === "string" ? p.name.trim().slice(0, 40) : "",
+      sectors: Array.isArray(p.sectors)
+        ? p.sectors.filter((s): s is string => typeof s === "string" && s.length < 120).slice(0, 100)
+        : [],
+    }))
+    .filter((p) => p.name.length > 0)
+    .slice(0, 30);
+}
+
+/** Slots nomeados de setores do "Visualizar somente". */
+export const getMySectorPresets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ presets: SectorPreset[] }> => {
+    const { data } = await context.supabase
+      .from("user_settings")
+      .select("sector_presets")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    return { presets: cleanPresets(data?.sector_presets) };
+  });
+
+export const setMySectorPresets = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: { presets: SectorPreset[] }) => ({ presets: cleanPresets(input?.presets) }))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("user_settings")
+      .upsert({ user_id: context.userId, sector_presets: data.presets }, { onConflict: "user_id" });
+    if (error) throw error;
+    return { ok: true as const };
+  });
+
 /** Preferência do cabeçalho de ativos (indicadores + valuation) salva na conta. */
 export const getMyStockColumns = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

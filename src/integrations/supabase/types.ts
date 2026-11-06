@@ -522,6 +522,7 @@ export type Database = {
           brapi_token: string | null
           created_at: string
           monthly_sales_limit: number
+          sector_presets: Json
           selected_sectors: Json | null
           stock_columns: Json | null
           updated_at: string
@@ -531,6 +532,7 @@ export type Database = {
           brapi_token?: string | null
           created_at?: string
           monthly_sales_limit?: number
+          sector_presets?: Json
           selected_sectors?: Json | null
           stock_columns?: Json | null
           updated_at?: string
@@ -540,6 +542,7 @@ export type Database = {
           brapi_token?: string | null
           created_at?: string
           monthly_sales_limit?: number
+          sector_presets?: Json
           selected_sectors?: Json | null
           stock_columns?: Json | null
           updated_at?: string
