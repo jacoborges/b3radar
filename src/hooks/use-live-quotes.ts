@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchLiveQuotes, type LiveQuote } from "@/lib/quotes.functions";
 import { getMyBrapiToken, setMyBrapiToken } from "@/lib/user-settings.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { quoteRefreshBatches } from "@/lib/quote-refresh";
+import { isMarketOpen, quoteRefreshBatches, quoteTiers } from "@/lib/quote-refresh";
+import { listPortfolios } from "@/lib/portfolio.functions";
+import { listStockGroups } from "@/lib/stock-groups.functions";
+import type { StockGroup } from "@/lib/stock-groups";
 import { fetchAltQuotes } from "@/lib/alt-data.functions";
 import { readUsage, recordUsage } from "@/lib/provider-usage";
 import { splitFreshAlt } from "@/lib/providers/merge";
@@ -45,6 +48,11 @@ function writeAltStore(quotes: LiveQuote[]) {
 // Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
 // ativos e com menos frequência para não estourar a cota.
 const REFRESH_MS = 60_000;
+/** Segundo plano (vendidos e demais ativos): bem menos frequente. */
+const BACKGROUND_MS = 15 * 60_000;
+/** Busca/lista pequena: atualiza na hora, como prioridade. */
+const FOCUS_MAX = 5;
+const CLOSED_STALE_MS = 6 * 60 * 60_000;
 const MAX_TICKERS = 40;
 export const BRAPI_TOKEN_STORAGE_KEY = "b3radar:brapi-token";
 const TOKEN_EVENT = "b3radar:brapi-token-changed";
@@ -217,23 +225,52 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
     return unique;
   }, [tickers]);
 
-  const requested = useMemo(() => allRequested.slice(0, MAX_TICKERS), [allRequested]);
+  const loadPortfolios = useServerFn(listPortfolios);
+  const loadGroups = useServerFn(listStockGroups);
+  const { data: portfolios = [] } = useQuery({ queryKey: ["portfolios"], queryFn: () => loadPortfolios(), staleTime: 60_000 });
+  const { data: groups = [] } = useQuery<StockGroup[]>({ queryKey: ["stock-groups"], queryFn: () => loadGroups(), staleTime: 60_000 });
 
-  const key = requested.join(",");
+  const tiers = useMemo(() => {
+    const held: string[] = [];
+    const sold: string[] = [];
+    for (const p of portfolios) {
+      const net = new Map<string, number>();
+      for (const l of p.lots) net.set(l.ticker.toUpperCase(), (net.get(l.ticker.toUpperCase()) ?? 0) + l.quantity);
+      for (const s of p.sales) net.set(s.ticker.toUpperCase(), (net.get(s.ticker.toUpperCase()) ?? 0) - s.quantity);
+      for (const [t, q] of net) (q > 0 ? held : sold).push(t);
+    }
+    return quoteTiers({ held, groups: groups.flatMap((g) => g.tickers), sold, requested: allRequested });
+  }, [portfolios, groups, allRequested]);
 
+  const open = isMarketOpen(new Date());
+  const fetchSet = async (list: string[]) => {
+    const res = await call({ data: token ? { tickers: list, token } : { tickers: list } });
+    writeQuotesToCache(queryClient, res.quotes);
+    return res;
+  };
+
+  // Níveis 1 e 2: carteira ativa + grupos, compartilhado entre todas as telas.
+  const priority = tiers.priority.slice(0, MAX_TICKERS * 2);
   const query = useQuery({
-    queryKey: ["live-quotes", key, token ? "user-token" : "anon"],
-    queryFn: async () => {
-      const res = await call({
-        data: token ? { tickers: requested, token } : { tickers: requested },
-      });
-      writeQuotesToCache(queryClient, res.quotes);
-      return res;
-    },
-    enabled: requested.length > 0,
-    refetchInterval: REFRESH_MS,
+    queryKey: ["live-quotes-priority", priority.join(","), token ? "user-token" : "anon"],
+    queryFn: () => fetchSet(priority),
+    enabled: priority.length > 0,
+    // Fora do pregão basta capturar o fechamento uma vez.
+    refetchInterval: open ? REFRESH_MS : false,
     refetchIntervalInBackground: false,
-    staleTime: REFRESH_MS - 1000,
+    staleTime: open ? REFRESH_MS - 1000 : CLOSED_STALE_MS,
+  });
+
+  // Nível 3 e demais: segundo plano; busca pontual (lista pequena) atualiza na hora.
+  const focused = tiers.background.length <= FOCUS_MAX;
+  const background = tiers.background.slice(0, MAX_TICKERS);
+  const bgQuery = useQuery({
+    queryKey: ["live-quotes-bg", background.join(","), token ? "user-token" : "anon"],
+    queryFn: () => fetchSet(background),
+    enabled: background.length > 0,
+    refetchInterval: open ? (focused ? REFRESH_MS : BACKGROUND_MS) : false,
+    refetchIntervalInBackground: false,
+    staleTime: open ? (focused ? REFRESH_MS - 1000 : BACKGROUND_MS - 1000) : CLOSED_STALE_MS,
   });
 
   const refresh = async (priorityTickers: string[] = []) => {
@@ -241,7 +278,7 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
     setManualFetching(true);
     setManualError(null);
     try {
-      for (const batch of quoteRefreshBatches(priorityTickers, allRequested)) {
+      for (const batch of quoteRefreshBatches([...priorityTickers, ...tiers.priority], allRequested)) {
         const res = await call({ data: token ? { tickers: batch, token } : { tickers: batch } });
         writeQuotesToCache(queryClient, res.quotes);
         if (res.error) throw new Error(res.error);
@@ -265,8 +302,8 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
     return {
       map,
       updatedAt: latest ? new Date(latest) : null,
-      isFetching: query.isFetching || manualFetching,
-      error: manualError ?? query.data?.error ?? (query.error ? "Falha ao atualizar cotações." : null),
+      isFetching: query.isFetching || bgQuery.isFetching || manualFetching,
+      error: manualError ?? query.data?.error ?? bgQuery.data?.error ?? (query.error || bgQuery.error ? "Falha ao atualizar cotações." : null),
       refresh,
     };
   })();

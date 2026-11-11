@@ -12,3 +12,17 @@ describe("manual quote refresh", () => {
     expect(batches.flat()).toEqual(tickers);
   });
 });
+import { isMarketOpen, quoteTiers } from "./quote-refresh";
+
+describe("quote priority tiers", () => {
+  it("puts held and group assets first, sold before other displayed assets", () => {
+    const t = quoteTiers({ held: ["petr4"], groups: ["VALE3", "PETR4"], sold: ["WEGE3", "ITUB4"], requested: ["ABEV3", "WEGE3", "PETR4", "AALR3"] });
+    expect(t.priority).toEqual(["PETR4", "VALE3"]);
+    expect(t.background).toEqual(["WEGE3", "AALR3", "ABEV3"]);
+  });
+  it("detects B3 trading hours in Brasília time", () => {
+    expect(isMarketOpen(new Date("2026-11-11T14:00:00Z"))).toBe(true); // 11:00 BRT quarta
+    expect(isMarketOpen(new Date("2026-11-11T22:00:00Z"))).toBe(false); // 19:00 BRT
+    expect(isMarketOpen(new Date("2026-11-14T15:00:00Z"))).toBe(false); // sábado
+  });
+});
