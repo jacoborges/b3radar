@@ -305,7 +305,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   }
                 >
                   {(isFetching && !isLoading) || (fundFetching && !fundLoading) ? "↻ " : ""}
-                  {sourceLabel}
+                  {sourceLabelFull}
                 </Badge>
               </DialogTitle>
               <DialogDescription className="mt-1 flex flex-wrap items-center gap-3 text-base">
