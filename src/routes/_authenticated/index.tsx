@@ -240,6 +240,7 @@ function HomePage() {
         preco: q.price,
         variacaoDia: q.changePercent,
         precoD1: q.previousClose ?? s.precoD1,
+        fonteCotacao: q.source,
       };
     });
   }, [filtered, live.map]);
@@ -262,6 +263,11 @@ function HomePage() {
   }, [SECTORS, filteredLive, sort, rankByDesconto, descontoMap]);
 
   const total = filtered.length;
+  const liveSources = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const q of live.map.values()) c[q.source ?? "brapi"] = (c[q.source ?? "brapi"] ?? 0) + 1;
+    return c;
+  }, [live.map]);
 
   const headerRef = useRef<HTMLElement>(null);
   const [headerH, setHeaderH] = useState(0);
@@ -300,12 +306,14 @@ function HomePage() {
                   isFetching={live.isFetching}
                   hasError={!!live.error}
                   count={live.map.size}
+                  sources={liveSources}
                 />
                 <DataSourceBadge fonte={fonte} updatedAt={updatedAt} error={dataError} />
               </div>
               <p className="mt-1 text-xs text-muted-foreground">
                 {total} ativos · organizados por setor econômico
               </p>
+              <ProviderUsageLine />
               {(refreshError || live.error) && (
                 <p className="mt-1 text-xs text-destructive">
                   {refreshError || live.error}{" "}
@@ -630,6 +638,14 @@ function StockTable({
                       >
                         {s.tipo}
                       </Badge>
+                      {s.fonteCotacao && s.fonteCotacao !== "brapi" && (
+                        <span
+                          className="rounded px-1 text-[9px] uppercase tracking-wide text-muted-foreground ring-1 ring-border/50"
+                          title={`Preço vindo de ${PROVIDER_LABEL[s.fonteCotacao]} (modo híbrido)`}
+                        >
+                          {PROVIDER_LABEL[s.fonteCotacao]}
+                        </span>
+                      )}
                     </div>
                     <div className="truncate text-xs text-muted-foreground">
                       {s.nome}

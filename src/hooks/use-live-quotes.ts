@@ -6,6 +6,7 @@ import { getMyBrapiToken, setMyBrapiToken } from "@/lib/user-settings.functions"
 import { supabase } from "@/integrations/supabase/client";
 import { quoteRefreshBatches } from "@/lib/quote-refresh";
 import { fetchAltQuotes } from "@/lib/alt-data.functions";
+import { recordUsage } from "@/lib/provider-usage";
 
 // Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
 // ativos e com menos frequência para não estourar a cota.
@@ -131,9 +132,11 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
   // Modo híbrido: BRAPI + fontes alternativas configuradas em Ajustes.
   const call = async ({ data }: { data: { tickers: string[]; token?: string } }) => {
     const res = await brapiCall({ data });
+    recordUsage({ brapi: res.requests ?? 0 });
     const got = new Set(res.quotes.map((q) => q.ticker.toUpperCase()));
     try {
       const alt = await altCall({ data: { tickers: data.tickers, got: Array.from(got) } });
+      recordUsage(alt.requests, alt.bolsaiRemaining != null ? { bolsai: alt.bolsaiRemaining } : {});
       if (alt.mode === "brapi" || alt.quotes.length === 0) return res;
       const byTicker = new Map(res.quotes.map((q) => [q.ticker.toUpperCase(), q]));
       for (const q of alt.quotes) {

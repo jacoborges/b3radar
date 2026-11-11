@@ -40,6 +40,8 @@ export interface Stock {
   preco: number;
   variacaoDia: number;
   precoD1: number;
+  /** Fonte da cotação ao vivo (brapi, hgbrasil, bolsai), quando houver. */
+  fonteCotacao?: "brapi" | "hgbrasil" | "bolsai";
   varD1: number;
   precoD7: number;
   varD7: number;
