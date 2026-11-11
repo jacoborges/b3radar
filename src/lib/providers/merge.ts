@@ -96,3 +96,26 @@ export function fillMissingDividendYears<T extends { year: number; dividendo: nu
   base.sort((x, y) => x.year - y.year);
   return { rows: base, filledYears };
 }
+
+/** Validade das cotações alternativas: Bolsai é fechamento diário; HG Brasil tem atraso de minutos. */
+export const ALT_QUOTE_TTL_MS: Record<"hgbrasil" | "bolsai", number> = {
+  hgbrasil: 30 * 60 * 1000,
+  bolsai: 6 * 60 * 60 * 1000,
+};
+
+/** Separa tickers com cotação alternativa ainda válida (não reconsultar) dos que precisam de nova consulta. */
+export function splitFreshAlt<Q extends { ticker: string; updatedAt: string; source?: string }>(
+  tickers: string[],
+  stored: Record<string, Q>,
+  now: number,
+): { fresh: Q[]; stale: string[] } {
+  const fresh: Q[] = [];
+  const stale: string[] = [];
+  for (const t of tickers) {
+    const q = stored[t.toUpperCase()];
+    const ttl = q?.source === "bolsai" || q?.source === "hgbrasil" ? ALT_QUOTE_TTL_MS[q.source] : 0;
+    if (q && now - Date.parse(q.updatedAt) < ttl) fresh.push(q);
+    else stale.push(t);
+  }
+  return { fresh, stale };
+}

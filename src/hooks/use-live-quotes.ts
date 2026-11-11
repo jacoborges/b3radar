@@ -7,6 +7,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { quoteRefreshBatches } from "@/lib/quote-refresh";
 import { fetchAltQuotes } from "@/lib/alt-data.functions";
 import { recordUsage } from "@/lib/provider-usage";
+import { splitFreshAlt } from "@/lib/providers/merge";
+
+const ALT_STORE_KEY = "b3radar:alt-quotes";
+function readAltStore(): Record<string, LiveQuote> {
+  try {
+    return JSON.parse(window.localStorage.getItem(ALT_STORE_KEY) ?? "{}") as Record<string, LiveQuote>;
+  } catch {
+    return {};
+  }
+}
+function writeAltStore(quotes: LiveQuote[]) {
+  try {
+    const store = readAltStore();
+    for (const q of quotes) store[q.ticker.toUpperCase()] = q;
+    window.localStorage.setItem(ALT_STORE_KEY, JSON.stringify(store));
+  } catch {
+    /* storage indisponível */
+  }
+}
 
 // Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
 // ativos e com menos frequência para não estourar a cota.
@@ -135,13 +154,26 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
     recordUsage({ brapi: res.requests ?? 0 });
     const got = new Set(res.quotes.map((q) => q.ticker.toUpperCase()));
     try {
-      const alt = await altCall({ data: { tickers: data.tickers, got: Array.from(got) } });
-      recordUsage(alt.requests, alt.bolsaiRemaining != null ? { bolsai: alt.bolsaiRemaining } : {});
-      if (alt.mode === "brapi" || alt.quotes.length === 0) return res;
+      // Cotações alternativas ainda válidas não são reconsultadas (preserva a cota diária).
+      const stored = readAltStore();
+      const { fresh, stale } = splitFreshAlt(data.tickers.map((t) => t.toUpperCase()), stored, Date.now());
+      const freshSet = new Set(fresh.map((q) => q.ticker));
+      let altQuotes: LiveQuote[] = [];
+      let mode: string = "hybrid";
+      if (stale.length > 0) {
+        const alt = await altCall({ data: { tickers: stale, got: [...got, ...freshSet] } });
+        recordUsage(alt.requests, alt.bolsaiRemaining != null ? { bolsai: alt.bolsaiRemaining } : {});
+        mode = alt.mode;
+        altQuotes = alt.quotes;
+        if (alt.quotes.length) writeAltStore(alt.quotes);
+      }
+      if (mode === "brapi") return res;
+      const usable = [...fresh, ...altQuotes];
+      if (usable.length === 0) return res;
       const byTicker = new Map(res.quotes.map((q) => [q.ticker.toUpperCase(), q]));
-      for (const q of alt.quotes) {
+      for (const q of usable) {
         // alt_first: fonte alternativa prevalece; híbrido: só preenche o que faltou.
-        if (alt.mode === "alt_first" || !byTicker.has(q.ticker)) byTicker.set(q.ticker, q);
+        if (mode === "alt_first" || !byTicker.has(q.ticker)) byTicker.set(q.ticker, q);
       }
       const quotes = Array.from(byTicker.values());
       return { quotes, error: quotes.length > 0 ? null : res.error };

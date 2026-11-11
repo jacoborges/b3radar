@@ -49,3 +49,16 @@ describe("proventos de fontes alternativas", () => {
     expect(filledYears).toEqual([2024, 2022]);
   });
 });
+
+import { splitFreshAlt } from "./merge";
+
+describe("economia de consultas nas fontes alternativas", () => {
+  const now = Date.parse("2026-11-11T15:00:00Z");
+  const q = (ticker: string, source: string, minutesAgo: number) => ({ ticker, source, updatedAt: new Date(now - minutesAgo * 60000).toISOString() });
+  it("Bolsai vale por 6 horas e HG Brasil por 30 minutos", () => {
+    const stored = { A: q("A", "bolsai", 300), B: q("B", "bolsai", 400), C: q("C", "hgbrasil", 20), D: q("D", "hgbrasil", 31) };
+    const r = splitFreshAlt(["A", "B", "C", "D", "E"], stored, now);
+    expect(r.fresh.map((x) => x.ticker)).toEqual(["A", "C"]);
+    expect(r.stale).toEqual(["B", "D", "E"]);
+  });
+});
