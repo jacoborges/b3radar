@@ -1,5 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { fetchAltFundamentals } from "@/lib/alt-data.functions";
 import { RefreshCw } from "lucide-react";
 import {
   Dialog,
