@@ -1,7 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { fetchAltFundamentals } from "@/lib/alt-data.functions";
+import { fetchAltDividends, fetchAltFundamentals } from "@/lib/alt-data.functions";
+import { fillMissingDividendYears } from "@/lib/providers/merge";
+import { recordUsage } from "@/lib/provider-usage";
 import { RefreshCw } from "lucide-react";
 import {
   Dialog,
@@ -73,12 +75,43 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const altFundFn = useServerFn(fetchAltFundamentals);
   const { data: altFund } = useQuery({
     queryKey: ["alt-fundamentals", ticker],
-    queryFn: () => altFundFn({ data: { ticker: ticker! } }),
+    queryFn: async () => {
+      const res = await altFundFn({ data: { ticker: ticker! } });
+      recordUsage({ bolsai: res.requests }, res.bolsaiRemaining != null ? { bolsai: res.bolsaiRemaining } : {});
+      return res;
+    },
     enabled: !!ticker,
     staleTime: 6 * 60 * 60 * 1000,
     retry: false,
   });
 
+
+  const altDivFn = useServerFn(fetchAltDividends);
+  const { data: altDiv } = useQuery({
+    queryKey: ["alt-dividends", ticker],
+    queryFn: async () => {
+      const res = await altDivFn({ data: { ticker: ticker! } });
+      recordUsage({ bolsai: res.requests }, res.bolsaiRemaining != null ? { bolsai: res.bolsaiRemaining } : {});
+      return res;
+    },
+    enabled: !!ticker && !!proventos,
+    staleTime: 24 * 60 * 60 * 1000,
+    retry: false,
+  });
+  // Modo híbrido: anos sem proventos na B3 são completados pela Bolsai (sem duplicar anos oficiais).
+  const { historicoFinal, anosCompletados } = useMemo(() => {
+    const oficial = proventos?.historico ?? null;
+    if (!altDiv?.years?.length) return { historicoFinal: oficial, anosCompletados: [] as number[] };
+    const anoAtual = new Date().getUTCFullYear();
+    const janela = Array.from({ length: 6 }, (_, i) => anoAtual - 5 + i);
+    const { rows, filledYears } = fillMissingDividendYears(
+      oficial,
+      altDiv.years,
+      (a) => ({ year: a.year, dividendo: a.dividendo, jcp: a.jcp, selicMediaPonderada: SELIC[a.year] ?? 12, precoMedio: 0 }),
+      janela,
+    );
+    return { historicoFinal: filledYears.length ? rows : oficial, anosCompletados: filledYears.sort() };
+  }, [proventos, altDiv]);
 
   useEffect(() => {
     setChartLoaded(false);
@@ -87,7 +120,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
   const mergedStock: Stock | null = useMemo(() => {
     if (!baseStock) return null;
     const stock = baseStock;
-    const historico = proventos?.historico ?? null;
+    const historico = historicoFinal;
 
     const provisionados = proventos?.provisionados ?? null;
 
@@ -156,10 +189,19 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       ).length;
     }
     return merged;
-  }, [baseStock, proventos, liveFund, altFund, priceHistory]);
+  }, [baseStock, proventos, historicoFinal, liveFund, altFund, priceHistory]);
   const stock = mergedStock;
 
-  const proventosOk = !!proventos?.historico;
+  const proventosOk = !!historicoFinal;
+  const altFilledCount = altFund?.fields
+    ? (["pl", "pvp", "dy", "roe", "margemLiquida", "margemEbit", "divBrutaPatrimonio"] as const).filter(
+        (k) => altFund.fields?.[k] != null && liveFund?.fields?.[k] == null,
+      ).length
+    : 0;
+  const hybridNote = [
+    altFilledCount > 0 ? `${altFilledCount} indicador(es) completado(s) pela Bolsai` : null,
+    anosCompletados.length ? `proventos de ${anosCompletados.join(", ")} completados pela Bolsai` : null,
+  ].filter(Boolean).join(" · ");
   const liveOk = !!liveFund?.fields;
   const liveTime = liveFund?.updatedAt
     ? new Date(liveFund.updatedAt).toLocaleTimeString("pt-BR", {
@@ -176,6 +218,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
         : proventosOk
           ? "Fundamentos + Preço: Fundamentus · Proventos: B3"
           : "Fundamentos + Preço: Fundamentus (offline)";
+  const sourceLabelFull = hybridNote ? `${sourceLabel} · Híbrido: ${hybridNote}` : sourceLabel;
 
   // Carimbo do cache: momento em que os dados guardados deste ativo foram atualizados.
   const cachedAtLabel = useMemo(() => {
@@ -377,7 +420,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                             <HistoryChartButton
                               ticker={stock.ticker}
                               kind={ind.history}
-                              historico={proventos?.historico ?? null}
+                              historico={historicoFinal}
                               label={ind.label}
                             />
                           )}
@@ -409,14 +452,14 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                 ticker={stock.ticker}
                 nome={stock.nome}
                 precoAtual={stock.preco}
-                historico={proventos?.historico ?? null}
+                historico={historicoFinal}
               />
 
               <PrecoTetoProjetivoPanel
                 ticker={stock.ticker}
                 nome={stock.nome}
                 precoAtual={stock.preco}
-                historico={proventos?.historico ?? null}
+                historico={historicoFinal}
               />
 
               {isSetorFinanceiroNome(stock.setor) && (
@@ -425,7 +468,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   nome={stock.nome}
                   precoAtual={stock.preco}
                   roe={stock.roe}
-                  historico={proventos?.historico ?? null}
+                  historico={historicoFinal}
                 />
               )}
 
@@ -449,7 +492,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   <HistoryChartButton
                     ticker={stock.ticker}
                     kind="proventos"
-                    historico={proventos?.historico ?? null}
+                    historico={historicoFinal}
                     label="Dividendos + JCP"
                   />
                   <span className="ml-auto text-[11px] text-muted-foreground">
@@ -472,7 +515,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   <HistoryChartButton
                     ticker={stock.ticker}
                     kind="dy"
-                    historico={proventos?.historico ?? null}
+                    historico={historicoFinal}
                     label="Yield vs. Selic"
                   />
                 </div>
@@ -492,7 +535,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
                   <HistoryChartButton
                     ticker={stock.ticker}
                     kind="valorizacao"
-                    historico={proventos?.historico ?? null}
+                    historico={historicoFinal}
                     label="Valorização vs. Selic"
                   />
                   <span className="ml-auto text-xs text-muted-foreground">
