@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 export const BAZIN_DIVISOR_STORAGE_KEY = "b3radar:bazin-divisor";
-export const BAZIN_DIVISOR_DEFAULT = 0.06;
+export const BAZIN_DIVISOR_DEFAULT = 0.07;
 export const BAZIN_DIVISOR_MIN = 0.01;
 export const BAZIN_DIVISOR_MAX = 0.5;
 const EVENT = "b3radar:bazin-divisor-changed";
