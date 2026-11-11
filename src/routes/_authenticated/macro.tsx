@@ -39,7 +39,7 @@ function MacroPage() {
   const refresh = useMutation({
     mutationFn: async (force: boolean) => {
       const list = data ?? [];
-      const result = { updated: 0, failed: [] as string[] };
+      const result = { updated: 0, failed: [] as string[], fallbackUsed: [] as string[] };
       setProgress({ done: 0, total: list.length });
       for (let i = 0; i < list.length; i += 2) {
         const batch = list.slice(i, i + 2);
@@ -47,12 +47,13 @@ function MacroPage() {
           try {
             return await refreshFn({ data: { force, codes: [series.code] } });
           } catch {
-            return { updated: 0, failed: [series.code] };
+            return { updated: 0, failed: [series.code], fallbackUsed: [] as string[] };
           }
         }));
         for (const outcome of outcomes) {
           result.updated += outcome.updated;
           result.failed.push(...outcome.failed);
+          result.fallbackUsed.push(...("fallbackUsed" in outcome ? outcome.fallbackUsed ?? [] : []));
         }
         setProgress({ done: Math.min(i + 2, list.length), total: list.length });
         await qc.invalidateQueries({ queryKey: ["macro-series"] });
@@ -100,6 +101,7 @@ function MacroPage() {
 
       {isLoading && <p className="text-sm text-muted-foreground">Carregando…</p>}
       {loadError && <p role="alert" className="mb-4 text-sm text-destructive">Não foi possível carregar os indicadores. Tente novamente em instantes.</p>}
+      {refresh.data && refresh.data.fallbackUsed.length > 0 && <p role="status" className="mb-2 text-xs text-muted-foreground">O Banco Central não respondeu; a Selic meta foi atualizada pela HG Brasil (reserva do modo híbrido).</p>}
       {refresh.data && refresh.data.failed.length > 0 && <p role="status" className="mb-4 text-xs text-muted-foreground">Sem resposta da fonte: {refresh.data.failed.map((code) => data?.find((s) => s.code === code)?.name ?? code).join(", ")}. Os últimos valores disponíveis foram preservados.</p>}
       {groups.map(([cat, list]) => (
         <section key={cat} className="mb-5">

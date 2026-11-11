@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getMyProviderSettings, setMyProviderSettings, testMyProviderKey } from "@/lib/alt-data.functions";
 import type { DataMode } from "@/lib/providers/merge";
+import { writeLastMode } from "@/hooks/use-live-quotes";
 
 type Provider = "bolsai" | "hgbrasil" | "partnr";
 
@@ -41,6 +42,7 @@ export function DataProvidersSettings() {
 
   const onMode = async (m: DataMode) => {
     setMode(m);
+    writeLastMode(m);
     await save({ data: { mode: m } });
     await refreshAll();
   };

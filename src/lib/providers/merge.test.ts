@@ -25,3 +25,40 @@ describe("modo híbrido", () => {
     expect(shouldFallback(200)).toBe(false);
   });
 });
+
+import { aggregateDividendEvents, fillMissingDividendYears } from "./merge";
+
+describe("proventos de fontes alternativas", () => {
+  it("soma por ano separando JCP e dividendo, sem duplicar o mesmo pagamento", () => {
+    const r = aggregateDividendEvents([
+      { tipo: "Dividendo", valor: 1, data: "2024-05-10" },
+      { tipo: "Dividendo", valor: 1, data: "2024-05-10" },
+      { tipo: "JCP", valor: 0.5, data: "2024-08-01" },
+    ]);
+    expect(r).toEqual([{ year: 2024, dividendo: 1, jcp: 0.5 }]);
+  });
+  it("só completa anos que a B3 não tem; nunca altera ano oficial com valor", () => {
+    const official = [{ year: 2023, dividendo: 2, jcp: 0 }, { year: 2024, dividendo: 0, jcp: 0 }];
+    const alt = [{ year: 2023, dividendo: 9, jcp: 9 }, { year: 2024, dividendo: 1, jcp: 0.5 }, { year: 2022, dividendo: 3, jcp: 0 }];
+    const { rows, filledYears } = fillMissingDividendYears(official, alt, (a) => ({ ...a }));
+    expect(rows).toEqual([
+      { year: 2022, dividendo: 3, jcp: 0 },
+      { year: 2023, dividendo: 2, jcp: 0 },
+      { year: 2024, dividendo: 1, jcp: 0.5 },
+    ]);
+    expect(filledYears).toEqual([2024, 2022]);
+  });
+});
+
+import { splitFreshAlt } from "./merge";
+
+describe("economia de consultas nas fontes alternativas", () => {
+  const now = Date.parse("2026-11-11T15:00:00Z");
+  const q = (ticker: string, source: string, minutesAgo: number) => ({ ticker, source, updatedAt: new Date(now - minutesAgo * 60000).toISOString() });
+  it("Bolsai vale por 6 horas e HG Brasil por 30 minutos", () => {
+    const stored = { A: q("A", "bolsai", 300), B: q("B", "bolsai", 400), C: q("C", "hgbrasil", 20), D: q("D", "hgbrasil", 31) };
+    const r = splitFreshAlt(["A", "B", "C", "D", "E"], stored, now);
+    expect(r.fresh.map((x) => x.ticker)).toEqual(["A", "C"]);
+    expect(r.stale).toEqual(["B", "D", "E"]);
+  });
+});

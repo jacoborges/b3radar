@@ -76,9 +76,12 @@ export const refreshMacro = createServerFn({ method: "POST" })
     const { data: rows, error } = await query;
     if (error) throw new Error(error.message);
     const stale = (rows ?? []).filter((r) => data.force || r.last_value == null || !r.updated_at || Date.now() - new Date(r.updated_at).getTime() >= STALE_MS);
-    if (stale.length === 0) return { skipped: true, updated: 0, failed: [] as string[] };
+    if (stale.length === 0) return { skipped: true, updated: 0, failed: [] as string[], fallbackUsed: [] as string[] };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { refreshAllMacro } = await import("@/lib/macro.server");
-    const r = await refreshAllMacro(supabaseAdmin, stale.map((r) => r.code));
+    const { data: settings } = await context.supabase
+      .from("user_settings").select("hgbrasil_key, data_mode").eq("user_id", context.userId).maybeSingle();
+    const hgbrasilKey = settings?.data_mode !== "brapi" ? settings?.hgbrasil_key?.trim() || undefined : undefined;
+    const r = await refreshAllMacro(supabaseAdmin, stale.map((r) => r.code), { hgbrasilKey });
     return { skipped: false, ...r };
   });

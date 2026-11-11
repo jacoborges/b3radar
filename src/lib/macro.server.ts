@@ -145,7 +145,10 @@ export async function refreshAllMacro(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   admin: any,
   codes?: string[],
-): Promise<{ updated: number; failed: string[] }> {
+  /** Reserva opcional: chave HG Brasil do usuário para a Selic meta quando o BCB falhar. */
+  fallback?: { hgbrasilKey?: string },
+): Promise<{ updated: number; failed: string[]; fallbackUsed: string[] }> {
+  const fallbackUsed: string[] = [];
   let query = admin
     .from("macro_series")
     .select("code, source, source_id, last_date");
@@ -161,7 +164,18 @@ export async function refreshAllMacro(
       const s = list[cursor++];
       if (!s) return;
       try {
-        const obs = await fetchSeries(s);
+        let obs: Observation[];
+        try {
+          obs = await fetchSeries(s);
+          if (obs.length === 0) throw new Error("vazio");
+        } catch (primaryErr) {
+          if (s.code !== "selic_meta" || !fallback?.hgbrasilKey) throw primaryErr;
+          const { hgSelic } = await import("@/lib/providers/alt.server");
+          const hg = await hgSelic(fallback.hgbrasilKey);
+          if (!hg) throw primaryErr;
+          obs = [hg];
+          fallbackUsed.push(s.code);
+        }
         if (obs.length === 0) throw new Error("A fonte não retornou observações válidas para o período");
         for (let i = 0; i < obs.length; i += 1000) {
           const rows = obs.slice(i, i + 1000).map((o) => ({ series_code: s.code, ...o }));
@@ -185,5 +199,5 @@ export async function refreshAllMacro(
     }
   };
   await Promise.all(Array.from({ length: 2 }, worker));
-  return { updated, failed };
+  return { updated, failed, fallbackUsed };
 }

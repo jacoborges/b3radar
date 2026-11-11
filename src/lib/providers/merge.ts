@@ -47,3 +47,75 @@ export function maskKey(key: string | null | undefined): string {
   if (k.length <= 8) return "••••";
   return `${k.slice(0, 3)}…${k.slice(-3)}`;
 }
+
+export interface AltDividendYear { year: number; dividendo: number; jcp: number }
+
+/** Soma pagamentos de uma fonte alternativa por ano, deduplicando (tipo+data+valor). */
+export function aggregateDividendEvents(
+  events: Array<{ tipo: "Dividendo" | "JCP"; valor: number; data: string | null }>,
+): AltDividendYear[] {
+  const seen = new Set<string>();
+  const byYear = new Map<number, AltDividendYear>();
+  for (const e of events) {
+    if (!e.data || !(e.valor > 0)) continue;
+    const key = `${e.tipo}|${e.data}|${e.valor.toFixed(6)}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const year = Number(e.data.slice(0, 4));
+    if (!Number.isFinite(year)) continue;
+    const row = byYear.get(year) ?? { year, dividendo: 0, jcp: 0 };
+    if (e.tipo === "JCP") row.jcp += e.valor; else row.dividendo += e.valor;
+    byYear.set(year, row);
+  }
+  return Array.from(byYear.values()).sort((a, b) => a.year - b.year);
+}
+
+/**
+ * Completa anos sem proventos da fonte oficial (B3) com dados alternativos.
+ * Anos que a B3 já tem (com valor > 0) nunca são alterados — evita pagamento duplicado.
+ */
+export function fillMissingDividendYears<T extends { year: number; dividendo: number; jcp: number }>(
+  official: T[] | null | undefined,
+  alt: AltDividendYear[],
+  makeRow: (a: AltDividendYear) => T,
+  years?: number[],
+): { rows: T[]; filledYears: number[] } {
+  const base = [...(official ?? [])];
+  const filledYears: number[] = [];
+  const wanted = years ? new Set(years) : null;
+  for (const a of alt) {
+    if (wanted && !wanted.has(a.year)) continue;
+    if (a.dividendo + a.jcp <= 0) continue;
+    const i = base.findIndex((r) => r.year === a.year);
+    if (i >= 0 && base[i]!.dividendo + base[i]!.jcp > 0) continue;
+    const row = makeRow(a);
+    if (i >= 0) base[i] = { ...base[i]!, dividendo: row.dividendo, jcp: row.jcp };
+    else base.push(row);
+    filledYears.push(a.year);
+  }
+  base.sort((x, y) => x.year - y.year);
+  return { rows: base, filledYears };
+}
+
+/** Validade das cotações alternativas: Bolsai é fechamento diário; HG Brasil tem atraso de minutos. */
+export const ALT_QUOTE_TTL_MS: Record<"hgbrasil" | "bolsai", number> = {
+  hgbrasil: 30 * 60 * 1000,
+  bolsai: 6 * 60 * 60 * 1000,
+};
+
+/** Separa tickers com cotação alternativa ainda válida (não reconsultar) dos que precisam de nova consulta. */
+export function splitFreshAlt<Q extends { ticker: string; updatedAt: string; source?: string }>(
+  tickers: string[],
+  stored: Record<string, Q>,
+  now: number,
+): { fresh: Q[]; stale: string[] } {
+  const fresh: Q[] = [];
+  const stale: string[] = [];
+  for (const t of tickers) {
+    const q = stored[t.toUpperCase()];
+    const ttl = q?.source === "bolsai" || q?.source === "hgbrasil" ? ALT_QUOTE_TTL_MS[q.source] : 0;
+    if (q && now - Date.parse(q.updatedAt) < ttl) fresh.push(q);
+    else stale.push(t);
+  }
+  return { fresh, stale };
+}

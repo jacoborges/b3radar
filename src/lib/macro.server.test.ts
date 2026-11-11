@@ -32,7 +32,27 @@ describe("macro observations", () => {
       update: () => { writes++; return { eq: () => Promise.resolve({ error: null }) }; },
     };
     const result = await refreshAllMacro({ from: () => query });
-    expect(result).toEqual({ updated: 0, failed: ["unknown"] });
+    expect(result).toEqual({ updated: 0, failed: ["unknown"], fallbackUsed: [] });
     expect(writes).toBe(0);
+  });
+  it("usa a HG Brasil como reserva da Selic meta quando o Banco Central falha", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async (url: string) => {
+      if (String(url).includes("hgbrasil")) return new Response(JSON.stringify({ results: [{ date: "2026-11-10", selic: 15 }] }), { status: 200 });
+      return new Response("erro", { status: 500 });
+    }) as typeof fetch;
+    const upserts: unknown[] = [];
+    const query = {
+      select: () => ({ in: () => Promise.resolve({ data: [{ code: "selic_meta", source: "sgs", source_id: "432", last_date: "2026-11-01" }], error: null }) }),
+      upsert: (rows: unknown) => { upserts.push(rows); return Promise.resolve({ error: null }); },
+      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
+    };
+    try {
+      const result = await refreshAllMacro({ from: () => query }, ["selic_meta"], { hgbrasilKey: "k" });
+      expect(result).toEqual({ updated: 1, failed: [], fallbackUsed: ["selic_meta"] });
+      expect(upserts).toEqual([[{ series_code: "selic_meta", date: "2026-11-10", value: 15 }]]);
+    } finally {
+      globalThis.fetch = realFetch;
+    }
   });
 });
