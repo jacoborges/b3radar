@@ -156,7 +156,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       ).length;
     }
     return merged;
-  }, [baseStock, proventos, liveFund, priceHistory]);
+  }, [baseStock, proventos, liveFund, altFund, priceHistory]);
   const stock = mergedStock;
 
   const proventosOk = !!proventos?.historico;
