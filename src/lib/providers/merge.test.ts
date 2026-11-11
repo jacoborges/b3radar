@@ -25,3 +25,27 @@ describe("modo híbrido", () => {
     expect(shouldFallback(200)).toBe(false);
   });
 });
+
+import { aggregateDividendEvents, fillMissingDividendYears } from "./merge";
+
+describe("proventos de fontes alternativas", () => {
+  it("soma por ano separando JCP e dividendo, sem duplicar o mesmo pagamento", () => {
+    const r = aggregateDividendEvents([
+      { tipo: "Dividendo", valor: 1, data: "2024-05-10" },
+      { tipo: "Dividendo", valor: 1, data: "2024-05-10" },
+      { tipo: "JCP", valor: 0.5, data: "2024-08-01" },
+    ]);
+    expect(r).toEqual([{ year: 2024, dividendo: 1, jcp: 0.5 }]);
+  });
+  it("só completa anos que a B3 não tem; nunca altera ano oficial com valor", () => {
+    const official = [{ year: 2023, dividendo: 2, jcp: 0 }, { year: 2024, dividendo: 0, jcp: 0 }];
+    const alt = [{ year: 2023, dividendo: 9, jcp: 9 }, { year: 2024, dividendo: 1, jcp: 0.5 }, { year: 2022, dividendo: 3, jcp: 0 }];
+    const { rows, filledYears } = fillMissingDividendYears(official, alt, (a) => ({ ...a }));
+    expect(rows).toEqual([
+      { year: 2022, dividendo: 3, jcp: 0 },
+      { year: 2023, dividendo: 2, jcp: 0 },
+      { year: 2024, dividendo: 1, jcp: 0.5 },
+    ]);
+    expect(filledYears).toEqual([2024, 2022]);
+  });
+});

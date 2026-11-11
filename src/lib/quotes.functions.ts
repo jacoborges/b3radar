@@ -130,7 +130,7 @@ function friendlyError(f: BrapiFailure): string {
 
 export const fetchLiveQuotes = createServerFn({ method: "POST" })
   .inputValidator((data) => inputSchema.parse(data))
-  .handler(async ({ data }): Promise<{ quotes: LiveQuote[]; error: string | null }> => {
+  .handler(async ({ data }): Promise<{ quotes: LiveQuote[]; error: string | null; requests?: number }> => {
     const tickers = Array.from(new Set(data.tickers.map((t) => t.toUpperCase())));
     if (tickers.length === 0) return { quotes: [], error: null };
 
@@ -140,6 +140,7 @@ export const fetchLiveQuotes = createServerFn({ method: "POST" })
       // 1ª tentativa: lotes grandes (planos que permitem vários ativos por requisição).
       let batches = chunk(tickers, DEFAULT_BATCH_SIZE);
       let results = await runPool(batches, token);
+      let requests = batches.length;
 
       // Plano restrito: refaz tudo respeitando o limite informado pela própria API.
       const limitFailure = results.find(
@@ -149,15 +150,16 @@ export const fetchLiveQuotes = createServerFn({ method: "POST" })
         const size = Math.max(1, limitFailure.maxPerRequest ?? 1);
         batches = chunk(tickers, size);
         results = await runPool(batches, token);
+        requests += batches.length;
       }
 
       const quotes = results.flatMap((r) => r?.quotes ?? []);
       const failure = results.find((r) => r?.failure)?.failure ?? null;
 
       if (quotes.length === 0 && failure) {
-        return { quotes: [], error: friendlyError(failure) };
+        return { quotes: [], error: friendlyError(failure), requests };
       }
-      return { quotes, error: null };
+      return { quotes, error: null, requests };
     } catch (err) {
       console.error("[fetchLiveQuotes] failed", err);
       return { quotes: [], error: "Falha ao consultar cotações ao vivo." };
