@@ -42,14 +42,65 @@ export async function hgQuote(ticker: string, key: string): Promise<{ quote: Liv
   } catch { return { quote: null, status: 0 }; }
 }
 
-async function bolsaiGet(path: string, key: string): Promise<{ json: Record<string, unknown> | null; status: number }> {
+/** Último saldo de consultas informado pela Bolsai (header X-RateLimit-Remaining). */
+export let bolsaiRemaining: number | null = null;
+
+async function bolsaiRaw(path: string, key: string): Promise<{ body: unknown; status: number }> {
   try {
     const res = await fetch(`https://api.usebolsai.com/api/v1${path}`, { headers: { "X-API-Key": key, accept: "application/json" } });
-    if (!res.ok) return { json: null, status: res.status };
-    const j = (await res.json()) as Record<string, unknown>;
-    const inner = (j && typeof j.data === "object" && j.data && !Array.isArray(j.data) ? j.data : j) as Record<string, unknown>;
-    return { json: inner, status: 200 };
-  } catch { return { json: null, status: 0 }; }
+    const rem = Number(res.headers.get("x-ratelimit-remaining"));
+    if (res.headers.has("x-ratelimit-remaining") && Number.isFinite(rem)) bolsaiRemaining = rem;
+    if (!res.ok) return { body: null, status: res.status };
+    return { body: await res.json(), status: 200 };
+  } catch { return { body: null, status: 0 }; }
+}
+
+async function bolsaiGet(path: string, key: string): Promise<{ json: Record<string, unknown> | null; status: number }> {
+  const { body, status } = await bolsaiRaw(path, key);
+  if (!body || typeof body !== "object") return { json: null, status };
+  const j = body as Record<string, unknown>;
+  const inner = (j && typeof j.data === "object" && j.data && !Array.isArray(j.data) ? j.data : j) as Record<string, unknown>;
+  return { json: inner, status };
+}
+
+function str(v: unknown): string | null {
+  return typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.slice(0, 10) : null;
+}
+
+/** Histórico de proventos da Bolsai (até 20 anos), normalizado. */
+export async function bolsaiDividends(
+  ticker: string, key: string, years = 6,
+): Promise<{ events: Array<{ tipo: "Dividendo" | "JCP"; valor: number; data: string | null }> | null; status: number }> {
+  const { body, status } = await bolsaiRaw(`/dividends/${encodeURIComponent(ticker)}?years=${years}`, key);
+  if (!body) return { events: null, status };
+  const o = body as Record<string, unknown>;
+  const list = (Array.isArray(body) ? body
+    : Array.isArray(o.dividends) ? o.dividends
+    : Array.isArray(o.data) ? o.data
+    : Array.isArray(o.history) ? o.history
+    : Array.isArray(o.items) ? o.items : []) as Array<Record<string, unknown>>;
+  const events = list.map((r) => {
+    const t = String(r.type ?? r.tipo ?? r.label ?? "").toLowerCase();
+    const tipo: "Dividendo" | "JCP" = t.includes("jcp") || t.includes("juros") || t.includes("interest") ? "JCP" : "Dividendo";
+    const valor = pick(r, "value", "valor", "amount", "rate", "cash_amount") ?? 0;
+    const data = str(r.payment_date) ?? str(r.data_pagamento) ?? str(r.ex_date) ?? str(r.data_ex) ?? str(r.com_date) ?? str(r.date);
+    return { tipo, valor, data };
+  });
+  return { events, status };
+}
+
+/** Selic meta (% a.a.) pela HG Brasil — reserva quando o Banco Central não responde. */
+export async function hgSelic(key: string): Promise<{ date: string; value: number } | null> {
+  try {
+    const res = await fetch(`https://api.hgbrasil.com/finance/taxes?key=${encodeURIComponent(key)}`, { headers: { accept: "application/json" } });
+    if (!res.ok) return null;
+    const j = (await res.json()) as { results?: Array<Record<string, unknown>> | Record<string, unknown> };
+    const first = Array.isArray(j.results) ? j.results[0] : j.results;
+    if (!first) return null;
+    const value = n(first.selic);
+    const date = str(first.date) ?? new Date().toISOString().slice(0, 10);
+    return value != null && value > 0 && value < 100 ? { date, value } : null;
+  } catch { return null; }
 }
 
 export async function bolsaiQuote(ticker: string, key: string): Promise<{ quote: LiveQuote | null; status: number }> {
