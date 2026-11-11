@@ -6,7 +6,7 @@ import { getMyBrapiToken, setMyBrapiToken } from "@/lib/user-settings.functions"
 import { supabase } from "@/integrations/supabase/client";
 import { quoteRefreshBatches } from "@/lib/quote-refresh";
 import { fetchAltQuotes } from "@/lib/alt-data.functions";
-import { recordUsage } from "@/lib/provider-usage";
+import { readUsage, recordUsage } from "@/lib/provider-usage";
 import { splitFreshAlt } from "@/lib/providers/merge";
 
 const ALT_STORE_KEY = "b3radar:alt-quotes";
@@ -176,7 +176,9 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
       let altQuotes: LiveQuote[] = [];
       let mode: string = readLastMode();
       if (stale.length > 0) {
-        const alt = await altCall({ data: { tickers: stale, got: [...got, ...freshSet] } });
+        // Cota da Bolsai esgotada hoje: não insiste até o próximo dia (UTC).
+        const skip = readUsage().remaining.bolsai === 0 ? (["bolsai"] as const) : [];
+        const alt = await altCall({ data: { tickers: stale, got: [...got, ...freshSet], skip: [...skip] } });
         recordUsage(alt.requests, alt.bolsaiRemaining != null ? { bolsai: alt.bolsaiRemaining } : {});
         mode = alt.mode;
         writeLastMode(alt.mode);

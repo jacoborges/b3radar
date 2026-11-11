@@ -70,7 +70,7 @@ const MAX_ALT = 25;
 /** Busca cotações nas fontes alternativas configuradas pelo usuário (HG Brasil → Bolsai). */
 export const fetchAltQuotes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ tickers: z.array(z.string().min(1).max(10)).max(200), got: z.array(z.string().max(10)).max(200).default([]) }).parse(d))
+  .inputValidator((d) => z.object({ tickers: z.array(z.string().min(1).max(10)).max(200), got: z.array(z.string().max(10)).max(200).default([]), skip: z.array(z.enum(["bolsai", "hgbrasil"])).max(2).default([]) }).parse(d))
   .handler(async ({ data, context }): Promise<{ quotes: LiveQuote[]; mode: DataMode; requests: { hgbrasil: number; bolsai: number }; bolsaiRemaining: number | null }> => {
     const r = await loadRow(context);
     const requests = { hgbrasil: 0, bolsai: 0 };
@@ -80,7 +80,8 @@ export const fetchAltQuotes = createServerFn({ method: "POST" })
     const tickers = tickersForAlt(r.mode, all, new Set(data.got.map((t) => t.toUpperCase()))).slice(0, MAX_ALT);
     if (tickers.length === 0) return { quotes: [], mode: r.mode, requests, bolsaiRemaining: null };
     const quotes: LiveQuote[] = [];
-    let hgDown = !r.hgbrasil, bolsaiDown = !r.bolsai;
+    let hgDown = !r.hgbrasil || data.skip.includes("hgbrasil");
+    let bolsaiDown = !r.bolsai || data.skip.includes("bolsai");
     for (const t of tickers) {
       if (!hgDown) {
         const h = await hgQuote(t, r.hgbrasil);
