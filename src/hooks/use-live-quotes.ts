@@ -17,6 +17,21 @@ function readAltStore(): Record<string, LiveQuote> {
     return {};
   }
 }
+const MODE_KEY = "b3radar:data-mode";
+function readLastMode(): string {
+  try {
+    return window.localStorage.getItem(MODE_KEY) ?? "hybrid";
+  } catch {
+    return "hybrid";
+  }
+}
+export function writeLastMode(mode: string) {
+  try {
+    window.localStorage.setItem(MODE_KEY, mode);
+  } catch {
+    /* storage indisponível */
+  }
+}
 function writeAltStore(quotes: LiveQuote[]) {
   try {
     const store = readAltStore();
@@ -159,11 +174,12 @@ export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
       const { fresh, stale } = splitFreshAlt(data.tickers.map((t) => t.toUpperCase()), stored, Date.now());
       const freshSet = new Set(fresh.map((q) => q.ticker));
       let altQuotes: LiveQuote[] = [];
-      let mode: string = "hybrid";
+      let mode: string = readLastMode();
       if (stale.length > 0) {
         const alt = await altCall({ data: { tickers: stale, got: [...got, ...freshSet] } });
         recordUsage(alt.requests, alt.bolsaiRemaining != null ? { bolsai: alt.bolsaiRemaining } : {});
         mode = alt.mode;
+        writeLastMode(alt.mode);
         altQuotes = alt.quotes;
         if (alt.quotes.length) writeAltStore(alt.quotes);
       }
