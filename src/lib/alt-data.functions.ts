@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isDataMode, maskKey, type DataMode } from "@/lib/providers/merge";
+import { isDataMode, maskKey, tickersForAlt, type DataMode } from "@/lib/providers/merge";
 import { bolsaiFundamentals, bolsaiQuote, hgQuote, type AltFundamentals } from "@/lib/providers/alt.server";
 import type { LiveQuote } from "@/lib/quotes.functions";
 
@@ -69,11 +69,13 @@ const MAX_ALT = 25;
 /** Busca cotações nas fontes alternativas configuradas pelo usuário (HG Brasil → Bolsai). */
 export const fetchAltQuotes = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ tickers: z.array(z.string().min(1).max(10)).max(200) }).parse(d))
+  .inputValidator((d) => z.object({ tickers: z.array(z.string().min(1).max(10)).max(200), got: z.array(z.string().max(10)).max(200).default([]) }).parse(d))
   .handler(async ({ data, context }): Promise<{ quotes: LiveQuote[]; mode: DataMode }> => {
     const r = await loadRow(context);
     if (r.mode === "brapi" || (!r.hgbrasil && !r.bolsai)) return { quotes: [], mode: r.mode };
-    const tickers = Array.from(new Set(data.tickers.map((t) => t.toUpperCase()))).slice(0, MAX_ALT);
+    const all = Array.from(new Set(data.tickers.map((t) => t.toUpperCase())));
+    const tickers = tickersForAlt(r.mode, all, new Set(data.got.map((t) => t.toUpperCase()))).slice(0, MAX_ALT);
+    if (tickers.length === 0) return { quotes: [], mode: r.mode };
     const quotes: LiveQuote[] = [];
     let hgDown = !r.hgbrasil, bolsaiDown = !r.bolsai;
     for (const t of tickers) {
