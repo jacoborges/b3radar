@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { listPortfolios } from "@/lib/portfolio.functions";
+import { ProviderUsageLine, PROVIDER_LABEL } from "@/components/ProviderUsageLine";
 import {
   RefreshCw,
   
@@ -594,7 +595,7 @@ function HomePage() {
 
 
       <footer className="border-t border-border/60 py-6 text-center text-xs text-muted-foreground">
-        Preços em tempo real via brapi.dev · Fundamentos atualizados do Fundamentus a cada 1 h · Proventos oficiais via B3
+        Preços em tempo real via brapi.dev (modo híbrido: HG Brasil e Bolsai) · Fundamentos atualizados do Fundamentus a cada 1 h · Proventos oficiais via B3
       </footer>
 
 
@@ -678,7 +679,9 @@ function LiveBadge({
   isFetching,
   hasError,
   count,
+  sources = {},
 }: {
+  sources?: Record<string, number>;
   updatedAt: Date | null;
   isFetching: boolean;
   hasError: boolean;
@@ -703,6 +706,10 @@ function LiveBadge({
     : updatedAt
       ? `Ao vivo · ${count} tickers · ${time}`
       : "Conectando…";
+  const breakdown = Object.entries(sources)
+    .filter(([, n]) => n > 0)
+    .map(([p, n]) => `${PROVIDER_LABEL[p as keyof typeof PROVIDER_LABEL] ?? p} ${n}`)
+    .join(" · ");
 
   return (
     <span
@@ -711,7 +718,7 @@ function LiveBadge({
         borderColor: "var(--color-border)",
         color: "var(--color-muted-foreground)",
       }}
-      title="Preços atualizados a cada 30 s via brapi.dev"
+      title={breakdown ? `Cotações por fonte: ${breakdown}` : "Preços atualizados via brapi.dev e fontes do modo híbrido"}
     >
       <span
         className="inline-block h-1.5 w-1.5 rounded-full"
@@ -722,6 +729,9 @@ function LiveBadge({
         }}
       />
       {label}
+      {Object.keys(sources).filter((k) => k !== "brapi" && (sources[k] ?? 0) > 0).length > 0 && (
+        <span className="normal-case tracking-normal opacity-80">· {breakdown}</span>
+      )}
     </span>
   );
 }
