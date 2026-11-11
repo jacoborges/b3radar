@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { MonthlySalesLimitSettings } from "@/components/MonthlySalesLimitSettings";
+import { DataProvidersSettings } from "@/components/DataProvidersSettings";
 import { useBrapiToken } from "@/hooks/use-live-quotes";
 import {
   useBazinDivisor,
@@ -164,6 +165,8 @@ function SettingsPage() {
             o painel continuará funcionando com o limite público da brapi.
           </p>
         </section>
+
+        <DataProvidersSettings />
 
         <BazinSection />
 

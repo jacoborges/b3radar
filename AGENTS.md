@@ -24,3 +24,5 @@
 - Keep portfolio chart viewing in a dedicated fullscreen dialog component using the public TradingView embed; chart controls stay separate from position-history toggles to avoid nested buttons.
 - Sector ranking math lives in pure src/lib/ranking.ts (100 shares, Data Com window, corporate-event quantity adjust); server fn only fetches data, so rules stay testable.
 - Keep stock-search draft state inside its isolated input and apply list filtering through a cancellable, tested debounce, so typing does not rerender the asset list or refresh quote subscriptions on each key.
+
+- Alternative data providers (HG Brasil, Bolsai, Partnr) keep per-user keys in user_settings and are called only from authenticated server functions; pure priority/merge rules live in src/lib/providers/merge.ts so the hybrid mode stays testable and keys never reach the browser.

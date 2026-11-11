@@ -5,6 +5,7 @@ import { fetchLiveQuotes, type LiveQuote } from "@/lib/quotes.functions";
 import { getMyBrapiToken, setMyBrapiToken } from "@/lib/user-settings.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { quoteRefreshBatches } from "@/lib/quote-refresh";
+import { fetchAltQuotes } from "@/lib/alt-data.functions";
 
 // Planos gratuitos da brapi permitem 1 ativo por requisição: pedimos menos
 // ativos e com menos frequência para não estourar a cota.
@@ -125,7 +126,26 @@ function readQuotesFromCache(qc: QueryClient, tickers: string[]): LiveQuote[] {
  * and the quotes screen always display the same price for the same asset.
  */
 export function useLiveQuotes(tickers: string[]): LiveQuotesMap {
-  const call = useServerFn(fetchLiveQuotes);
+  const brapiCall = useServerFn(fetchLiveQuotes);
+  const altCall = useServerFn(fetchAltQuotes);
+  // Modo híbrido: BRAPI + fontes alternativas configuradas em Ajustes.
+  const call = async ({ data }: { data: { tickers: string[]; token?: string } }) => {
+    const res = await brapiCall({ data });
+    const got = new Set(res.quotes.map((q) => q.ticker.toUpperCase()));
+    try {
+      const alt = await altCall({ data: { tickers: data.tickers, got: Array.from(got) } });
+      if (alt.mode === "brapi" || alt.quotes.length === 0) return res;
+      const byTicker = new Map(res.quotes.map((q) => [q.ticker.toUpperCase(), q]));
+      for (const q of alt.quotes) {
+        // alt_first: fonte alternativa prevalece; híbrido: só preenche o que faltou.
+        if (alt.mode === "alt_first" || !byTicker.has(q.ticker)) byTicker.set(q.ticker, q);
+      }
+      const quotes = Array.from(byTicker.values());
+      return { quotes, error: quotes.length > 0 ? null : res.error };
+    } catch {
+      return res;
+    }
+  };
   const [token] = useBrapiToken();
   const queryClient = useQueryClient();
   const [, setCacheRevision] = useState(0);

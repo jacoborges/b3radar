@@ -519,9 +519,13 @@ export type Database = {
       }
       user_settings: {
         Row: {
+          bolsai_key: string | null
           brapi_token: string | null
           created_at: string
+          data_mode: string
+          hgbrasil_key: string | null
           monthly_sales_limit: number
+          partnr_key: string | null
           sector_presets: Json
           selected_sectors: Json | null
           stock_columns: Json | null
@@ -529,9 +533,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bolsai_key?: string | null
           brapi_token?: string | null
           created_at?: string
+          data_mode?: string
+          hgbrasil_key?: string | null
           monthly_sales_limit?: number
+          partnr_key?: string | null
           sector_presets?: Json
           selected_sectors?: Json | null
           stock_columns?: Json | null
@@ -539,9 +547,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bolsai_key?: string | null
           brapi_token?: string | null
           created_at?: string
+          data_mode?: string
+          hgbrasil_key?: string | null
           monthly_sales_limit?: number
+          partnr_key?: string | null
           sector_presets?: Json
           selected_sectors?: Json | null
           stock_columns?: Json | null

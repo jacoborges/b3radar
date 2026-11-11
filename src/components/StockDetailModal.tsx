@@ -1,5 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { fetchAltFundamentals } from "@/lib/alt-data.functions";
 import { RefreshCw } from "lucide-react";
 import {
   Dialog,
@@ -68,6 +70,14 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     isFetching: fundFetching,
   } = useTickerFundamentals(ticker);
   const { data: priceHistory } = usePriceHistory(ticker, !!ticker);
+  const altFundFn = useServerFn(fetchAltFundamentals);
+  const { data: altFund } = useQuery({
+    queryKey: ["alt-fundamentals", ticker],
+    queryFn: () => altFundFn({ data: { ticker: ticker! } }),
+    enabled: !!ticker,
+    staleTime: 6 * 60 * 60 * 1000,
+    retry: false,
+  });
 
 
   useEffect(() => {
@@ -104,6 +114,17 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       if (f.liquidezDiaria != null) merged.liquidezDiaria = f.liquidezDiaria;
     }
 
+    // Modo híbrido: Bolsai preenche apenas indicadores que ficaram vazios.
+    const a = altFund?.fields;
+    if (a) {
+      const keys = ["pl", "pvp", "dy", "roe", "roic", "margemLiquida", "margemEbit", "divBrutaPatrimonio", "liquidezCorrente", "valorMercado"] as const;
+      const target = merged as unknown as Record<string, unknown>;
+      for (const k of keys) {
+        const cur = target[k];
+        if ((cur == null || (typeof cur === "number" && !Number.isFinite(cur))) && a[k] != null) target[k] = a[k];
+      }
+    }
+
     if (historico && historico.length > 0) {
       const stats = computeDividendStats(historico, merged.preco);
       merged.dividendos = stats.dividendos;
@@ -135,7 +156,7 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       ).length;
     }
     return merged;
-  }, [baseStock, proventos, liveFund, priceHistory]);
+  }, [baseStock, proventos, liveFund, altFund, priceHistory]);
   const stock = mergedStock;
 
   const proventosOk = !!proventos?.historico;
