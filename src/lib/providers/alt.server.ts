@@ -42,25 +42,23 @@ export async function hgQuote(ticker: string, key: string): Promise<{ quote: Liv
   } catch { return { quote: null, status: 0 }; }
 }
 
-/** Último saldo de consultas informado pela Bolsai (header X-RateLimit-Remaining). */
-export let bolsaiRemaining: number | null = null;
-
-async function bolsaiRaw(path: string, key: string): Promise<{ body: unknown; status: number }> {
+async function bolsaiRaw(path: string, key: string): Promise<{ body: unknown; status: number; remaining: number | null }> {
   try {
     const res = await fetch(`https://api.usebolsai.com/api/v1${path}`, { headers: { "X-API-Key": key, accept: "application/json" } });
-    const rem = Number(res.headers.get("x-ratelimit-remaining"));
-    if (res.headers.has("x-ratelimit-remaining") && Number.isFinite(rem)) bolsaiRemaining = rem;
-    if (!res.ok) return { body: null, status: res.status };
-    return { body: await res.json(), status: 200 };
-  } catch { return { body: null, status: 0 }; }
+    // Saldo do dia informado pela própria Bolsai (header X-RateLimit-Remaining).
+    const h = res.headers.get("x-ratelimit-remaining");
+    const remaining = h != null && Number.isFinite(Number(h)) ? Number(h) : null;
+    if (!res.ok) return { body: null, status: res.status, remaining };
+    return { body: await res.json(), status: 200, remaining };
+  } catch { return { body: null, status: 0, remaining: null }; }
 }
 
-async function bolsaiGet(path: string, key: string): Promise<{ json: Record<string, unknown> | null; status: number }> {
-  const { body, status } = await bolsaiRaw(path, key);
-  if (!body || typeof body !== "object") return { json: null, status };
+async function bolsaiGet(path: string, key: string): Promise<{ json: Record<string, unknown> | null; status: number; remaining: number | null }> {
+  const { body, status, remaining } = await bolsaiRaw(path, key);
+  if (!body || typeof body !== "object") return { json: null, status, remaining };
   const j = body as Record<string, unknown>;
   const inner = (j && typeof j.data === "object" && j.data && !Array.isArray(j.data) ? j.data : j) as Record<string, unknown>;
-  return { json: inner, status };
+  return { json: inner, status, remaining };
 }
 
 function str(v: unknown): string | null {
@@ -70,9 +68,9 @@ function str(v: unknown): string | null {
 /** Histórico de proventos da Bolsai (até 20 anos), normalizado. */
 export async function bolsaiDividends(
   ticker: string, key: string, years = 6,
-): Promise<{ events: Array<{ tipo: "Dividendo" | "JCP"; valor: number; data: string | null }> | null; status: number }> {
-  const { body, status } = await bolsaiRaw(`/dividends/${encodeURIComponent(ticker)}?years=${years}`, key);
-  if (!body) return { events: null, status };
+): Promise<{ events: Array<{ tipo: "Dividendo" | "JCP"; valor: number; data: string | null }> | null; status: number; remaining: number | null }> {
+  const { body, status, remaining } = await bolsaiRaw(`/dividends/${encodeURIComponent(ticker)}?years=${years}`, key);
+  if (!body) return { events: null, status, remaining };
   const o = body as Record<string, unknown>;
   const list = (Array.isArray(body) ? body
     : Array.isArray(o.dividends) ? o.dividends
@@ -86,7 +84,7 @@ export async function bolsaiDividends(
     const data = str(r.payment_date) ?? str(r.data_pagamento) ?? str(r.ex_date) ?? str(r.data_ex) ?? str(r.com_date) ?? str(r.date);
     return { tipo, valor, data };
   });
-  return { events, status };
+  return { events, status, remaining };
 }
 
 /** Selic meta (% a.a.) pela HG Brasil — reserva quando o Banco Central não responde. */
@@ -103,14 +101,15 @@ export async function hgSelic(key: string): Promise<{ date: string; value: numbe
   } catch { return null; }
 }
 
-export async function bolsaiQuote(ticker: string, key: string): Promise<{ quote: LiveQuote | null; status: number }> {
-  const { json, status } = await bolsaiGet(`/stocks/${encodeURIComponent(ticker)}/quote`, key);
-  if (!json) return { quote: null, status };
+export async function bolsaiQuote(ticker: string, key: string): Promise<{ quote: LiveQuote | null; status: number; remaining?: number | null }> {
+  const { json, status, remaining } = await bolsaiGet(`/stocks/${encodeURIComponent(ticker)}/quote`, key);
+  if (!json) return { quote: null, status, remaining };
   const price = pick(json, "close", "price");
-  if (price == null) return { quote: null, status: 404 };
+  if (price == null) return { quote: null, status: 404, remaining };
   const open = pick(json, "previous_close", "open");
   return {
     status: 200,
+    remaining,
     quote: {
       ticker: ticker.toUpperCase(), price,
       changePercent: open ? ((price - open) / open) * 100 : 0,
@@ -119,12 +118,13 @@ export async function bolsaiQuote(ticker: string, key: string): Promise<{ quote:
   };
 }
 
-export async function bolsaiFundamentals(ticker: string, key: string): Promise<{ f: AltFundamentals | null; status: number }> {
-  const { json, status } = await bolsaiGet(`/fundamentals/${encodeURIComponent(ticker)}`, key);
-  if (!json) return { f: null, status };
+export async function bolsaiFundamentals(ticker: string, key: string): Promise<{ f: AltFundamentals | null; status: number; remaining: number | null }> {
+  const { json, status, remaining } = await bolsaiGet(`/fundamentals/${encodeURIComponent(ticker)}`, key);
+  if (!json) return { f: null, status, remaining };
   const o = (typeof json.indicators === "object" && json.indicators ? json.indicators : json) as Record<string, unknown>;
   return {
     status: 200,
+    remaining,
     f: {
       pl: pick(o, "pl", "p_l", "pe", "price_earnings"),
       pvp: pick(o, "pvp", "p_vp", "pb", "price_to_book"),

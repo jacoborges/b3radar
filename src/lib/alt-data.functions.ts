@@ -3,7 +3,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { isDataMode, maskKey, tickersForAlt, type DataMode } from "@/lib/providers/merge";
 import { bolsaiDividends, bolsaiFundamentals, bolsaiQuote, hgQuote, type AltFundamentals } from "@/lib/providers/alt.server";
-import * as altServer from "@/lib/providers/alt.server";
 import { aggregateDividendEvents, type AltDividendYear } from "@/lib/providers/merge";
 import type { LiveQuote } from "@/lib/quotes.functions";
 
@@ -75,6 +74,7 @@ export const fetchAltQuotes = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ quotes: LiveQuote[]; mode: DataMode; requests: { hgbrasil: number; bolsai: number }; bolsaiRemaining: number | null }> => {
     const r = await loadRow(context);
     const requests = { hgbrasil: 0, bolsai: 0 };
+    let bolsaiRemaining: number | null = null;
     if (r.mode === "brapi" || (!r.hgbrasil && !r.bolsai)) return { quotes: [], mode: r.mode, requests, bolsaiRemaining: null };
     const all = Array.from(new Set(data.tickers.map((t) => t.toUpperCase())));
     const tickers = tickersForAlt(r.mode, all, new Set(data.got.map((t) => t.toUpperCase()))).slice(0, MAX_ALT);
@@ -91,12 +91,13 @@ export const fetchAltQuotes = createServerFn({ method: "POST" })
       if (!bolsaiDown) {
         const b = await bolsaiQuote(t, r.bolsai);
         requests.bolsai++;
+        if (b.remaining != null) bolsaiRemaining = b.remaining;
         if (b.quote) { quotes.push(b.quote); continue; }
         if (b.status === 401 || b.status === 403 || b.status === 429) bolsaiDown = true;
       }
       if (hgDown && bolsaiDown) break;
     }
-    return { quotes, mode: r.mode, requests, bolsaiRemaining: altServer.bolsaiRemaining };
+    return { quotes, mode: r.mode, requests, bolsaiRemaining };
   });
 
 /** Fundamentos complementares (Bolsai) para preencher campos vazios na ficha do ativo. */
@@ -106,8 +107,8 @@ export const fetchAltFundamentals = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ fields: AltFundamentals | null; source: "bolsai" | null; requests: number; bolsaiRemaining: number | null }> => {
     const r = await loadRow(context);
     if (r.mode === "brapi" || !r.bolsai) return { fields: null, source: null, requests: 0, bolsaiRemaining: null };
-    const { f } = await bolsaiFundamentals(data.ticker, r.bolsai);
-    return { fields: f, source: f ? "bolsai" : null, requests: 1, bolsaiRemaining: altServer.bolsaiRemaining };
+    const { f, remaining } = await bolsaiFundamentals(data.ticker, r.bolsai);
+    return { fields: f, source: f ? "bolsai" : null, requests: 1, bolsaiRemaining: remaining };
   });
 
 /** Proventos por ano vindos da Bolsai, para completar anos ausentes na base oficial da B3. */
@@ -117,7 +118,7 @@ export const fetchAltDividends = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ years: AltDividendYear[]; source: "bolsai" | null; requests: number; bolsaiRemaining: number | null }> => {
     const r = await loadRow(context);
     if (r.mode === "brapi" || !r.bolsai) return { years: [], source: null, requests: 0, bolsaiRemaining: null };
-    const { events } = await bolsaiDividends(data.ticker, r.bolsai, 6);
+    const { events, remaining } = await bolsaiDividends(data.ticker, r.bolsai, 6);
     const years = aggregateDividendEvents(events ?? []);
-    return { years, source: years.length ? "bolsai" : null, requests: 1, bolsaiRemaining: altServer.bolsaiRemaining };
+    return { years, source: years.length ? "bolsai" : null, requests: 1, bolsaiRemaining: remaining };
   });
