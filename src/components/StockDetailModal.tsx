@@ -68,6 +68,14 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
     isFetching: fundFetching,
   } = useTickerFundamentals(ticker);
   const { data: priceHistory } = usePriceHistory(ticker, !!ticker);
+  const altFundFn = useServerFn(fetchAltFundamentals);
+  const { data: altFund } = useQuery({
+    queryKey: ["alt-fundamentals", ticker],
+    queryFn: () => altFundFn({ data: { ticker: ticker! } }),
+    enabled: !!ticker,
+    staleTime: 6 * 60 * 60 * 1000,
+    retry: false,
+  });
 
 
   useEffect(() => {
@@ -102,6 +110,17 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
       if (f.cagrLucros5a != null) merged.cagrLucros5a = f.cagrLucros5a;
       if (f.valorMercado != null) merged.valorMercado = f.valorMercado;
       if (f.liquidezDiaria != null) merged.liquidezDiaria = f.liquidezDiaria;
+    }
+
+    // Modo híbrido: Bolsai preenche apenas indicadores que ficaram vazios.
+    const a = altFund?.fields;
+    if (a) {
+      const keys = ["pl", "pvp", "dy", "roe", "roic", "margemLiquida", "margemEbit", "divBrutaPatrimonio", "liquidezCorrente", "valorMercado"] as const;
+      const target = merged as unknown as Record<string, unknown>;
+      for (const k of keys) {
+        const cur = target[k];
+        if ((cur == null || (typeof cur === "number" && !Number.isFinite(cur))) && a[k] != null) target[k] = a[k];
+      }
     }
 
     if (historico && historico.length > 0) {
