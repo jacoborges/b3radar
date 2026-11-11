@@ -7,6 +7,8 @@ export interface LiveQuote {
   changePercent: number;
   previousClose: number | null;
   updatedAt: string; // ISO
+  /** Fonte do preço (brapi, hgbrasil, bolsai). */
+  source?: "brapi" | "hgbrasil" | "bolsai";
 }
 
 const inputSchema = z.object({
@@ -77,6 +79,7 @@ async function fetchBatch(batch: string[], token: string | undefined): Promise<B
       changePercent: r.regularMarketChangePercent ?? 0,
       previousClose: r.regularMarketPreviousClose ?? null,
       updatedAt: now,
+      source: "brapi" as const,
     }));
   return { quotes, failure: null };
 }
