@@ -25,4 +25,4 @@
 - Sector ranking math lives in pure src/lib/ranking.ts (100 shares, Data Com window, corporate-event quantity adjust); server fn only fetches data, so rules stay testable.
 - Keep stock-search draft state inside its isolated input and apply list filtering through a cancellable, tested debounce, so typing does not rerender the asset list or refresh quote subscriptions on each key.
 
-- Alternative data providers (HG Brasil, Bolsai, Partnr) keep per-user keys in user_settings and are called only from authenticated server functions; pure priority/merge rules live in src/lib/providers/merge.ts so the hybrid mode stays testable and keys never reach the browser.
+- Alternative data providers (HG Brasil, Bolsai, Partnr) keep per-user keys in user_settings and are called only from authenticated server functions; pure priority/merge/TTL rules live in src/lib/providers/merge.ts, alt quotes are cached client-side by per-source TTL and usage is counted per browser day, so free daily quotas are not burned by polling and keys never reach the browser. Alt dividends only fill years missing from B3; HG Brasil is the Selic-meta fallback inside refreshAllMacro.
