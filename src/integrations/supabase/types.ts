@@ -38,6 +38,27 @@ export type Database = {
         }
         Relationships: []
       }
+      brokers: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       dividend_cache: {
         Row: {
           error: string | null
@@ -291,6 +312,7 @@ export type Database = {
       }
       portfolios: {
         Row: {
+          broker_id: string | null
           created_at: string
           id: string
           name: string
@@ -298,6 +320,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          broker_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -305,13 +328,22 @@ export type Database = {
           user_id: string
         }
         Update: {
+          broker_id?: string | null
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "portfolios_broker_owner_fkey"
+            columns: ["broker_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "brokers"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
       }
       profiles: {
         Row: {

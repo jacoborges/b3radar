@@ -22,6 +22,7 @@ export interface Portfolio {
   id: string;
   name: string;
   createdAt: string;
+  brokerId: string | null;
   lots: PortfolioLot[];
   sales: PortfolioSale[];
 }
@@ -71,7 +72,7 @@ export const listPortfolios = createServerFn({ method: "GET" })
 
     const { data: portfolios, error } = await supabase
       .from("portfolios")
-      .select("id, name, created_at")
+      .select("id, name, created_at, broker_id")
       .eq("user_id", userId)
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
@@ -108,6 +109,7 @@ export const listPortfolios = createServerFn({ method: "GET" })
       id: p.id,
       name: p.name,
       createdAt: p.created_at,
+      brokerId: p.broker_id ?? null,
       lots: lots
         .filter((l) => l.portfolio_id === p.id)
         .map((l) => ({
@@ -263,6 +265,48 @@ export const deleteSale = createServerFn({ method: "POST" })
   .inputValidator((data) => idSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("portfolio_sales").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export interface Broker { id: string; name: string }
+
+const brokerNameSchema = z.object({ name: z.string().trim().min(1, "Informe o nome da corretora.").max(60) });
+const portfolioBrokerSchema = z.object({ portfolioId: z.string().uuid(), brokerId: z.string().uuid().nullable() });
+
+export const listBrokers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Broker[]> => {
+    const { data, error } = await context.supabase
+      .from("brokers").select("id, name").eq("user_id", context.userId).order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const createBroker = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => brokerNameSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("brokers").insert({ name: data.name, user_id: context.userId });
+    if (error) throw new Error(error.code === "23505" ? "Essa corretora já está cadastrada." : error.message);
+    return { ok: true };
+  });
+
+export const deleteBroker = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => idSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("brokers").delete().eq("id", data.id).eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const setPortfolioBroker = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => portfolioBrokerSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("portfolios").update({ broker_id: data.brokerId }).eq("id", data.portfolioId).eq("user_id", context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
   });

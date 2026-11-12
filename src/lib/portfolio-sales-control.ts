@@ -51,3 +51,11 @@ export function currentMonthSalesProgress(positions: SalesControlPosition[], tod
   if (!month) throw new Error("Data inválida.");
   return { ...month, bar: Math.min(100, Math.max(0, month.percentage)) };
 }
+
+
+/** Carteiras somadas na barra: todas as da mesma corretora; sem corretora, só a própria carteira. */
+export function salesScopePortfolioIds(portfolios: Array<{ id: string; brokerId: string | null }>, portfolioId: string) {
+  const brokerId = portfolios.find((p) => p.id === portfolioId)?.brokerId ?? null;
+  if (!brokerId) return [portfolioId];
+  return portfolios.filter((p) => p.brokerId === brokerId).map((p) => p.id);
+}

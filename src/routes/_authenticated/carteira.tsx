@@ -35,6 +35,7 @@ import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { PortfolioRebalanceButton } from "@/components/PortfolioRebalanceButton";
 import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
 import { PortfolioMonthSalesBar } from "@/components/PortfolioMonthSalesBar";
+import { BrokersPanel, PortfolioBrokerSelect, useBrokers } from "@/components/BrokersPanel";
 import { useMonthlySalesLimit } from "@/hooks/use-monthly-sales-limit";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
@@ -43,6 +44,7 @@ import { useStockSort } from "@/hooks/use-stock-sort";
 import { compareStocks } from "@/lib/stock-sort";
 import { useSimProventos } from "@/hooks/use-sim-proventos";
 import { portfolioLedger } from "@/lib/portfolio-ledger";
+import { salesScopePortfolioIds } from "@/lib/portfolio-sales-control";
 import {
   addSale,
   addLot,
@@ -303,6 +305,7 @@ function CarteiraPage() {
   })), [portfolios, corporateEvents.byTicker]);
   const taxPositions = useMemo(() => Array.from(ledgersByPortfolio.values()).flat(), [ledgersByPortfolio]);
   const { limit: salesLimit } = useMonthlySalesLimit();
+  const { brokers } = useBrokers();
   const salesToday = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
   const posicoesResumo = useMemo(
     () =>
@@ -410,6 +413,7 @@ function CarteiraPage() {
               </Button>
             </div>
           </div>
+          <BrokersPanel />
 
           <div className="space-y-1">
             {isLoading && (
@@ -506,7 +510,13 @@ function CarteiraPage() {
                       </Button>
                     </div>
                   )}
-                  <PortfolioMonthSalesBar positions={ledgersByPortfolio.get(p.id) ?? []} today={salesToday} limit={salesLimit} />
+                  {renamingId !== p.id && <PortfolioBrokerSelect portfolioId={p.id} brokerId={p.brokerId} />}
+                  <PortfolioMonthSalesBar
+                    positions={salesScopePortfolioIds(portfolios, p.id).flatMap((id) => ledgersByPortfolio.get(id) ?? [])}
+                    today={salesToday}
+                    limit={salesLimit}
+                    brokerName={brokers.find((b) => b.id === p.brokerId)?.name ?? null}
+                  />
                 </div>
               );
             })}
