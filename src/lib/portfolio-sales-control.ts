@@ -44,3 +44,10 @@ export function monthlySalesControl(positions: SalesControlPosition[], year: num
   }
   return months;
 }
+
+/** Progresso de vendas do mês de `today` (AAAA-MM-DD); a barra satura em 100%, o valor real continua em `percentage`. */
+export function currentMonthSalesProgress(positions: SalesControlPosition[], today: string, limit = DEFAULT_MONTHLY_SALES_LIMIT) {
+  const month = monthlySalesControl(positions, Number(today.slice(0, 4)), limit)[Number(today.slice(5, 7)) - 1];
+  if (!month) throw new Error("Data inválida.");
+  return { ...month, bar: Math.min(100, Math.max(0, month.percentage)) };
+}

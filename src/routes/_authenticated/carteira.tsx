@@ -34,6 +34,8 @@ import { TickerPayoutTimeline } from "@/components/TickerPayoutTimeline";
 import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { PortfolioRebalanceButton } from "@/components/PortfolioRebalanceButton";
 import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
+import { PortfolioMonthSalesBar } from "@/components/PortfolioMonthSalesBar";
+import { useMonthlySalesLimit } from "@/hooks/use-monthly-sales-limit";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
 import { StockMetricsStrip } from "@/components/StockMetricColumns";
@@ -287,7 +289,7 @@ function CarteiraPage() {
     );
   }, [allPositions, stocks, sort]);
 
-  const taxPositions = useMemo(() => portfolios.flatMap(portfolio => {
+  const ledgersByPortfolio = useMemo(() => new Map(portfolios.map(portfolio => {
     const grouped = new Map<string, { lots: PortfolioLot[]; sales: PortfolioSale[] }>();
     for (const lot of portfolio.lots) {
       const item = grouped.get(lot.ticker) ?? { lots: [], sales: [] };
@@ -297,8 +299,11 @@ function CarteiraPage() {
       const item = grouped.get(sale.ticker) ?? { lots: [], sales: [] };
       item.sales.push(sale); grouped.set(sale.ticker, item);
     }
-    return Array.from(grouped, ([ticker, item]) => portfolioLedger(item.lots, item.sales, corporateEvents.byTicker.get(ticker) ?? [], new Date().toISOString().slice(0, 10)));
-  }), [portfolios, corporateEvents.byTicker]);
+    return [portfolio.id, Array.from(grouped, ([ticker, item]) => portfolioLedger(item.lots, item.sales, corporateEvents.byTicker.get(ticker) ?? [], new Date().toISOString().slice(0, 10)))] as const;
+  })), [portfolios, corporateEvents.byTicker]);
+  const taxPositions = useMemo(() => Array.from(ledgersByPortfolio.values()).flat(), [ledgersByPortfolio]);
+  const { limit: salesLimit } = useMonthlySalesLimit();
+  const salesToday = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
   const posicoesResumo = useMemo(
     () =>
       positions.map((p) => ({
@@ -501,6 +506,7 @@ function CarteiraPage() {
                       </Button>
                     </div>
                   )}
+                  <PortfolioMonthSalesBar positions={ledgersByPortfolio.get(p.id) ?? []} today={salesToday} limit={salesLimit} />
                 </div>
               );
             })}

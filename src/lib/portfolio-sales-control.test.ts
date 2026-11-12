@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { monthlySalesControl, validateMonthlySalesLimit, DEFAULT_MONTHLY_SALES_LIMIT } from "./portfolio-sales-control";
+import { currentMonthSalesProgress, monthlySalesControl, validateMonthlySalesLimit, DEFAULT_MONTHLY_SALES_LIMIT } from "./portfolio-sales-control";
 import { portfolioLedger } from "./portfolio-ledger";
 
 const position = (sold: number, gain = 1000, month = "01") => ({ realizedSales: [{ id: `${month}-${sold}`, ticker: "TEST3", quantity: 100, price: sold / 100, soldAt: `2026-${month}-10`, realized: gain }] });
@@ -18,4 +18,6 @@ describe("Controle mensal de vendas", () => {
   it("recalcula percentual e alerta com limite personalizado", () => { const m = monthlySalesControl([position(9000)], 2026, 10000)[0]; expect(m?.percentage).toBe(90); expect(m?.tone).toBe("warning"); });
   it("não estima imposto sem ganhos positivos mesmo acima do limite", () => { expect(monthlySalesControl([position(25000, -500)], 2026)[0]?.estimatedTax).toBe(0); });
   it("rejeita limite inválido", () => { expect(() => validateMonthlySalesLimit(0)).toThrow(); expect(() => validateMonthlySalesLimit(NaN)).toThrow(); });
+  it("barra da carteira usa só o mês vigente", () => { const p = currentMonthSalesProgress([position(5000, 0, "01"), position(8000, 0, "02")], "2026-02-15"); expect(p.sold).toBe(8000); expect(p.bar).toBe(40); });
+  it("barra da carteira para em 100% acima do limite", () => { const p = currentMonthSalesProgress([position(30000)], "2026-01-20"); expect(p.percentage).toBe(150); expect(p.bar).toBe(100); expect(p.tone).toBe("destructive"); });
 });
