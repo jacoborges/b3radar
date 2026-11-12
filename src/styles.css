@@ -79,6 +79,22 @@
   html {
     -webkit-text-size-adjust: 100%;
   }
+  /* sem barras de rolagem no app: roda do mouse, toque ou clicar-e-arrastar */
+  * {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  html[data-drag-scrolling],
+  html[data-drag-scrolling] * {
+    cursor: grabbing !important;
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
   body {
     /* nunca rolar a página na horizontal; blocos largos rolam por dentro */
     overflow-x: hidden;

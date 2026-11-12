@@ -29,3 +29,4 @@
 
 - Automatic quote polling is tiered via pure quoteTiers/isMarketOpen in src/lib/quote-refresh.ts: held + group tickers poll every minute in a shared query, sold and other displayed tickers poll in background (immediately when the list is a small search result), and polling stops outside B3 hours after capturing the close, to save free API quotas.
 - Portfolios link to user-owned brokers through a composite (broker_id, user_id) foreign key with ON DELETE SET NULL (broker_id), so a portfolio can never point at another user's broker and deleting a broker only unlinks; the per-portfolio sales bar sums the scope from pure salesScopePortfolioIds.
+- Scrollbars are hidden app-wide in src/styles.css; the root-mounted DragScroll (pure axis rules in src/lib/drag-scroll.ts) gives every inner scroller mouse drag-to-scroll, skipping form controls and the asset list that has its own synced drag, so content stays reachable without visible bars.
