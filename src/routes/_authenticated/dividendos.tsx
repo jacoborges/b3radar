@@ -28,6 +28,7 @@ import {
 } from "@/lib/stock-filters";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
 import { useDividendBatch } from "@/hooks/use-dividend-batch";
+import { usePortfolioHoldings } from "@/hooks/use-portfolio-holdings";
 import {
   classMeta,
   type DividendClass,
@@ -121,6 +122,10 @@ function DividendosPage() {
   const [q, setQ] = useState("");
   const [cls, setCls] = useState<DividendClass[]>([]);
   const [selected, setSelected] = useState<Stock | null>(null);
+  const [somenteCarteira, setSomenteCarteira] = useState(false);
+  const { tickers: heldTickers, isLoading: heldLoading } =
+    usePortfolioHoldings();
+  const heldSet = useMemo(() => new Set(heldTickers), [heldTickers]);
 
   // filtros fundamentalistas / qualitativos (mesmos da tela de ações)
   const [filters, setFilters] =
@@ -186,6 +191,12 @@ function DividendosPage() {
   const ranked = useMemo(() => {
     const hoje = new Date();
     const filtered = rows.filter((r) => {
+      if (
+        somenteCarteira &&
+        !heldSet.has(r.stock.ticker.toUpperCase())
+      )
+        return false;
+
       if (
         cls.length > 0 &&
         !(r.intel && cls.includes(r.intel.classification))
@@ -254,6 +265,8 @@ function DividendosPage() {
     freq,
     comEmDias,
     somenteComDados,
+    somenteCarteira,
+    heldSet,
   ]);
 
   const intelSection = (
@@ -443,6 +456,25 @@ function DividendosPage() {
             placeholder="Buscar ticker ou empresa…"
             className="max-w-xs border-border/60 bg-input/60"
           />
+          <button
+            onClick={() => setSomenteCarteira((v) => !v)}
+            disabled={heldLoading || heldTickers.length === 0}
+            title={
+              heldTickers.length === 0
+                ? "Nenhuma ação com posição aberta na carteira"
+                : "Mostrar apenas ações que estão na sua carteira"
+            }
+            className={`rounded-full border px-3 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              somenteCarteira
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border/60 text-muted-foreground hover:border-primary/60"
+            }`}
+          >
+            Em Carteira
+            {somenteCarteira && (
+              <span className="ml-1 font-mono">{heldTickers.length}</span>
+            )}
+          </button>
           <StockSortSelect />
           <StockFilterSheet
             title="Filtros — proventos e fundamentos"
