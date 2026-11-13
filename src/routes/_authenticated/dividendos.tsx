@@ -14,6 +14,7 @@ import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
 import { useValuationColumns } from "@/hooks/use-valuation-columns";
 import { VALUATION_COLUMNS } from "@/lib/valuation-columns";
+import { StockListViewport } from "@/components/StockListViewport";
 import { StockMetricHeaders, StockMetricCells } from "@/components/StockMetricColumns";
 import { useStockColumns } from "@/hooks/use-stock-columns";
 import { useStockSort } from "@/hooks/use-stock-sort";
@@ -100,6 +101,45 @@ function fmtDate(iso: string | null) {
   if (!iso) return "—";
   const [y, m, d] = iso.split("-");
   return `${d}/${m}/${y}`;
+}
+
+/** Larguras fixas da tabela de proventos: cabeçalho e corpo são tabelas separadas e precisam alinhar. */
+const INTEL_W = {
+  ticker: 420,
+  classe: 120,
+  score: 70,
+  freq: 100,
+  metric: 80,
+  consec: 100,
+  com: 130,
+  faixa: 150,
+};
+
+const intelMinWidth = (metricCount: number) =>
+  INTEL_W.ticker +
+  INTEL_W.classe +
+  INTEL_W.score +
+  INTEL_W.freq +
+  metricCount * INTEL_W.metric +
+  INTEL_W.consec +
+  INTEL_W.com +
+  INTEL_W.faixa;
+
+function IntelColGroup({ count }: { count: number }) {
+  return (
+    <colgroup>
+      <col style={{ width: INTEL_W.ticker }} />
+      <col style={{ width: INTEL_W.classe }} />
+      <col style={{ width: INTEL_W.score }} />
+      <col style={{ width: INTEL_W.freq }} />
+      {Array.from({ length: count }, (_, index) => (
+        <col key={index} style={{ width: INTEL_W.metric }} />
+      ))}
+      <col style={{ width: INTEL_W.consec }} />
+      <col style={{ width: INTEL_W.com }} />
+      <col style={{ width: INTEL_W.faixa }} />
+    </colgroup>
+  );
 }
 
 const FREQ_OPTS: Array<"ALL" | Frequencia> = [
@@ -572,10 +612,14 @@ function DividendosPage() {
           </p>
           <StockColumnsSelect />
         </div>
-        <div className="rounded-lg border border-border/60 bg-card">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 z-20 border-b border-border/60 bg-card text-xs uppercase text-muted-foreground">
-              <tr>
+        <StockListViewport metricCount={columns.length}>
+          <div className="rounded-lg border border-border/60 bg-card">
+            <div className="sticky top-0 z-20 rounded-t-lg border-b border-border/60 bg-card">
+              <div data-stock-scroll tabIndex={0} aria-label="Colunas da inteligência de proventos">
+                <table className="w-full table-fixed text-sm" style={{ minWidth: intelMinWidth(columns.length) }}>
+                  <IntelColGroup count={columns.length} />
+                  <thead className="text-xs uppercase text-muted-foreground">
+                    <tr>
                 <th className="p-3 text-left">Ticker</th>
                 <th className="p-3 text-left">Classe</th>
                 <th className="p-3 text-right">Score</th>
@@ -585,8 +629,14 @@ function DividendosPage() {
                 <th className="p-3 text-left">Próxima COM</th>
                 <th className="p-3 text-right">Faixa esperada</th>
               </tr>
-            </thead>
-            <tbody>
+                  </thead>
+                </table>
+              </div>
+            </div>
+            <div data-stock-scroll tabIndex={0} aria-label="Lista de ativos da inteligência de proventos">
+              <table className="w-full table-fixed text-sm" style={{ minWidth: intelMinWidth(columns.length) }}>
+                <IntelColGroup count={columns.length} />
+                <tbody>
               {ranked.map((r) => {
                 const intel = r.intel;
                 const meta = intel ? classMeta(intel.classification) : null;
@@ -675,9 +725,11 @@ function DividendosPage() {
                   </td>
                 </tr>
               )}
-            </tbody>
-          </table>
-        </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </StockListViewport>
       </div>
 
       <StockDetailModal stock={selected} onClose={() => setSelected(null)} />
