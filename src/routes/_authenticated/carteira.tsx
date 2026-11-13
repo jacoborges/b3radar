@@ -35,7 +35,7 @@ import { PortfolioChartButton } from "@/components/PortfolioChartButton";
 import { PortfolioRebalanceButton } from "@/components/PortfolioRebalanceButton";
 import { PortfolioSalesTimeline } from "@/components/PortfolioSalesTimeline";
 import { PortfolioMonthSalesBar } from "@/components/PortfolioMonthSalesBar";
-import { BrokersPanel, PortfolioBrokerSelect, useBrokers } from "@/components/BrokersPanel";
+import { PortfolioBrokerSelect, useBrokers } from "@/components/BrokersPanel";
 import { useMonthlySalesLimit } from "@/hooks/use-monthly-sales-limit";
 import { StockSortSelect } from "@/components/StockSortSelect";
 import { StockColumnsSelect } from "@/components/StockColumnsSelect";
@@ -413,7 +413,6 @@ function CarteiraPage() {
               </Button>
             </div>
           </div>
-          <BrokersPanel />
 
           <div className="space-y-1">
             {isLoading && (

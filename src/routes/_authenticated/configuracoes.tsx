@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { MonthlySalesLimitSettings } from "@/components/MonthlySalesLimitSettings";
 import { DataProvidersSettings } from "@/components/DataProvidersSettings";
+import { BrokersPanel } from "@/components/BrokersPanel";
 import { useBrapiToken } from "@/hooks/use-live-quotes";
 import {
   useBazinDivisor,
@@ -167,6 +168,8 @@ function SettingsPage() {
         </section>
 
         <DataProvidersSettings />
+
+        <BrokersPanel />
 
         <BazinSection />
 
