@@ -565,8 +565,14 @@ function DividendosPage() {
           })}
         </div>
 
-        <div className="mb-3 flex justify-end"><StockColumnsSelect /></div>
-        <div className="max-h-[70dvh] overflow-auto rounded-lg border border-border/60 bg-card">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs text-muted-foreground">
+            Previsões geradas por modelo estatístico sobre o histórico oficial da B3.
+            Não são anúncios da companhia. Consulte o RI antes de operar por data com/ex.
+          </p>
+          <StockColumnsSelect />
+        </div>
+        <div className="rounded-lg border border-border/60 bg-card">
           <table className="w-full text-sm">
             <thead className="sticky top-0 z-20 border-b border-border/60 bg-card text-xs uppercase text-muted-foreground">
               <tr>
@@ -672,11 +678,6 @@ function DividendosPage() {
             </tbody>
           </table>
         </div>
-
-        <p className="mt-3 text-xs text-muted-foreground">
-          Previsões geradas por modelo estatístico sobre o histórico oficial da B3.
-          Não são anúncios da companhia. Consulte o RI antes de operar por data com/ex.
-        </p>
       </div>
 
       <StockDetailModal stock={selected} onClose={() => setSelected(null)} />
