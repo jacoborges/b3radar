@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { listPortfolios } from "@/lib/portfolio.functions";
-import { heldTickers } from "@/lib/portfolio-holdings";
+import { heldPositions, heldTickers } from "@/lib/portfolio-holdings";
 
 /** Tickers com posição aberta em alguma carteira do usuário. */
 export function usePortfolioHoldings() {
@@ -16,6 +16,7 @@ export function usePortfolioHoldings() {
 
   const tickers = useMemo(() => heldTickers(portfolios), [portfolios]);
   const tickerSet = useMemo(() => new Set(tickers), [tickers]);
+  const positions = useMemo(() => heldPositions(portfolios), [portfolios]);
 
-  return { tickers, tickerSet, isLoading };
+  return { tickers, tickerSet, positions, isLoading };
 }

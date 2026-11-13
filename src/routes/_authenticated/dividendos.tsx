@@ -123,8 +123,11 @@ function DividendosPage() {
   const [cls, setCls] = useState<DividendClass[]>([]);
   const [selected, setSelected] = useState<Stock | null>(null);
   const [somenteCarteira, setSomenteCarteira] = useState(false);
-  const { tickers: heldTickers, isLoading: heldLoading } =
-    usePortfolioHoldings();
+  const {
+    tickers: heldTickers,
+    positions: heldPositions,
+    isLoading: heldLoading,
+  } = usePortfolioHoldings();
   const heldSet = useMemo(() => new Set(heldTickers), [heldTickers]);
 
   // filtros fundamentalistas / qualitativos (mesmos da tela de ações)
@@ -581,6 +584,7 @@ function DividendosPage() {
               {ranked.map((r) => {
                 const intel = r.intel;
                 const meta = intel ? classMeta(intel.classification) : null;
+                const pos = heldPositions.get(r.stock.ticker.toUpperCase());
                 return (
                   <tr
                     key={r.stock.ticker}
@@ -595,6 +599,18 @@ function DividendosPage() {
                         <div>
                           <div className="font-mono font-semibold">
                             {r.stock.ticker}
+                            {pos && (
+                              <span
+                                className="ml-2 align-middle text-[10px] font-normal text-muted-foreground"
+                                title="Posição aberta consolidada das suas carteiras"
+                              >
+                                {pos.quantity.toLocaleString("pt-BR")} × PM R${" "}
+                                {pos.avgPrice.toLocaleString("pt-BR", {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })}
+                              </span>
+                            )}
                           </div>
                           <span className="mt-1 inline-block" onClick={(e) => e.stopPropagation()}>
                             <PortfolioChartButton ticker={r.stock.ticker} />
