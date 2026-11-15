@@ -440,6 +440,12 @@ function CarteiraPage() {
                         value={renameValue}
                         maxLength={60}
                         onChange={(e) => setRenameValue(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            e.preventDefault();
+                            setRenamingId(null);
+                          }
+                        }}
                         className="h-8"
                       />
                       <Button
