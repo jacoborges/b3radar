@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { stocksQueryOptions, useAllStocks } from "@/hooks/use-all-stocks";
+import { StockDetailModal } from "@/components/StockDetailModal";
+import type { Stock } from "@/lib/stocks-data";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
@@ -212,6 +214,7 @@ function CarteiraPage() {
   const mDeleteSale = useMutation({ mutationFn: (id: string) => callDeleteSale({ data: { id } }), onSuccess: invalidate });
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailStock, setDetailStock] = useState<Stock | null>(null);
   const { groups } = useStockGroups();
   const [groupId, setGroupId] = useState<string | null>(null);
   const [showIndices, setShowIndices] = useState(false);
@@ -647,24 +650,30 @@ function CarteiraPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {positions.map((pos) => (
+                  {positions.map((pos) => {
+                    const stock = stocks.find(s => s.ticker === pos.ticker);
+                    const price = priceOf(pos.ticker);
+                    return (
                     <PositionRow
                       key={pos.ticker}
                       pos={pos}
-                      price={priceOf(pos.ticker)}
-                      stock={stocks.find(s => s.ticker === pos.ticker)}
+                      price={price}
+                      stock={stock}
+                      onOpenDetail={stock ? () => setDetailStock({ ...stock, preco: price ?? stock.preco }) : undefined}
                       onUpdateLot={(v) => mUpdateLot.mutate(v)}
                       onDeleteLot={(id) => mDeleteLot.mutate(id)}
                       onUpdateSale={(v) => mUpdateSale.mutate(v)}
                       onDeleteSale={(id) => mDeleteSale.mutate(id)}
                     />
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
           )}
         </section>
       </main>
+      <StockDetailModal stock={detailStock} onClose={() => setDetailStock(null)} />
     </div>
   );
 }
@@ -847,7 +856,9 @@ function PositionRow({
   onDeleteLot,
   onUpdateSale,
   onDeleteSale,
+  onOpenDetail,
 }: {
+  onOpenDetail?: () => void;
   stock?: Partial<Record<import("@/lib/indicators").IndicatorKey, number>>;
   pos: Position;
   price: number | null;
@@ -873,21 +884,35 @@ function PositionRow({
       <div className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left">
       <Button
         variant="ghost"
+        size="icon"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label={`Ver histórico de ${pos.ticker}`}
-        className="h-auto flex-wrap justify-start gap-3 p-0 hover:bg-transparent"
+        aria-label={open ? `Recolher histórico de ${pos.ticker}` : `Expandir histórico de ${pos.ticker}`}
+        title={open ? "Recolher" : "Expandir"}
+        className="-ml-1 h-6 w-6 shrink-0"
       >
         {open ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />
         ) : (
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         )}
-        <span className={`font-mono font-semibold ${closed ? "text-muted-foreground/50" : "text-foreground"}`}>{pos.ticker}</span>
-        <Badge variant="outline" className="font-mono text-xs">
-          {closed ? "Encerrada" : `${qty(pos.totalQty)} un.`}
-        </Badge>
       </Button>
+      {onOpenDetail ? (
+        <button
+          type="button"
+          onClick={onOpenDetail}
+          aria-label={`Ver dados fundamentalistas de ${pos.ticker}`}
+          title="Ver dados fundamentalistas"
+          className={`-ml-1 rounded px-1 font-mono font-semibold underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${closed ? "text-muted-foreground/50" : "text-foreground"}`}
+        >
+          {pos.ticker}
+        </button>
+      ) : (
+        <span className={`-ml-1 px-1 font-mono font-semibold ${closed ? "text-muted-foreground/50" : "text-foreground"}`}>{pos.ticker}</span>
+      )}
+      <Badge variant="outline" className="font-mono text-xs">
+        {closed ? "Encerrada" : `${qty(pos.totalQty)} un.`}
+      </Badge>
         <span className="text-xs text-muted-foreground">
           PM {brl(pos.avgPrice)} · Atual {price != null ? brl(price) : "—"}
         </span>
