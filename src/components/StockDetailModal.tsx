@@ -310,6 +310,24 @@ export function StockDetailModal({ stock: baseStock, onClose }: Props) {
               </DialogTitle>
               <DialogDescription className="mt-1 flex flex-wrap items-center gap-3 text-base">
                 <span>{stock.nome}</span>
+                <span className="flex items-center gap-2 text-xs">
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(`${stock.nome} relações com investidores proventos`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    RI da empresa ↗
+                  </a>
+                  <a
+                    href={`https://www.rad.cvm.gov.br/ENET/frmConsultaExternaCVM.aspx`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    Comunicados CVM ↗
+                  </a>
+                </span>
                 <span className="flex items-center gap-2 text-xs text-muted-foreground">
                   {cachedAtLabel && <span>Atualizado em {cachedAtLabel}</span>}
                   <button

@@ -655,6 +655,12 @@ function DividendosPage() {
                         <div>
                           <div className="font-mono font-semibold">
                             {r.stock.ticker}
+                            <span
+                              className="ml-2 rounded border border-border/60 px-1 align-middle text-[9px] font-normal text-muted-foreground"
+                              title="Classe da ação: proventos são filtrados apenas para esta classe"
+                            >
+                              {r.stock.tipo}
+                            </span>
                             {pos && (
                               <span
                                 className="ml-2 align-middle text-[10px] font-normal text-muted-foreground"
