@@ -74,16 +74,36 @@ function normalizeTipoStock(raw: string | undefined): EventoTipo | null {
   return null;
 }
 
-function classMatches(ticker: string, typeStock: string | undefined): boolean {
-  if (!typeStock) return true;
-  const t = typeStock.toUpperCase();
+type ClassInfo = { typeStock?: string; isinCode?: string; assetIssued?: string };
+
+function isinClass(isin: string | undefined): "ON" | "PN" | "UNIT" | null {
+  const i = (isin ?? "").toUpperCase().trim();
+  if (i.length < 11 || !i.startsWith("BR")) return null;
+  const code = i.slice(6, 11);
+  if (code.startsWith("CD")) return "UNIT";
+  if (code.startsWith("ACNO")) return "ON";
+  if (code.startsWith("ACNP") || code.startsWith("ACPR")) return "PN";
+  return null;
+}
+
+function tickerClass(ticker: string): "ON" | "PN" | "UNIT" | null {
   const suffix = ticker.match(/(\d+)$/)?.[1];
-  if (!suffix) return true;
-  if (suffix === "3") return t.includes("ON");
-  if (suffix === "4") return t.includes("PN");
-  if (suffix === "11") return t.includes("UNT") || t.includes("UNIT");
-  if (["5", "6", "7", "8"].includes(suffix)) return t.includes("PN");
-  return true;
+  if (suffix === "3") return "ON";
+  if (suffix === "11") return "UNIT";
+  if (suffix && ["4", "5", "6", "7", "8"].includes(suffix)) return "PN";
+  return null;
+}
+
+function classMatches(ticker: string, info: ClassInfo): boolean {
+  const want = tickerClass(ticker);
+  if (!want) return true;
+  const fromIsin = isinClass(info.isinCode) ?? isinClass(info.assetIssued);
+  if (fromIsin) return fromIsin === want;
+  const t = (info.typeStock ?? "").toUpperCase().trim();
+  if (!t) return true;
+  if (want === "ON") return /\bON\b/.test(t);
+  if (want === "UNIT") return t.includes("UNT") || t.includes("UNIT");
+  return /\bPN/.test(t);
 }
 
 function b64(payload: string): string {
@@ -323,7 +343,7 @@ async function buildUncached(ticker: string): Promise<TickerProventosResult> {
     };
 
     for (const r of supplement.cash) {
-      if (!classMatches(ticker, r.typeStock)) continue;
+      if (!classMatches(ticker, r)) continue;
       const tipo = normalizeTipoCash(r.label);
       if (!tipo) continue;
       push({
@@ -336,7 +356,7 @@ async function buildUncached(ticker: string): Promise<TickerProventosResult> {
     }
 
     for (const r of listed) {
-      if (!classMatches(ticker, r.typeStock)) continue;
+      if (!classMatches(ticker, r)) continue;
       const tipo = normalizeTipoCash(r.corporateAction);
       if (!tipo) continue;
       push({
@@ -360,7 +380,7 @@ async function buildUncached(ticker: string): Promise<TickerProventosResult> {
 
     const seenStock = new Set<string>();
     for (const r of supplement.stock) {
-      if (!classMatches(ticker, r.typeStock)) continue;
+      if (!classMatches(ticker, r)) continue;
       const tipo = normalizeTipoStock(r.label);
       if (!tipo) continue;
       const dataCom = parseB3Date(r.lastDatePrior);
