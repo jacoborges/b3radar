@@ -3,6 +3,7 @@
 - [x] Testar os critérios e verificar a seleção nas telas autenticadas.
 
 # Carteira: vendas e histórico
+- [x] Acrescentar linha de aportes mensais abaixo dos resultados; 11 testes passaram e carteira autenticada confirmou valores, detalhes de compras e troca de ano em duas larguras de janela.
 - [x] Adicionar régua mensal de vendas, limite configurável na conta, alertas e estimativa fiscal; 29 testes passaram e fluxo autenticado validou persistência, vendas existentes e alerta, com limite restaurado a R$ 20 mil.
 - [x] Garantir resultados e proventos de posições encerradas na linha do tempo e verificar com testes e Carteira autenticada.
 - [x] Registrar vendas com validação de saldo e apurar resultado realizado.

@@ -25,6 +25,7 @@ import type { Stock } from "@/lib/stocks-data";
 import { useLiveQuotes } from "@/hooks/use-live-quotes";
 import { PortfolioProventos } from "@/components/PortfolioProventos";
 import { PortfolioTimeline } from "@/components/PortfolioTimeline";
+import { PortfolioContributionsTimeline } from "@/components/PortfolioContributionsTimeline";
 import { GroupWatchlist } from "@/components/GroupWatchlist";
 import { Gauge } from "lucide-react";
 import { MarketIndicesList } from "@/components/MarketIndicesList";
@@ -638,6 +639,7 @@ function CarteiraPage() {
 
               <PortfolioProventos posicoes={posicoesResumo} />
               <PortfolioTimeline name={selected.name} positions={allPositions} year={timelineYear} onYearChange={setTimelineYear} />
+              <PortfolioContributionsTimeline key={selected.id} lots={selected.lots} year={timelineYear} />
               <PortfolioSalesTimeline positions={taxPositions} selectedPositions={allPositions} year={timelineYear} loading={corporateEvents.isLoading} />
               {corporateEvents.isLoading && <p className="text-xs text-muted-foreground">Carregando histórico oficial de proventos e eventos…</p>}
               {corporateEvents.errors.map(error => <p key={error} className="text-xs text-destructive">{error}</p>)}
