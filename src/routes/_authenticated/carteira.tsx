@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { buildPortfolioExport, renderPortfolioExportHtml } from "@/lib/portfolio-export";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ import { PortfolioTimeline } from "@/components/PortfolioTimeline";
 import { PortfolioContributionsTimeline } from "@/components/PortfolioContributionsTimeline";
 import { GroupWatchlist } from "@/components/GroupWatchlist";
 import { Gauge } from "lucide-react";
+import { FileDown } from "lucide-react";
 import { MarketIndicesList } from "@/components/MarketIndicesList";
 import { OpenOrdersPanel, useOpenOrders } from "@/components/OpenOrdersPanel";
 import { ListOrdered } from "lucide-react";
@@ -338,6 +340,21 @@ function CarteiraPage() {
     };
   }, [allPositions]);
 
+  const exportPortfolio = () => {
+    if (!selected) return;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const report = buildPortfolioExport(allPositions.map((p) => ({
+      ticker: p.ticker, quantity: p.totalQty, avgPrice: p.avgPrice, invested: p.invested, price: p.price, current: p.current,
+      lots: p.lots.map((l) => ({ price: l.price, quantity: l.quantity, boughtAt: l.boughtAt })),
+      sales: p.realizedSales.map((s) => ({ price: s.price, quantity: s.quantity, soldAt: s.soldAt, realized: s.realized })),
+      dividends: p.dividends,
+    })), salesToday);
+    w.document.open();
+    w.document.write(renderPortfolioExportHtml(selected.name, report, new Date()));
+    w.document.close();
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-30 border-b border-border/60 bg-background/85 backdrop-blur-xl">
@@ -363,6 +380,17 @@ function CarteiraPage() {
                 ? `Cotações ${quotes.updatedAt.toLocaleTimeString("pt-BR")}`
                 : "Cotações do último fechamento"}
           </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={!selected}
+            onClick={exportPortfolio}
+            title="Exportar a carteira selecionada em PDF"
+          >
+            <FileDown className="h-4 w-4" />
+            Exportar carteira
+          </Button>
           <Button
             variant="outline"
             size="sm"

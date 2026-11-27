@@ -35,3 +35,4 @@
 - [x] Fixar o cabeçalho da lista principal durante a rolagem.
 - [x] Adicionar seleção de todos os indicadores fundamentalistas sem repetições e compartilhar a configuração nas demais listas de ativos.
 - [x] Testar seleção, persistência, cabeçalho fixo e navegação entre listas (Carteira e Simulador preenchidos, seleção preservada após recarregar, celular sem ultrapassar margens).
+- [x] Exportar carteira em PDF
